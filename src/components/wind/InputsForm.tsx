@@ -1,110 +1,282 @@
-import { ProjectInputs } from "@/lib/windModel";
+import { ProjectInputs, DebtTranche } from "@/lib/windModel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 interface Props {
   inputs: ProjectInputs;
   onChange: (i: ProjectInputs) => void;
 }
 
-type Field = {
-  key: keyof ProjectInputs;
+type Field<T = ProjectInputs> = {
+  key: keyof T;
   label: string;
   unit?: string;
   step?: number;
   pct?: boolean;
+  switch01?: boolean;
 };
 
-const sections: Record<string, Field[]> = {
-  Project: [
-    { key: "constructionStart", label: "Construction start year" },
-    { key: "constructionMonths", label: "Construction duration", unit: "months" },
-    { key: "operationsYears", label: "Operations period", unit: "years" },
-    { key: "capacityMWp", label: "Installed capacity", unit: "MWp" },
-  ],
-  Capex: [
-    { key: "epcCost", label: "EPC cost", unit: "USD '000" },
-    { key: "developmentCost", label: "Development cost", unit: "USD '000" },
-    { key: "substationContingency", label: "Substation & contingency", unit: "USD '000" },
-    { key: "dsraInitial", label: "DSRA initial funding", unit: "USD '000" },
-  ],
-  Production: [
-    { key: "yieldKWhPerKWp", label: "Annual yield", unit: "kWh/kWp" },
-    { key: "availability", label: "Availability", pct: true, step: 0.01 },
-    { key: "ownConsumptionLoss", label: "Own consumption + losses", pct: true, step: 0.01 },
-    { key: "degradation", label: "Annual degradation", pct: true, step: 0.001 },
-  ],
-  Tariff: [
-    { key: "tariffUsdPerKWh", label: "Tariff", unit: "USD/kWh", step: 0.001 },
-    { key: "tariffEscalation", label: "Tariff escalation p.a.", pct: true, step: 0.001 },
-  ],
-  Opex: [
-    { key: "oAndM", label: "O&M", unit: "USD '000 p.a." },
-    { key: "assetMgmt", label: "Asset management", unit: "USD '000 p.a." },
-    { key: "spvCost", label: "SPV / licence", unit: "USD '000 p.a." },
-    { key: "insurance", label: "Insurance", unit: "USD '000 p.a." },
-    { key: "cpi", label: "Opex CPI", pct: true, step: 0.001 },
-    { key: "daysReceivable", label: "Days receivable", unit: "days" },
-    { key: "daysPayable", label: "Days payable", unit: "days" },
-  ],
-  Debt: [
-    { key: "gearing", label: "Target gearing (fixed mode)", pct: true, step: 0.01 },
-    { key: "targetDSCR", label: "Target DSCR (sculpt mode)", step: 0.01 },
-    { key: "debtTenorYears", label: "Debt tenor", unit: "years" },
-    { key: "graceYears", label: "Grace period", unit: "years" },
-    { key: "interestRate", label: "All-in interest rate", pct: true, step: 0.001 },
+// ─────────────────────────────────────────────────────────────────────────────
+// Reusable atoms
+// ─────────────────────────────────────────────────────────────────────────────
+const NumberField = <T extends Record<string, any>>({ obj, k, f, onSet }: {
+  obj: T; k: keyof T; f: Omit<Field<T>, "key">; onSet: (v: any) => void;
+}) => {
+  const raw = obj[k] as unknown as number;
+  const display = f.pct ? (Number(raw) * 100).toFixed(3) : String(raw);
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-muted-foreground">
+        {f.label} {f.unit && <span className="opacity-60">({f.unit})</span>}{f.pct && <span className="opacity-60">(%)</span>}
+      </Label>
+      <Input type="number" step={f.step ?? 1} className="h-9 font-mono"
+        value={display}
+        onChange={(e) => {
+          const n = parseFloat(e.target.value);
+          if (isNaN(n)) return;
+          onSet(f.pct ? n / 100 : n);
+        }}/>
+    </div>
+  );
+};
+
+const FieldsGrid = ({ inputs, onChange, fields }: { inputs: ProjectInputs; onChange: (i: ProjectInputs) => void; fields: Field[] }) => (
+  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    {fields.map((f) => (
+      <NumberField key={String(f.key)} obj={inputs} k={f.key} f={f}
+        onSet={(v) => onChange({ ...inputs, [f.key]: v })} />
+    ))}
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section field definitions (mirror of Excel "Inputs" sheet)
+// ─────────────────────────────────────────────────────────────────────────────
+const TIMING: Field[] = [
+  { key: "constructionStart", label: "Construction start year" },
+  { key: "constructionMonths", label: "Construction duration", unit: "months" },
+  { key: "preOpsMonths", label: "Pre-operations period", unit: "months" },
+  { key: "operationsYears", label: "Operations period", unit: "years" },
+];
+
+const CAPEX: Field[] = [
+  { key: "preConstructionCosts", label: "Pre-construction costs", unit: "USD '000" },
+  { key: "epcCost", label: "EPC costs", unit: "USD '000" },
+  { key: "developmentPremiums", label: "Development premiums", unit: "USD '000" },
+  { key: "developmentExpenses", label: "Development expenses", unit: "USD '000" },
+  { key: "land", label: "Land", unit: "USD '000" },
+  { key: "esMeasures", label: "E&S implementation", unit: "USD '000" },
+  { key: "lendersTechAdvisors", label: "Lenders technical advisors", unit: "USD '000" },
+  { key: "legalExpenses", label: "Legal expenses", unit: "USD '000" },
+  { key: "administrativeCosts", label: "Administrative costs", unit: "USD '000" },
+  { key: "financialAudit", label: "Financial audit", unit: "USD '000" },
+  { key: "insuranceConstruction", label: "Insurance during construction", unit: "USD '000" },
+  { key: "contingency", label: "Contingency", unit: "USD '000" },
+  { key: "substation", label: "Substation", unit: "USD '000" },
+  { key: "loanRepayment", label: "Loan repayment (capex)", unit: "USD '000" },
+  { key: "taxesCapex", label: "Taxes (capex)", unit: "USD '000" },
+];
+
+const RESERVES: Field[] = [
+  { key: "dsraInitial", label: "DSRA initial funding", unit: "USD '000" },
+  { key: "dsraTargetMonths", label: "DSRA target lookforward", unit: "months" },
+  { key: "performanceBond", label: "Performance bond (Land)", unit: "USD '000" },
+];
+
+const PRODUCTION: Field[] = [
+  { key: "capacityMWp", label: "DC capacity", unit: "MWp" },
+  { key: "hoursPerDay", label: "Max hours of generation", unit: "h/day" },
+  { key: "yieldKWhPerKWp", label: "P50 yield per MW", unit: "kWh/kWp", step: 0.01 },
+  { key: "yieldP75Pct", label: "P75 % of P50", pct: true, step: 0.01 },
+  { key: "yieldP90Pct", label: "P90 % of P50", pct: true, step: 0.01 },
+];
+
+const LOSSES: Field[] = [
+  { key: "degradation", label: "Annual degradation", pct: true, step: 0.001 },
+  { key: "ownConsumption", label: "Own consumption", pct: true, step: 0.001 },
+  { key: "transformerLosses", label: "Transformer losses", pct: true, step: 0.001 },
+  { key: "lineLosses", label: "Line losses", pct: true, step: 0.001 },
+  { key: "otherLosses", label: "Other losses", pct: true, step: 0.001 },
+  { key: "availability", label: "Availability", pct: true, step: 0.01 },
+];
+
+const TARIFF: Field[] = [
+  { key: "tariffUsdPerKWh", label: "Start price", unit: "USD/kWh", step: 0.001 },
+  { key: "tariffEscalation", label: "Tariff escalation p.a.", pct: true, step: 0.001 },
+  { key: "tariffFixedYears", label: "Fixed-price agreement", unit: "years" },
+  { key: "tariffPostYearGrowth", label: "Growth post fixed-price", pct: true, step: 0.001 },
+];
+
+const CDM: Field[] = [
+  { key: "cdmStartYear", label: "CDM start year" },
+  { key: "cdmDurationYears", label: "CDM duration", unit: "years" },
+  { key: "gridEmissionFactor", label: "Grid emission factor", unit: "tCO2/MWh", step: 0.001 },
+  { key: "cdmPriceUSD", label: "Carbon price", unit: "USD/tCO2", step: 0.5 },
+];
+
+const OPEX: Field[] = [
+  { key: "oAndM", label: "O&M", unit: "USD '000 p.a." },
+  { key: "assetMgmt", label: "Asset management", unit: "USD '000 p.a." },
+  { key: "spvCost", label: "SPV cost / licence", unit: "USD '000 p.a." },
+  { key: "insurance", label: "Insurance during ops", unit: "USD '000 p.a." },
+  { key: "csrContribution", label: "CSR contribution", unit: "USD '000 p.a." },
+  { key: "eetcCost", label: "EETC cost", unit: "USD '000 p.a." },
+  { key: "cpi", label: "Opex escalation (CPI)", pct: true, step: 0.001 },
+  { key: "daysReceivable", label: "Debtor days", unit: "days" },
+  { key: "daysPayable", label: "Creditor days", unit: "days" },
+];
+
+const DEBT_OVERALL: Field[] = [
+  { key: "gearing", label: "Target gearing (fixed mode)", pct: true, step: 0.01 },
+  { key: "targetDSCR", label: "Target DSCR (sculpt mode)", step: 0.01 },
+  { key: "debtTenorYears", label: "Debt tenor", unit: "years" },
+  { key: "graceYears", label: "Grace period", unit: "years" },
+];
+
+const REFI: Field[] = [
+  { key: "refinanceYear", label: "Refinance year" },
+  { key: "refinanceFee", label: "Refinance fee", pct: true, step: 0.001 },
+  { key: "refinanceMargin", label: "Refinance margin", pct: true, step: 0.001 },
+];
+
+const SHLOAN: Field[] = [
+  { key: "shLoanFunding", label: "SH loan funding", unit: "USD '000" },
+  { key: "shLoanRate", label: "SH loan all-in rate", pct: true, step: 0.001 },
+];
+
+const DISTRIBUTIONS: Field[] = [
+  { key: "payoutRatio", label: "Payout ratio", pct: true, step: 0.01 },
+  { key: "minCashBalance", label: "Min cash balance", unit: "USD '000" },
+  { key: "carriedInterestPct", label: "Carried interest", pct: true, step: 0.01 },
+  { key: "carriedInterestOneTime", label: "Carried interest one-time", unit: "USD '000" },
+];
+
+const TAX_CORE: Field[] = [
+  { key: "taxRate", label: "Corporate tax rate", pct: true, step: 0.005 },
+  { key: "taxStartYear", label: "Tax start year" },
+  { key: "taxPeriods", label: "Tax periods", unit: "years" },
+  { key: "additionalLevy", label: "Additional levy on revenue", pct: true, step: 0.001 },
+  { key: "realEstateTaxRate", label: "Real estate tax rate", pct: true, step: 0.0001 },
+  { key: "realEstateTaxableAmount", label: "Taxable amount", pct: true, step: 0.01 },
+  { key: "exemptedProportion", label: "Exempted proportion", unit: "USD '000" },
+  { key: "rentalValuePct", label: "Rental value", pct: true, step: 0.001 },
+  { key: "taxHolidayYears", label: "Tax holiday", unit: "years" },
+];
+
+const WHT: Field[] = [
+  { key: "whtDividendsRate", label: "WHT dividends rate", pct: true, step: 0.01 },
+  { key: "whtSHLoanRate", label: "WHT SH loan interest rate", pct: true, step: 0.01 },
+  { key: "whtPrefShareRate", label: "WHT pref share coupon rate", pct: true, step: 0.01 },
+  { key: "relPartyDeductMultiple", label: "Related party debt limit", unit: "x equity", step: 0.5 },
+];
+
+const DEPREC: Field[] = [
+  { key: "depreciationYears", label: "Depreciation — long term", unit: "years" },
+  { key: "idcDepreciationYears", label: "Depreciation — IDC & fees", unit: "years" },
+];
+
+const DISCOUNT: Field[] = [
+  { key: "discountRateProject", label: "Project (pre-tax)", pct: true, step: 0.005 },
+  { key: "discountRateProjectPostTax", label: "Project (post-tax)", pct: true, step: 0.005 },
+  { key: "discountRateInvestor", label: "Investor blended", pct: true, step: 0.005 },
+  { key: "discountRateEquity", label: "Common equity", pct: true, step: 0.005 },
+  { key: "discountRatePref", label: "Preferential equity", pct: true, step: 0.005 },
+];
+
+const MACRO: Field[] = [
+  { key: "baseRate", label: "Base rate (SOFR)", pct: true, step: 0.001 },
+  { key: "cpiGeneral", label: "CPI (general)", pct: true, step: 0.001 },
+  { key: "cpiUSDollar", label: "CPI USD", pct: true, step: 0.001 },
+  { key: "cpiBlend", label: "CPI blend US-EGP", pct: true, step: 0.001 },
+  { key: "oAndMInflRate", label: "O&M inflation rate", pct: true, step: 0.001 },
+  { key: "lcoeDiscountFactor", label: "LCOE discount factor", pct: true, step: 0.005 },
+  { key: "depositRate", label: "Deposit rate (interest income)", pct: true, step: 0.001 },
+];
+
+const FX: Field[] = [
+  { key: "fxEUR", label: "EUR : USD", step: 0.001 },
+  { key: "fxEGP", label: "EGP : USD", step: 0.0001 },
+  { key: "fxSpare", label: "Spare : USD", step: 0.001 },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tranche editor
+// ─────────────────────────────────────────────────────────────────────────────
+const TRANCHE_FIELDS: Omit<Field<DebtTranche>, "key">[] & { key: keyof DebtTranche }[] = [] as any;
+
+const TrancheEditor = ({ t, onChange, label }: { t: DebtTranche; label: string; onChange: (t: DebtTranche) => void; }) => {
+  const set = <K extends keyof DebtTranche>(k: K, v: DebtTranche[K]) => onChange({ ...t, [k]: v });
+  const fields: Field<DebtTranche>[] = [
+    { key: "baseRate", label: "Base rate", pct: true, step: 0.001 },
+    { key: "hedgedPct", label: "% hedged", pct: true, step: 0.01 },
+    { key: "hedgedRate", label: "Hedged rate", pct: true, step: 0.001 },
+    { key: "underlyingRate", label: "Underlying rate", pct: true, step: 0.001 },
+    { key: "riskMargin", label: "Risk margin", pct: true, step: 0.001 },
     { key: "upfrontFeePct", label: "Upfront fee", pct: true, step: 0.001 },
     { key: "commitmentFeePct", label: "Commitment fee p.a.", pct: true, step: 0.001 },
-  ],
-  Tax: [
-    { key: "taxRate", label: "Corporate tax rate", pct: true, step: 0.005 },
-    { key: "depreciationYears", label: "Depreciation period", unit: "years" },
-    { key: "taxHolidayYears", label: "Tax holiday", unit: "years" },
-    { key: "discountRateProject", label: "Discount rate (project)", pct: true, step: 0.005 },
-    { key: "discountRateEquity", label: "Discount rate (equity)", pct: true, step: 0.005 },
-  ],
+    { key: "agencyFee", label: "Agency fee", unit: "USD '000 p.a." },
+    { key: "targetDSCR", label: "Tranche target DSCR", step: 0.01 },
+    { key: "sharePct", label: "Share of total debt", pct: true, step: 0.01 },
+  ];
+  return (
+    <div className="rounded-lg border border-border/60 bg-secondary/20 p-4 space-y-3">
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="flex-1 min-w-[160px]">
+          <Label className="text-xs text-muted-foreground">Tranche name</Label>
+          <Input className="h-9 mt-1" value={t.name} onChange={e => set("name", e.target.value)} />
+        </div>
+        <div className="min-w-[140px]">
+          <Label className="text-xs text-muted-foreground">Enabled</Label>
+          <Select value={t.enabled ? "1" : "0"} onValueChange={v => set("enabled", v === "1")}>
+            <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Yes</SelectItem>
+              <SelectItem value="0">No</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="min-w-[160px]">
+          <Label className="text-xs text-muted-foreground">Repayment method</Label>
+          <Select value={t.method} onValueChange={v => set("method", v as DebtTranche["method"])}>
+            <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="annuity">Annuity</SelectItem>
+              <SelectItem value="sculpted">Sculpted</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="text-xs text-muted-foreground">{label}</div>
+      </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {fields.map(f => (
+          <NumberField key={String(f.key)} obj={t} k={f.key} f={f}
+            onSet={(v) => set(f.key, v)} />
+        ))}
+      </div>
+    </div>
+  );
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Main form
+// ─────────────────────────────────────────────────────────────────────────────
 export const InputsForm = ({ inputs, onChange }: Props) => {
   const set = <K extends keyof ProjectInputs>(k: K, v: ProjectInputs[K]) =>
     onChange({ ...inputs, [k]: v });
 
-  const renderField = (f: Field) => {
-    const raw = inputs[f.key] as number;
-    const display = f.pct ? (raw * 100).toFixed(3) : String(raw);
-    return (
-      <div key={String(f.key)} className="space-y-1">
-        <Label className="text-xs text-muted-foreground">
-          {f.label} {f.unit && <span className="opacity-60">({f.unit})</span>}
-          {f.pct && <span className="opacity-60">(%)</span>}
-        </Label>
-        <Input
-          type="number"
-          step={f.step ?? 1}
-          className="h-9 font-mono"
-          value={display}
-          onChange={(e) => {
-            const n = parseFloat(e.target.value);
-            if (isNaN(n)) return;
-            set(f.key, (f.pct ? n / 100 : n) as ProjectInputs[typeof f.key]);
-          }}
-        />
-      </div>
-    );
-  };
-
-  const tabs = Object.keys(sections);
-
   return (
     <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-soft)]">
       <div className="border-b border-border bg-secondary/40 px-5 py-3">
-        <h3 className="font-semibold">Project inputs</h3>
-        <p className="text-xs text-muted-foreground">Edit any field — outputs recompute instantly with closed-form IDC and JS-based DSCR sculpting.</p>
+        <h3 className="font-semibold">Project inputs — full assumption set</h3>
+        <p className="text-xs text-muted-foreground">Mirrors the Wind 552 Inputs tab. Edits recalculate instantly with closed-form IDC and JS-based DSCR sculpting.</p>
       </div>
+
       <div className="space-y-4 p-5">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        {/* Identity row */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-5">
           <div>
             <Label className="text-xs text-muted-foreground">Project name</Label>
             <Input className="h-9 mt-1" value={inputs.projectName} onChange={(e) => set("projectName", e.target.value)} />
@@ -112,6 +284,14 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
           <div>
             <Label className="text-xs text-muted-foreground">Scenario</Label>
             <Input className="h-9 mt-1" value={inputs.scenario} onChange={(e) => set("scenario", e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Company</Label>
+            <Input className="h-9 mt-1" value={inputs.companyName} onChange={(e) => set("companyName", e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Country</Label>
+            <Input className="h-9 mt-1" value={inputs.country} onChange={(e) => set("country", e.target.value)} />
           </div>
           <div>
             <Label className="text-xs text-muted-foreground">Debt sizing mode</Label>
@@ -125,17 +305,220 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
           </div>
         </div>
 
-        <Tabs defaultValue={tabs[0]}>
+        <Tabs defaultValue="construction">
           <TabsList className="flex-wrap h-auto">
-            {tabs.map((t) => <TabsTrigger key={t} value={t}>{t}</TabsTrigger>)}
+            <TabsTrigger value="construction">Construction</TabsTrigger>
+            <TabsTrigger value="operations">Operations</TabsTrigger>
+            <TabsTrigger value="revenue">Revenue</TabsTrigger>
+            <TabsTrigger value="opex">Opex</TabsTrigger>
+            <TabsTrigger value="debt">Debt</TabsTrigger>
+            <TabsTrigger value="equity">Equity & dist.</TabsTrigger>
+            <TabsTrigger value="tax">Tax</TabsTrigger>
+            <TabsTrigger value="macro">Macro & FX</TabsTrigger>
           </TabsList>
-          {tabs.map((t) => (
-            <TabsContent key={t} value={t} className="m-0 pt-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {sections[t].map(renderField)}
-              </div>
-            </TabsContent>
-          ))}
+
+          {/* Construction */}
+          <TabsContent value="construction" className="m-0 pt-4">
+            <Accordion type="multiple" defaultValue={["timing", "capex", "reserves"]}>
+              <AccordionItem value="timing">
+                <AccordionTrigger>Timing</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={TIMING}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="capex">
+                <AccordionTrigger>Capital expenditure</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={CAPEX}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="reserves">
+                <AccordionTrigger>Reserves</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={RESERVES}/></AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </TabsContent>
+
+          {/* Operations */}
+          <TabsContent value="operations" className="m-0 pt-4">
+            <Accordion type="multiple" defaultValue={["volume", "losses"]}>
+              <AccordionItem value="volume">
+                <AccordionTrigger>Volume & yield</AccordionTrigger>
+                <AccordionContent>
+                  <div className="mb-3 max-w-xs">
+                    <Label className="text-xs text-muted-foreground">Yield case</Label>
+                    <Select value={inputs.yieldCase} onValueChange={(v) => set("yieldCase", v as ProjectInputs["yieldCase"])}>
+                      <SelectTrigger className="h-9 mt-1"><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="P50">P50</SelectItem>
+                        <SelectItem value="P75">P75</SelectItem>
+                        <SelectItem value="P90">P90</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <FieldsGrid inputs={inputs} onChange={onChange} fields={PRODUCTION}/>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="losses">
+                <AccordionTrigger>Loss factors & availability</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={LOSSES}/></AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </TabsContent>
+
+          {/* Revenue */}
+          <TabsContent value="revenue" className="m-0 pt-4">
+            <Accordion type="multiple" defaultValue={["tariff", "cdm"]}>
+              <AccordionItem value="tariff">
+                <AccordionTrigger>PPA / Tariff</AccordionTrigger>
+                <AccordionContent>
+                  <div className="mb-3 max-w-xs">
+                    <Label className="text-xs text-muted-foreground">Tariff currency</Label>
+                    <Select value={inputs.tariffCurrency} onValueChange={(v) => set("tariffCurrency", v as ProjectInputs["tariffCurrency"])}>
+                      <SelectTrigger className="h-9 mt-1"><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="USD">USD</SelectItem>
+                        <SelectItem value="EGP">EGP</SelectItem>
+                        <SelectItem value="EUR">EUR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <FieldsGrid inputs={inputs} onChange={onChange} fields={TARIFF}/>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="cdm">
+                <AccordionTrigger>Clean Development Mechanism (carbon)</AccordionTrigger>
+                <AccordionContent>
+                  <div className="mb-3 max-w-xs">
+                    <Label className="text-xs text-muted-foreground">CDM switch</Label>
+                    <Select value={String(inputs.cdmSwitch)} onValueChange={(v) => set("cdmSwitch", Number(v) as 0|1)}>
+                      <SelectTrigger className="h-9 mt-1"><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">On</SelectItem>
+                        <SelectItem value="0">Off</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <FieldsGrid inputs={inputs} onChange={onChange} fields={CDM}/>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </TabsContent>
+
+          {/* Opex */}
+          <TabsContent value="opex" className="m-0 pt-4">
+            <FieldsGrid inputs={inputs} onChange={onChange} fields={OPEX}/>
+          </TabsContent>
+
+          {/* Debt */}
+          <TabsContent value="debt" className="m-0 pt-4">
+            <Accordion type="multiple" defaultValue={["overall", "t1"]}>
+              <AccordionItem value="overall">
+                <AccordionTrigger>Overall debt sizing</AccordionTrigger>
+                <AccordionContent>
+                  <div className="mb-3 max-w-xs">
+                    <Label className="text-xs text-muted-foreground">Payment periodicity</Label>
+                    <Select value={inputs.paymentPeriodicity} onValueChange={(v) => set("paymentPeriodicity", v as ProjectInputs["paymentPeriodicity"])}>
+                      <SelectTrigger className="h-9 mt-1"><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Quarterly">Quarterly</SelectItem>
+                        <SelectItem value="Semi-annual">Semi-annual</SelectItem>
+                        <SelectItem value="Annual">Annual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <FieldsGrid inputs={inputs} onChange={onChange} fields={DEBT_OVERALL}/>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="t1">
+                <AccordionTrigger>Tranche 1 — {inputs.debt1.name}</AccordionTrigger>
+                <AccordionContent>
+                  <TrancheEditor t={inputs.debt1} label="Primary senior facility" onChange={(t) => set("debt1", t)} />
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="t2">
+                <AccordionTrigger>Tranche 2 — {inputs.debt2.name}</AccordionTrigger>
+                <AccordionContent>
+                  <TrancheEditor t={inputs.debt2} label="Optional secondary facility" onChange={(t) => set("debt2", t)} />
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="t3">
+                <AccordionTrigger>Tranche 3 — {inputs.debt3.name}</AccordionTrigger>
+                <AccordionContent>
+                  <TrancheEditor t={inputs.debt3} label="Optional tertiary facility" onChange={(t) => set("debt3", t)} />
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="refi">
+                <AccordionTrigger>Refinancing</AccordionTrigger>
+                <AccordionContent>
+                  <div className="mb-3 max-w-xs">
+                    <Label className="text-xs text-muted-foreground">Refinance switch</Label>
+                    <Select value={String(inputs.refinanceSwitch)} onValueChange={(v) => set("refinanceSwitch", Number(v) as 0|1)}>
+                      <SelectTrigger className="h-9 mt-1"><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">On</SelectItem>
+                        <SelectItem value="0">Off</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <FieldsGrid inputs={inputs} onChange={onChange} fields={REFI}/>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="shloan">
+                <AccordionTrigger>Shareholder loan</AccordionTrigger>
+                <AccordionContent>
+                  <FieldsGrid inputs={inputs} onChange={onChange} fields={SHLOAN}/>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </TabsContent>
+
+          {/* Equity & distributions */}
+          <TabsContent value="equity" className="m-0 pt-4">
+            <FieldsGrid inputs={inputs} onChange={onChange} fields={DISTRIBUTIONS}/>
+            <div className="mt-4 max-w-xs">
+              <Label className="text-xs text-muted-foreground">Dividends restricted to retained earnings?</Label>
+              <Select value={String(inputs.divRestrictedToRetainedEarnings)} onValueChange={(v) => set("divRestrictedToRetainedEarnings", Number(v) as 0|1)}>
+                <SelectTrigger className="h-9 mt-1"><SelectValue/></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Yes</SelectItem>
+                  <SelectItem value="0">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="mt-6">
+              <h4 className="font-semibold text-sm mb-2">Discount rates</h4>
+              <FieldsGrid inputs={inputs} onChange={onChange} fields={DISCOUNT}/>
+            </div>
+          </TabsContent>
+
+          {/* Tax */}
+          <TabsContent value="tax" className="m-0 pt-4">
+            <Accordion type="multiple" defaultValue={["corp", "wht", "deprec"]}>
+              <AccordionItem value="corp">
+                <AccordionTrigger>Corporate tax</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={TAX_CORE}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="wht">
+                <AccordionTrigger>Withholding tax & related parties</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={WHT}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="deprec">
+                <AccordionTrigger>Depreciation</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={DEPREC}/></AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </TabsContent>
+
+          {/* Macro & FX */}
+          <TabsContent value="macro" className="m-0 pt-4">
+            <Accordion type="multiple" defaultValue={["macro", "fx"]}>
+              <AccordionItem value="macro">
+                <AccordionTrigger>Macro — rates & inflation</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={MACRO}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="fx">
+                <AccordionTrigger>Foreign exchange</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={FX}/></AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
