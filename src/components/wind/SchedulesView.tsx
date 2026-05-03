@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { ModelOutputs, fmt, fmtPct } from "@/lib/windModel";
 
 type Section = {
@@ -21,8 +22,8 @@ const ScheduleTable = ({ title, years, sections }: { title: string; years: numbe
         </thead>
         <tbody>
           {sections.map((sec, si) => (
-            <>
-              <tr key={`s-${si}`} className="bg-secondary/20">
+            <Fragment key={`sec-${si}`}>
+              <tr className="bg-secondary/20">
                 <td colSpan={2 + years.length} className="px-3 py-1.5 font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">{sec.title}</td>
               </tr>
               {sec.rows.map((r, ri) => {
@@ -39,7 +40,7 @@ const ScheduleTable = ({ title, years, sections }: { title: string; years: numbe
                   </tr>
                 );
               })}
-            </>
+            </Fragment>
           ))}
         </tbody>
       </table>
