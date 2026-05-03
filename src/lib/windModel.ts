@@ -1,117 +1,363 @@
 // Wind 552 MWp project finance engine
 // Closed-form IDC where possible; fixed-point iteration for DSCR-sculpted debt sizing.
+// Inputs schema mirrors the Excel "Inputs" tab — all granular assumptions are exposed,
+// then aggregated inside runModel to feed the simulation.
+
+export type SizingMethod = "annuity" | "sculpted";
+export type YieldCase = "P50" | "P75" | "P90";
+
+export interface DebtTranche {
+  name: string;
+  enabled: boolean;
+  baseRate: number;        // e.g. SOFR
+  hedgedPct: number;       // % of notional hedged
+  hedgedRate: number;      // hedged fixed rate
+  underlyingRate: number;  // floating spread post-hedge
+  riskMargin: number;
+  upfrontFeePct: number;
+  commitmentFeePct: number;
+  agencyFee: number;       // USD '000 p.a.
+  method: SizingMethod;
+  targetDSCR: number;      // for sculpted
+  sharePct: number;        // share of total debt (used for blending)
+}
 
 export interface ProjectInputs {
-  // Identity
+  // ── Identity ─────────────────────────────────────────────────────────
   projectName: string;
   scenario: string;
+  companyName: string;
+  country: string;
+  modelType: string;
 
-  // Timing
+  // ── Timing ───────────────────────────────────────────────────────────
   constructionStart: number; // year
   constructionMonths: number;
+  preOpsMonths: number;
   operationsYears: number;
 
-  // Capex (USD '000)
+  // ── Capex breakdown (USD '000, fixed) ────────────────────────────────
+  preConstructionCosts: number;
   epcCost: number;
-  developmentCost: number;
-  substationContingency: number;
-  dsraInitial: number;
+  developmentPremiums: number;
+  developmentExpenses: number;
+  land: number;
+  esMeasures: number;
+  lendersTechAdvisors: number;
+  legalExpenses: number;
+  administrativeCosts: number;
+  financialAudit: number;
+  insuranceConstruction: number;
+  contingency: number;
+  substation: number;
+  loanRepayment: number;          // capex line
+  taxesCapex: number;
 
-  // Capacity & Production
+  // ── Reserves ─────────────────────────────────────────────────────────
+  dsraInitial: number;            // USD '000
+  dsraTargetMonths: number;
+  dsraSwitch: 0 | 1;
+  performanceBond: number;        // USD '000
+
+  // ── Production ───────────────────────────────────────────────────────
   capacityMWp: number;
-  yieldKWhPerKWp: number; // MWh per MWp = kWh per kWp (numerically). e.g. 3828
-  degradation: number; // %/yr decimal
-  availability: number; // decimal
-  ownConsumptionLoss: number; // decimal
+  hoursPerDay: number;            // typically 24
+  yieldKWhPerKWp: number;         // P50
+  yieldCase: YieldCase;
+  yieldP75Pct: number;            // 0.95
+  yieldP90Pct: number;            // 0.90
 
-  // Tariff
+  // Loss factors (multiplicative, decimals)
+  degradation: number;
+  ownConsumption: number;
+  transformerLosses: number;
+  lineLosses: number;
+  otherLosses: number;
+  ownConsumptionLoss: number;     // legacy combined; kept for back-compat
+  availability: number;
+
+  // ── Tariff ───────────────────────────────────────────────────────────
+  tariffCurrency: "USD" | "EGP" | "EUR";
   tariffUsdPerKWh: number;
-  tariffEscalation: number; // decimal /yr
+  tariffEscalation: number;
+  tariffPostYearGrowth: number;   // growth rate after fixed-price end
+  tariffFixedYears: number;       // 25 in template
 
-  // Opex (USD '000 p.a., real)
+  // ── CDM / carbon ─────────────────────────────────────────────────────
+  cdmSwitch: 0 | 1;
+  cdmStartYear: number;
+  cdmDurationYears: number;
+  gridEmissionFactor: number;     // tCO2/MWh
+  cdmPriceUSD: number;            // USD / tCO2
+
+  // ── Opex (USD '000 p.a., real) ───────────────────────────────────────
   oAndM: number;
   assetMgmt: number;
   spvCost: number;
   insurance: number;
-  cpi: number; // decimal /yr
+  csrContribution: number;
+  eetcCost: number;
+  cpi: number;                    // opex escalation
 
   // Working capital
   daysReceivable: number;
   daysPayable: number;
 
-  // Debt sizing
-  gearing: number; // target debt / total uses (initial guess)
+  // ── Debt sizing — overall ────────────────────────────────────────────
   sizingMode: "fixed-gearing" | "dscr-sculpted";
-  targetDSCR: number;
+  gearing: number;                // fixed-gearing target
+  targetDSCR: number;             // overall sculpting target
   debtTenorYears: number;
   graceYears: number;
-  interestRate: number; // all-in decimal
-  upfrontFeePct: number; // decimal of debt amount
-  commitmentFeePct: number; // decimal p.a. on undrawn
+  paymentPeriodicity: "Quarterly" | "Semi-annual" | "Annual";
 
-  // Tax & depreciation
-  taxRate: number; // decimal
-  depreciationYears: number;
+  // Three tranches (Debt 1/2/3)
+  debt1: DebtTranche;
+  debt2: DebtTranche;
+  debt3: DebtTranche;
+
+  // Aggregate (auto-derived for engine; can be overridden)
+  interestRate: number;
+  upfrontFeePct: number;
+  commitmentFeePct: number;
+
+  // Refinancing (Debt 1)
+  refinanceSwitch: 0 | 1;
+  refinanceYear: number;
+  refinanceFee: number;
+  refinanceMargin: number;
+
+  // Shareholder loan
+  shLoanFunding: number;
+  shLoanRate: number;
+  shLoanFullyRepaid: 0 | 1;
+
+  // ── Distributions ────────────────────────────────────────────────────
+  payoutRatio: number;            // 0..1
+  divRestrictedToRetainedEarnings: 0 | 1;
+  minCashBalance: number;
+  carriedInterestPct: number;
+  carriedInterestOneTime: number;
+
+  // ── Tax & depreciation ───────────────────────────────────────────────
+  taxRate: number;
+  taxStartYear: number;
+  taxPeriods: number;
+  additionalLevy: number;
+  realEstateTaxRate: number;
+  realEstateTaxableAmount: number;
+  exemptedProportion: number;
+  rentalValuePct: number;
   taxHolidayYears: number;
+  csrTaxDeductible: 0 | 1;
 
-  // Discount rates
-  discountRateProject: number;
-  discountRateEquity: number;
+  whtDividendsSwitch: 0 | 1;
+  whtDividendsRate: number;
+  whtSHLoanSwitch: 0 | 1;
+  whtSHLoanRate: number;
+  whtPrefShareSwitch: 0 | 1;
+  whtPrefShareRate: number;
+
+  relPartyDeductLimitSwitch: 0 | 1;
+  relPartyDeductMultiple: number; // x outstanding equity
+
+  depreciationYears: number;      // Long term (PPE)
+  idcDepreciationYears: number;   // IDC & Fees
+
+  // ── Discount rates ───────────────────────────────────────────────────
+  discountRateProject: number;       // pre-tax
+  discountRateProjectPostTax: number;
+  discountRateInvestor: number;
+  discountRateEquity: number;        // common equity
+  discountRatePref: number;
+
+  // ── Macro ────────────────────────────────────────────────────────────
+  baseRateSelection: string;
+  baseRate: number;               // SOFR
+  cpiGeneral: number;
+  cpiUSDollar: number;
+  cpiBlend: number;
+  oAndMInflRate: number;
+  lcoeDiscountFactor: number;
+  depositRate: number;
+  modelInflationOn: 0 | 1;
+
+  // FX
+  fxEUR: number;
+  fxEGP: number;
+  fxSpare: number;
 }
+
+export const DEFAULT_DEBT1: DebtTranche = {
+  name: "Senior Debt 1", enabled: true,
+  baseRate: 0.041, hedgedPct: 0.7, hedgedRate: 0.041, underlyingRate: 0.041,
+  riskMargin: 0.035, upfrontFeePct: 0.0125, commitmentFeePct: 0.0125, agencyFee: 50,
+  method: "annuity", targetDSCR: 1.20, sharePct: 1.0,
+};
+export const DEFAULT_DEBT2: DebtTranche = {
+  name: "Senior Debt 2", enabled: false,
+  baseRate: 0.041, hedgedPct: 0.7, hedgedRate: 0.0135, underlyingRate: 0.02175,
+  riskMargin: 0, upfrontFeePct: 0, commitmentFeePct: 0, agencyFee: 0,
+  method: "sculpted", targetDSCR: 1.20, sharePct: 0,
+};
+export const DEFAULT_DEBT3: DebtTranche = {
+  name: "Senior Debt 3", enabled: false,
+  baseRate: 0.041, hedgedPct: 0.7, hedgedRate: 0.0185, underlyingRate: 0.02525,
+  riskMargin: 0.005, upfrontFeePct: 0, commitmentFeePct: 0, agencyFee: 0,
+  method: "sculpted", targetDSCR: 1.20, sharePct: 0,
+};
 
 export const DEFAULT_INPUTS: ProjectInputs = {
   projectName: "Wind 552 MWp",
   scenario: "Base Fixed",
+  companyName: "Project SPV",
+  country: "Egypt",
+  modelType: "Wind / Solar Hybrid",
+
   constructionStart: 2027,
   constructionMonths: 24,
+  preOpsMonths: 0,
   operationsYears: 25,
 
+  preConstructionCosts: 0,
   epcCost: 336168,
-  developmentCost: 9936,
-  substationContingency: 139334.49,
+  developmentPremiums: 0,
+  developmentExpenses: 9936,
+  land: 0,
+  esMeasures: 0,
+  lendersTechAdvisors: 0,
+  legalExpenses: 0,
+  administrativeCosts: 0,
+  financialAudit: 0,
+  insuranceConstruction: 0,
+  contingency: 13128.12,
+  substation: 41500,
+  loanRepayment: 50000,
+  taxesCapex: 34706.37,
+
   dsraInitial: 44820,
+  dsraTargetMonths: 12,
+  dsraSwitch: 1,
+  performanceBond: 0,
 
   capacityMWp: 552,
+  hoursPerDay: 24,
   yieldKWhPerKWp: 3828.12,
-  degradation: 0.005,
-  availability: 0.97,
-  ownConsumptionLoss: 0.02,
+  yieldCase: "P50",
+  yieldP75Pct: 0.95,
+  yieldP90Pct: 0.90,
 
+  degradation: 0.005,
+  ownConsumption: 0.01,
+  transformerLosses: 0.005,
+  lineLosses: 0.005,
+  otherLosses: 0.0,
+  ownConsumptionLoss: 0.02,
+  availability: 0.97,
+
+  tariffCurrency: "USD",
   tariffUsdPerKWh: 0.03,
   tariffEscalation: 0.0,
+  tariffPostYearGrowth: 0.0,
+  tariffFixedYears: 25,
+
+  cdmSwitch: 1,
+  cdmStartYear: 2027,
+  cdmDurationYears: 25,
+  gridEmissionFactor: 0.225,
+  cdmPriceUSD: 5,
 
   oAndM: 5034.24,
   assetMgmt: 496.8,
   spvCost: 46.368,
   insurance: 0,
+  csrContribution: 0,
+  eetcCost: 0,
   cpi: 0.022,
 
   daysReceivable: 60,
   daysPayable: 30,
 
-  gearing: 0.8,
   sizingMode: "dscr-sculpted",
+  gearing: 0.8,
   targetDSCR: 1.30,
   debtTenorYears: 20,
   graceYears: 2,
+  paymentPeriodicity: "Semi-annual",
+
+  debt1: { ...DEFAULT_DEBT1 },
+  debt2: { ...DEFAULT_DEBT2 },
+  debt3: { ...DEFAULT_DEBT3 },
+
   interestRate: 0.076,
   upfrontFeePct: 0.0125,
   commitmentFeePct: 0.0125,
 
-  taxRate: 0.225,
-  depreciationYears: 20,
-  taxHolidayYears: 0,
+  refinanceSwitch: 0,
+  refinanceYear: 2035,
+  refinanceFee: 0.008,
+  refinanceMargin: 0.01,
 
-  discountRateProject: 0.08,
-  discountRateEquity: 0.10,
+  shLoanFunding: 0,
+  shLoanRate: 0.09,
+  shLoanFullyRepaid: 0,
+
+  payoutRatio: 1.0,
+  divRestrictedToRetainedEarnings: 1,
+  minCashBalance: 0,
+  carriedInterestPct: 0,
+  carriedInterestOneTime: 0,
+
+  taxRate: 0.225,
+  taxStartYear: 2029,
+  taxPeriods: 25,
+  additionalLevy: 0,
+  realEstateTaxRate: 0.00136,
+  realEstateTaxableAmount: 1.0,
+  exemptedProportion: 0,
+  rentalValuePct: 0,
+  taxHolidayYears: 0,
+  csrTaxDeductible: 0,
+
+  whtDividendsSwitch: 0,
+  whtDividendsRate: 0.20,
+  whtSHLoanSwitch: 0,
+  whtSHLoanRate: 0.20,
+  whtPrefShareSwitch: 0,
+  whtPrefShareRate: 0,
+
+  relPartyDeductLimitSwitch: 1,
+  relPartyDeductMultiple: 4,
+
+  depreciationYears: 25,
+  idcDepreciationYears: 22,
+
+  discountRateProject: 0.06,
+  discountRateProjectPostTax: 0.06,
+  discountRateInvestor: 0.06,
+  discountRateEquity: 0.06,
+  discountRatePref: 0.06,
+
+  baseRateSelection: "US SOFR 6M",
+  baseRate: 0.041,
+  cpiGeneral: 0.07,
+  cpiUSDollar: 0.03,
+  cpiBlend: 0.04,
+  oAndMInflRate: 0.022,
+  lcoeDiscountFactor: 0.06,
+  depositRate: 0,
+  modelInflationOn: 1,
+
+  fxEUR: 1.05,
+  fxEGP: 0.0205339,
+  fxSpare: 0,
 };
 
 export interface AnnualRow {
   year: number;
-  // Production
   mwh: number;
-  // Income statement
   revenue: number;
+  carbonRevenue: number;
   opex: number;
   ebitda: number;
   depreciation: number;
@@ -120,17 +366,14 @@ export interface AnnualRow {
   ebt: number;
   tax: number;
   netIncome: number;
-  // Cashflow
   workingCapitalChange: number;
-  cfads: number; // cash flow available for debt service
-  debtService: number; // interest + principal
+  cfads: number;
+  debtService: number;
   principal: number;
-  cffi: number; // cashflow for investors
-  // Debt
+  cffi: number;
   openingDebt: number;
   closingDebt: number;
   dscr: number;
-  // Balance sheet
   ppe: number;
   cash: number;
   receivables: number;
@@ -140,7 +383,6 @@ export interface AnnualRow {
 
 export interface ModelOutputs {
   inputs: ProjectInputs;
-  // Sources & Uses
   totalUses: number;
   totalSources: number;
   idc: number;
@@ -149,17 +391,11 @@ export interface ModelOutputs {
   debtAmount: number;
   equityAmount: number;
   effectiveGearing: number;
-
-  // Annual schedule (operations only, indexed by ops year 1..N)
   rows: AnnualRow[];
-
-  // Construction-period rows (for sources/uses chart)
   constructionYears: number[];
-  constructionDraws: number[]; // total funding per year
+  constructionDraws: number[];
   equityDraws: number[];
   debtDraws: number[];
-
-  // KPIs
   minDSCR: number;
   avgDSCR: number;
   projectIRR: number;
@@ -171,18 +407,19 @@ export interface ModelOutputs {
   totalRevenue: number;
   totalOpex: number;
   totalCFADS: number;
-
-  // Convergence info
   iterations: number;
   converged: boolean;
+  // Derived per-tranche all-in rates (display)
+  allInRate1: number;
+  allInRate2: number;
+  allInRate3: number;
+  blendedRate: number;
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
-  // Newton-Raphson IRR
   let r = guess;
   for (let iter = 0; iter < 100; iter++) {
-    let npv = 0;
-    let dnpv = 0;
+    let npv = 0, dnpv = 0;
     for (let t = 0; t < cashflows.length; t++) {
       const f = Math.pow(1 + r, t);
       npv += cashflows[t] / f;
@@ -196,19 +433,58 @@ function irr(cashflows: number[], guess = 0.1): number {
   }
   return r;
 }
-
 function npv(rate: number, cashflows: number[]): number {
   return cashflows.reduce((s, cf, t) => s + cf / Math.pow(1 + rate, t), 0);
 }
 
-/** Build operating-year schedule given a debt amount; returns rows + KPIs. */
-function simulate(inputs: ProjectInputs, debtAmount: number, idc: number, fees: number): {
-  rows: AnnualRow[];
-  totalCapex: number;
-  equityAmount: number;
-} {
-  const I = inputs;
-  const baseUses = I.epcCost + I.developmentCost + I.substationContingency + I.dsraInitial;
+function trancheAllIn(t: DebtTranche): number {
+  // hedged*hedgedRate + (1-hedged)*(base+underlyingMargin?) + risk margin
+  // The Excel uses: All-in = hedged*hedgedRate + (1-hedged)*underlyingRate + riskMargin (approx)
+  return t.hedgedPct * t.hedgedRate + (1 - t.hedgedPct) * (t.baseRate + (t.underlyingRate - t.baseRate)) + t.riskMargin;
+}
+
+/** Aggregate breakdowns into the values used by the simulation. */
+function aggregate(I: ProjectInputs) {
+  const epcCost = I.epcCost;
+  const developmentCost = I.preConstructionCosts + I.developmentPremiums + I.developmentExpenses
+    + I.land + I.esMeasures + I.lendersTechAdvisors + I.legalExpenses
+    + I.administrativeCosts + I.financialAudit + I.insuranceConstruction;
+  const substationContingency = I.contingency + I.substation + I.loanRepayment + I.taxesCapex;
+
+  // Loss factor combined (used as ownConsumptionLoss in legacy simulate)
+  const lossFactor = 1
+    - (1 - I.ownConsumption) * (1 - I.transformerLosses) * (1 - I.lineLosses) * (1 - I.otherLosses);
+
+  // Yield case
+  const yMult = I.yieldCase === "P75" ? I.yieldP75Pct : I.yieldCase === "P90" ? I.yieldP90Pct : 1;
+  const yieldKWhPerKWp = I.yieldKWhPerKWp * yMult;
+
+  // Tranches
+  const t1 = I.debt1, t2 = I.debt2, t3 = I.debt3;
+  const r1 = trancheAllIn(t1), r2 = trancheAllIn(t2), r3 = trancheAllIn(t3);
+  // Weights from sharePct of enabled tranches
+  const ws = [
+    t1.enabled ? Math.max(0, t1.sharePct) : 0,
+    t2.enabled ? Math.max(0, t2.sharePct) : 0,
+    t3.enabled ? Math.max(0, t3.sharePct) : 0,
+  ];
+  const wsum = ws[0] + ws[1] + ws[2];
+  const blendedRate = wsum > 0 ? (ws[0]*r1 + ws[1]*r2 + ws[2]*r3) / wsum : r1;
+  const blendedUpfront = wsum > 0 ? (ws[0]*t1.upfrontFeePct + ws[1]*t2.upfrontFeePct + ws[2]*t3.upfrontFeePct) / wsum : t1.upfrontFeePct;
+  const blendedCommit  = wsum > 0 ? (ws[0]*t1.commitmentFeePct + ws[1]*t2.commitmentFeePct + ws[2]*t3.commitmentFeePct) / wsum : t1.commitmentFeePct;
+
+  return {
+    epcCost, developmentCost, substationContingency,
+    yieldKWhPerKWp, lossFactor,
+    interestRate: blendedRate,
+    upfrontFeePct: blendedUpfront,
+    commitmentFeePct: blendedCommit,
+    r1, r2, r3, blendedRate,
+  };
+}
+
+function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmount: number, idc: number, fees: number) {
+  const baseUses = agg.epcCost + agg.developmentCost + agg.substationContingency + I.dsraInitial;
   const totalCapex = baseUses + idc + fees;
   const equityAmount = totalCapex - debtAmount;
 
@@ -219,17 +495,13 @@ function simulate(inputs: ProjectInputs, debtAmount: number, idc: number, fees: 
 
   const rows: AnnualRow[] = [];
   let debt = debtAmount;
-  let cash = 0;
-  let receivables = 0;
-  let payables = 0;
+  let cash = 0, receivables = 0, payables = 0;
   let ppe = depreciableBase;
   let equity = equityAmount;
 
-  // Pre-compute principal schedule (mortgage-style, after grace period)
   const grace = I.graceYears;
   const amortYears = Math.max(1, I.debtTenorYears - grace);
-  const r = I.interestRate;
-  // Fixed annuity payment that fully amortizes debt over amortYears at rate r
+  const r = agg.interestRate;
   const annuity = r > 0
     ? debtAmount * (r * Math.pow(1 + r, amortYears)) / (Math.pow(1 + r, amortYears) - 1)
     : debtAmount / amortYears;
@@ -237,15 +509,24 @@ function simulate(inputs: ProjectInputs, debtAmount: number, idc: number, fees: 
   for (let y = 1; y <= N; y++) {
     const year = opsStartYear + y - 1;
     const escal = Math.pow(1 + I.cpi, y - 1);
-    const tariffEsc = Math.pow(1 + I.tariffEscalation, y - 1);
+    const tariffEsc = y <= I.tariffFixedYears
+      ? Math.pow(1 + I.tariffEscalation, y - 1)
+      : Math.pow(1 + I.tariffEscalation, I.tariffFixedYears - 1) * Math.pow(1 + I.tariffPostYearGrowth, y - I.tariffFixedYears);
     const degr = Math.pow(1 - I.degradation, y - 1);
 
-    const mwh = I.capacityMWp * I.yieldKWhPerKWp * I.availability * (1 - I.ownConsumptionLoss) * degr;
-    const revenue = mwh * I.tariffUsdPerKWh * tariffEsc; // USD '000? mwh*usd/kwh = usd*1000... mwh*1000kwh*usd/kwh=usd*1000 → /1000 to get k... actually mwh=MWh, *USD/kWh*1000 = USD. We want '000 USD: mwh * tariff * 1
-    // mwh * tariff_USD/kWh = USD/1000? 1 MWh = 1000 kWh → revenue_USD = mwh*1000*tariff. Convert to '000 USD = mwh*tariff
-    // So revenue is already in '000 USD.
-    const opex = (I.oAndM + I.assetMgmt + I.spvCost + I.insurance) * escal;
-    const ebitda = revenue - opex;
+    const lossKept = (1 - agg.lossFactor);
+    const mwh = I.capacityMWp * agg.yieldKWhPerKWp * I.availability * lossKept * degr;
+    const revenue = mwh * I.tariffUsdPerKWh * tariffEsc; // USD '000
+
+    const carbonOn = I.cdmSwitch === 1 && (year >= I.cdmStartYear) && (year < I.cdmStartYear + I.cdmDurationYears);
+    const carbonRevenue = carbonOn ? mwh * I.gridEmissionFactor * I.cdmPriceUSD / 1000 : 0; // USD '000
+
+    const totalRev = revenue + carbonRevenue;
+
+    const baseOpex = (I.oAndM + I.assetMgmt + I.spvCost + I.insurance + I.csrContribution + I.eetcCost) * escal;
+    const realEstate = I.epcCost * 0.5 * I.realEstateTaxRate * I.realEstateTaxableAmount; // estimate per template note
+    const opex = baseOpex + realEstate + I.additionalLevy * totalRev;
+    const ebitda = totalRev - opex;
 
     const depreciation = y <= I.depreciationYears ? annualDeprec : 0;
     const openingDebt = debt;
@@ -255,21 +536,17 @@ function simulate(inputs: ProjectInputs, debtAmount: number, idc: number, fees: 
     const tax = (y <= I.taxHolidayYears || ebt <= 0) ? 0 : ebt * I.taxRate;
     const netIncome = ebt - tax;
 
-    // Working capital
-    const newReceivables = revenue * (I.daysReceivable / 365);
+    const newReceivables = totalRev * (I.daysReceivable / 365);
     const newPayables = opex * (I.daysPayable / 365);
     const wcChange = -((newReceivables - receivables) - (newPayables - payables));
-    receivables = newReceivables;
-    payables = newPayables;
+    receivables = newReceivables; payables = newPayables;
 
     const cfads = ebitda - tax + wcChange;
 
-    // Principal payment
     let principal = 0;
     let debtService = interest;
     if (y > grace && debt > 1e-6) {
-      principal = Math.min(debt, annuity - interest);
-      principal = Math.max(0, principal);
+      principal = Math.max(0, Math.min(debt, annuity - interest));
       debtService = interest + principal;
     }
     debt -= principal;
@@ -279,11 +556,11 @@ function simulate(inputs: ProjectInputs, debtAmount: number, idc: number, fees: 
     const dscr = debtService > 0 ? cfads / debtService : 0;
 
     ppe = Math.max(0, ppe - depreciation);
-    cash += cffi; // cash to equity (modeled as distributed)
+    cash += cffi;
     equity += netIncome;
 
     rows.push({
-      year, mwh, revenue, opex, ebitda, depreciation, ebit,
+      year, mwh, revenue, carbonRevenue, opex, ebitda, depreciation, ebit,
       interest, ebt, tax, netIncome,
       workingCapitalChange: wcChange, cfads, debtService, principal, cffi,
       openingDebt, closingDebt: debt, dscr,
@@ -294,62 +571,51 @@ function simulate(inputs: ProjectInputs, debtAmount: number, idc: number, fees: 
   return { rows, totalCapex, equityAmount };
 }
 
-/** Solve IDC + debt sizing iteratively. */
 export function runModel(inputs: ProjectInputs): ModelOutputs {
   const I = inputs;
-  const baseUses = I.epcCost + I.developmentCost + I.substationContingency + I.dsraInitial;
+  const agg = aggregate(I);
+  const baseUses = agg.epcCost + agg.developmentCost + agg.substationContingency + I.dsraInitial;
   const consYears = I.constructionMonths / 12;
 
-  // Closed-form IDC for a uniformly-drawn debt facility over construction:
-  // average outstanding ≈ debt/2 over consYears, IDC = debt/2 * r * consYears
-  // Plus commitment fee on undrawn: ~ debt/2 * commit * consYears
-  // Upfront fee on full debt amount.
-  const computeFinancingCosts = (debt: number) => {
-    const idc = debt * 0.5 * I.interestRate * consYears;
-    const upfront = debt * I.upfrontFeePct;
-    const commitment = debt * 0.5 * I.commitmentFeePct * consYears;
+  const computeFC = (debt: number) => {
+    const idc = debt * 0.5 * agg.interestRate * consYears;
+    const upfront = debt * agg.upfrontFeePct;
+    const commitment = debt * 0.5 * agg.commitmentFeePct * consYears;
     return { idc, upfront, commitment, fees: upfront + commitment };
   };
 
-  let debt = baseUses * I.gearing / (1 - I.gearing); // initial guess
+  let debt = I.gearing < 1 ? baseUses * I.gearing / (1 - I.gearing) : baseUses;
   let iter = 0;
   let converged = false;
 
   if (I.sizingMode === "fixed-gearing") {
-    // Fixed-point iteration: total uses = base + IDC + fees; debt = gearing * total uses
     for (iter = 0; iter < 50; iter++) {
-      const fc = computeFinancingCosts(debt);
+      const fc = computeFC(debt);
       const totalUses = baseUses + fc.idc + fc.fees;
       const newDebt = totalUses * I.gearing;
       if (Math.abs(newDebt - debt) < 0.01) { converged = true; break; }
       debt = newDebt;
     }
   } else {
-    // DSCR-sculpted: find max debt such that min DSCR >= target.
-    // Bisection on debt amount.
-    let lo = 0;
-    let hi = baseUses * 5; // generous upper bound
+    let lo = 0, hi = baseUses * 5;
     for (iter = 0; iter < 60; iter++) {
       const mid = (lo + hi) / 2;
-      const fc = computeFinancingCosts(mid);
-      const sim = simulate(I, mid, fc.idc, fc.fees);
-      const dscrs = sim.rows.filter(r => r.debtService > 0 && r.year > I.constructionStart + Math.ceil(consYears) + I.graceYears - 1).map(r => r.dscr);
+      const fc = computeFC(mid);
+      const sim = simulate(I, agg, mid, fc.idc, fc.fees);
+      const dscrs = sim.rows
+        .filter(r => r.debtService > 0 && r.year > I.constructionStart + Math.ceil(consYears) + I.graceYears - 1)
+        .map(r => r.dscr);
       const minDSCR = dscrs.length ? Math.min(...dscrs) : 0;
-      if (minDSCR >= I.targetDSCR) {
-        lo = mid;
-      } else {
-        hi = mid;
-      }
+      if (minDSCR >= I.targetDSCR) lo = mid; else hi = mid;
       if (hi - lo < 1) { converged = true; break; }
     }
     debt = lo;
   }
 
-  const fc = computeFinancingCosts(debt);
-  const sim = simulate(I, debt, fc.idc, fc.fees);
+  const fc = computeFC(debt);
+  const sim = simulate(I, agg, debt, fc.idc, fc.fees);
   const totalUses = sim.totalCapex;
 
-  // Construction-year sources & uses (uniform draw)
   const consYearCount = Math.max(1, Math.ceil(consYears));
   const constructionYears: number[] = [];
   const constructionDraws: number[] = [];
@@ -362,46 +628,35 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     debtDraws.push(debt / consYearCount);
   }
 
-  // KPIs
   const dscrs = sim.rows.filter(r => r.debtService > 0).map(r => r.dscr);
   const minDSCR = dscrs.length ? Math.min(...dscrs) : 0;
   const avgDSCR = dscrs.length ? dscrs.reduce((a, b) => a + b, 0) / dscrs.length : 0;
 
-  // Project IRR cashflows: -capex (spread over construction), then operating CFADS-Tax (~ ebitda - tax)
   const projCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) projCF.push(-constructionDraws[i]);
   sim.rows.forEach(r => projCF.push(r.ebitda - r.tax + r.workingCapitalChange));
   const projectIRR = irr(projCF, 0.08);
   const npvProject = npv(I.discountRateProject, projCF);
 
-  // Equity IRR: -equity each construction year, then CFFI
   const eqCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) eqCF.push(-equityDraws[i]);
   sim.rows.forEach(r => eqCF.push(r.cffi));
-  // Add DSRA release at end
   if (eqCF.length > 0) eqCF[eqCF.length - 1] += I.dsraInitial;
   const equityIRR = irr(eqCF, 0.12);
   const npvEquity = npv(I.discountRateEquity, eqCF);
 
-  // Payback (equity)
-  let cum = 0;
-  let payback = NaN;
+  let cum = 0, payback = NaN;
   for (let i = 0; i < eqCF.length; i++) {
     cum += eqCF[i];
-    if (cum >= 0 && isNaN(payback)) {
-      payback = i;
-      break;
-    }
+    if (cum >= 0 && isNaN(payback)) { payback = i; break; }
   }
 
-  const totalRevenue = sim.rows.reduce((s, r) => s + r.revenue, 0);
+  const totalRevenue = sim.rows.reduce((s, r) => s + r.revenue + r.carbonRevenue, 0);
   const totalOpex = sim.rows.reduce((s, r) => s + r.opex, 0);
   const totalCFADS = sim.rows.reduce((s, r) => s + r.cfads, 0);
-  const totalMWh = sim.rows.reduce((s, r) => s + r.mwh, 0);
 
-  // LCOE: total discounted cost / total discounted MWh (in USD per kWh)
   let dCost = 0, dMWh = 0;
-  const dr = I.discountRateProject;
+  const dr = I.lcoeDiscountFactor || I.discountRateProject;
   for (let i = 0; i < consYearCount; i++) dCost += constructionDraws[i] * 1000 / Math.pow(1 + dr, i);
   sim.rows.forEach((r, i) => {
     dCost += (r.opex + r.tax) * 1000 / Math.pow(1 + dr, consYearCount + i);
@@ -420,23 +675,15 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     equityAmount: sim.equityAmount,
     effectiveGearing: debt / totalUses,
     rows: sim.rows,
-    constructionYears,
-    constructionDraws,
-    equityDraws,
-    debtDraws,
-    minDSCR,
-    avgDSCR,
-    projectIRR,
-    equityIRR,
-    npvProject,
-    npvEquity,
+    constructionYears, constructionDraws, equityDraws, debtDraws,
+    minDSCR, avgDSCR,
+    projectIRR, equityIRR, npvProject, npvEquity,
     paybackYears: payback,
     lcoeUsdPerKWh,
-    totalRevenue,
-    totalOpex,
-    totalCFADS,
-    iterations: iter,
-    converged,
+    totalRevenue, totalOpex, totalCFADS,
+    iterations: iter, converged,
+    allInRate1: agg.r1, allInRate2: agg.r2, allInRate3: agg.r3,
+    blendedRate: agg.blendedRate,
   };
 }
 
@@ -445,7 +692,6 @@ export function fmt(n: number, digits = 2): string {
   if (Math.abs(n) < 0.005 && digits <= 2) return "-";
   return n.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
-
 export function fmtPct(n: number, digits = 2): string {
   if (!isFinite(n)) return "-";
   return (n * 100).toFixed(digits) + "%";

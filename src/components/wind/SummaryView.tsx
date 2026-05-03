@@ -3,11 +3,16 @@ import { KpiCard } from "@/components/dashboard/KpiCard";
 import { Banknote, TrendingUp, Activity, Calendar, Gauge, Zap } from "lucide-react";
 
 export const SummaryView = ({ m }: { m: ModelOutputs }) => {
+  const I = m.inputs;
+  const development = I.preConstructionCosts + I.developmentPremiums + I.developmentExpenses
+    + I.land + I.esMeasures + I.lendersTechAdvisors + I.legalExpenses
+    + I.administrativeCosts + I.financialAudit + I.insuranceConstruction;
+  const subCont = I.contingency + I.substation + I.loanRepayment + I.taxesCapex;
   const uses = [
-    { label: "EPC costs", v: m.inputs.epcCost },
-    { label: "Development", v: m.inputs.developmentCost },
-    { label: "Substation & contingency", v: m.inputs.substationContingency },
-    { label: "DSRA", v: m.inputs.dsraInitial },
+    { label: "EPC costs", v: I.epcCost },
+    { label: "Development & soft costs", v: development },
+    { label: "Substation, contingency & taxes", v: subCont },
+    { label: "DSRA", v: I.dsraInitial },
     { label: "IDC", v: m.idc },
     { label: "Upfront fees", v: m.upfrontFee },
     { label: "Commitment fees", v: m.commitmentFee },
