@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   inputs: ProjectInputs;
@@ -53,11 +54,103 @@ const FieldsGrid = ({ inputs, onChange, fields }: { inputs: ProjectInputs; onCha
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Construction drawdown schedule editor — monthly % allocation (up to 36 months)
+// ─────────────────────────────────────────────────────────────────────────────
+const CapexScheduleEditor = ({ inputs, onChange }: Props) => {
+  const M = Math.max(1, Math.min(36, Math.round(inputs.constructionMonths)));
+  // Ensure schedule length matches constructionMonths.
+  const sched: number[] = (() => {
+    const s = (inputs.capexSchedulePct ?? []).slice(0, M);
+    while (s.length < M) s.push(0);
+    return s;
+  })();
+  const total = sched.reduce((a, b) => a + b, 0);
+
+  const setMonth = (idx: number, v: number) => {
+    const next = sched.slice();
+    next[idx] = isNaN(v) ? 0 : v;
+    onChange({ ...inputs, capexSchedulePct: next });
+  };
+  const distributeEvenly = () => {
+    const v = 100 / M;
+    onChange({ ...inputs, capexSchedulePct: Array.from({ length: M }, () => v) });
+  };
+  const normalizeTo100 = () => {
+    if (total <= 0) return distributeEvenly();
+    const next = sched.map(v => (v / total) * 100);
+    onChange({ ...inputs, capexSchedulePct: next });
+  };
+  const setMonths = (months: number) => {
+    const m = Math.max(1, Math.min(36, Math.round(months)));
+    onChange({ ...inputs, constructionMonths: m, capexSchedulePct: Array.from({ length: m }, () => 100 / m) });
+  };
+
+  // Group months into year blocks for display.
+  const years: { year: number; months: { idx: number; monthInYear: number }[] }[] = [];
+  for (let m = 0; m < M; m++) {
+    const yIdx = Math.floor(m / 12);
+    if (!years[yIdx]) years[yIdx] = { year: inputs.constructionStart + yIdx, months: [] };
+    years[yIdx].months.push({ idx: m, monthInYear: (m % 12) + 1 });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="min-w-[180px]">
+          <Label className="text-xs text-muted-foreground">Construction duration (months, max 36)</Label>
+          <Input type="number" min={1} max={36} step={1} className="h-9 mt-1 font-mono"
+            value={inputs.constructionMonths}
+            onChange={(e) => setMonths(parseFloat(e.target.value))} />
+        </div>
+        <div className="min-w-[120px]">
+          <Label className="text-xs text-muted-foreground">Total allocated</Label>
+          <div className={`h-9 mt-1 flex items-center px-3 rounded-md border font-mono text-sm ${
+            Math.abs(total - 100) < 0.01 ? "border-border" : "border-destructive text-destructive"
+          }`}>
+            {total.toFixed(2)}%
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={distributeEvenly}>Distribute evenly</Button>
+        <Button variant="outline" size="sm" onClick={normalizeTo100}>Normalize to 100%</Button>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Allocate capex spend across construction months. Used to compute IDC (interest during construction) and yearly draws.
+        The schedule is auto-normalized in calculations, but for clarity it should sum to 100%.
+      </p>
+
+      <div className="space-y-4">
+        {years.map((y, yi) => {
+          const yearTotal = y.months.reduce((s, m) => s + (sched[m.idx] || 0), 0);
+          return (
+            <div key={yi} className="rounded-lg border border-border/60 bg-secondary/20 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-semibold text-sm">Year {yi + 1} — {y.year}</div>
+                <div className="text-xs text-muted-foreground font-mono">Subtotal: {yearTotal.toFixed(2)}%</div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12">
+                {y.months.map((m) => (
+                  <div key={m.idx}>
+                    <Label className="text-[10px] text-muted-foreground">M{m.monthInYear}</Label>
+                    <Input type="number" step={0.1} className="h-8 font-mono text-xs px-2"
+                      value={Number(sched[m.idx] ?? 0).toFixed(2)}
+                      onChange={(e) => setMonth(m.idx, parseFloat(e.target.value))} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Section field definitions (mirror of Excel "Inputs" sheet)
 // ─────────────────────────────────────────────────────────────────────────────
 const TIMING: Field[] = [
   { key: "constructionStart", label: "Construction start year" },
-  { key: "constructionMonths", label: "Construction duration", unit: "months" },
   { key: "preOpsMonths", label: "Pre-operations period", unit: "months" },
   { key: "operationsYears", label: "Operations period", unit: "years" },
 ];
@@ -319,10 +412,16 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
 
           {/* Construction */}
           <TabsContent value="construction" className="m-0 pt-4">
-            <Accordion type="multiple" defaultValue={["timing", "capex", "reserves"]}>
+            <Accordion type="multiple" defaultValue={["timing", "schedule", "capex", "reserves"]}>
               <AccordionItem value="timing">
                 <AccordionTrigger>Timing</AccordionTrigger>
                 <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={TIMING}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="schedule">
+                <AccordionTrigger>Construction drawdown schedule (monthly %)</AccordionTrigger>
+                <AccordionContent>
+                  <CapexScheduleEditor inputs={inputs} onChange={onChange}/>
+                </AccordionContent>
               </AccordionItem>
               <AccordionItem value="capex">
                 <AccordionTrigger>Capital expenditure</AccordionTrigger>
