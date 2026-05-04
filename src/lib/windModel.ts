@@ -356,6 +356,9 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   fxEUR: 1.05,
   fxEGP: 0.0205339,
   fxSpare: 0,
+
+  // 24 months — straight-line by default; user can edit per-month %.
+  capexSchedulePct: Array.from({ length: 24 }, () => 100 / 24),
 };
 
 export interface AnnualRow {
