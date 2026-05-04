@@ -186,6 +186,11 @@ export interface ProjectInputs {
   fxEUR: number;
   fxEGP: number;
   fxSpare: number;
+
+  // ── Construction drawdown schedule ───────────────────────────────────
+  // Percent of total capex spent in each construction month (sum should = 100%).
+  // Length must equal constructionMonths (1..36 supported, i.e. up to 3 years).
+  capexSchedulePct: number[];
 }
 
 export const DEFAULT_DEBT1: DebtTranche = {
