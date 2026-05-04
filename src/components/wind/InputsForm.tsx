@@ -151,7 +151,6 @@ const CapexScheduleEditor = ({ inputs, onChange }: Props) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const TIMING: Field[] = [
   { key: "constructionStart", label: "Construction start year" },
-  { key: "constructionMonths", label: "Construction duration", unit: "months" },
   { key: "preOpsMonths", label: "Pre-operations period", unit: "months" },
   { key: "operationsYears", label: "Operations period", unit: "years" },
 ];
@@ -413,10 +412,16 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
 
           {/* Construction */}
           <TabsContent value="construction" className="m-0 pt-4">
-            <Accordion type="multiple" defaultValue={["timing", "capex", "reserves"]}>
+            <Accordion type="multiple" defaultValue={["timing", "schedule", "capex", "reserves"]}>
               <AccordionItem value="timing">
                 <AccordionTrigger>Timing</AccordionTrigger>
                 <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={TIMING}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="schedule">
+                <AccordionTrigger>Construction drawdown schedule (monthly %)</AccordionTrigger>
+                <AccordionContent>
+                  <CapexScheduleEditor inputs={inputs} onChange={onChange}/>
+                </AccordionContent>
               </AccordionItem>
               <AccordionItem value="capex">
                 <AccordionTrigger>Capital expenditure</AccordionTrigger>
