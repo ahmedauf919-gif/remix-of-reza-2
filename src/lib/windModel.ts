@@ -585,10 +585,36 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const baseUses = agg.epcCost + agg.developmentCost + agg.substationContingency + I.dsraInitial;
   const consYears = I.constructionMonths / 12;
 
+  // Normalise monthly draw profile to length = constructionMonths and sum to 1.
+  const M = Math.max(1, Math.round(I.constructionMonths));
+  const rawSched = (I.capexSchedulePct && I.capexSchedulePct.length > 0)
+    ? I.capexSchedulePct.slice(0, M)
+    : Array.from({ length: M }, () => 100 / M);
+  while (rawSched.length < M) rawSched.push(0);
+  const schedSum = rawSched.reduce((a, b) => a + b, 0) || 1;
+  const monthFrac = rawSched.map(p => p / schedSum); // fractions per month, sum = 1
+
+  // Cumulative drawn at end of each month (fraction of total capex).
+  const cumEnd: number[] = [];
+  let acc = 0;
+  for (const f of monthFrac) { acc += f; cumEnd.push(acc); }
+  // Average outstanding fraction over the construction period — drives IDC.
+  // For each month, average outstanding = (cumStart + cumEnd)/2.
+  let avgOutstandingFrac = 0;
+  let cumStart = 0;
+  for (let m = 0; m < M; m++) {
+    const ce = cumEnd[m];
+    avgOutstandingFrac += (cumStart + ce) / 2;
+    cumStart = ce;
+  }
+  avgOutstandingFrac = avgOutstandingFrac / M; // average fraction of total drawn during construction
+
   const computeFC = (debt: number) => {
-    const idc = debt * 0.5 * agg.interestRate * consYears;
+    // IDC = debt × avg outstanding fraction × rate × construction years
+    const idc = debt * avgOutstandingFrac * agg.interestRate * consYears;
     const upfront = debt * agg.upfrontFeePct;
-    const commitment = debt * 0.5 * agg.commitmentFeePct * consYears;
+    // Commitment fee is paid on undrawn balance — average undrawn = 1 - avgOutstandingFrac
+    const commitment = debt * (1 - avgOutstandingFrac) * agg.commitmentFeePct * consYears;
     return { idc, upfront, commitment, fees: upfront + commitment };
   };
 
@@ -624,16 +650,23 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const sim = simulate(I, agg, debt, fc.idc, fc.fees);
   const totalUses = sim.totalCapex;
 
+  // Aggregate the monthly schedule into per-year construction draws.
   const consYearCount = Math.max(1, Math.ceil(consYears));
+  const yearFrac: number[] = Array(consYearCount).fill(0);
+  for (let m = 0; m < M; m++) {
+    const yIdx = Math.min(consYearCount - 1, Math.floor(m / 12));
+    yearFrac[yIdx] += monthFrac[m];
+  }
   const constructionYears: number[] = [];
   const constructionDraws: number[] = [];
   const equityDraws: number[] = [];
   const debtDraws: number[] = [];
+  const gearing = totalUses > 0 ? debt / totalUses : 0;
   for (let i = 0; i < consYearCount; i++) {
     constructionYears.push(I.constructionStart + i);
-    constructionDraws.push(totalUses / consYearCount);
-    equityDraws.push(sim.equityAmount / consYearCount);
-    debtDraws.push(debt / consYearCount);
+    constructionDraws.push(totalUses * yearFrac[i]);
+    debtDraws.push(debt * yearFrac[i]);
+    equityDraws.push((totalUses - debt) * yearFrac[i]);
   }
 
   const dscrs = sim.rows.filter(r => r.debtService > 0).map(r => r.dscr);
