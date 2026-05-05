@@ -649,6 +649,9 @@ export interface AnnualRow {
   receivables: number;
   payables: number;
   equity: number;
+  dsraTarget: number;
+  dsraMovement: number;
+  dsraBalance: number;
 }
 
 export interface ModelOutputs {
@@ -684,6 +687,8 @@ export interface ModelOutputs {
   allInRate2: number;
   allInRate3: number;
   blendedRate: number;
+  dsraInitialAuto: number;
+  dsraLookForwardMonths: number;
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
@@ -753,14 +758,14 @@ function aggregate(I: ProjectInputs) {
   };
 }
 
-function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmount: number, idc: number, fees: number) {
-  const baseUses = agg.epcCost + agg.developmentCost + agg.substationContingency + I.dsraInitial;
+function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmount: number, idc: number, fees: number, dsraInitial: number) {
+  const baseUses = agg.epcCost + agg.developmentCost + agg.substationContingency + dsraInitial;
   const totalCapex = baseUses + idc + fees;
   const equityAmount = totalCapex - debtAmount;
 
   const N = I.operationsYears;
   const opsStartYear = I.constructionStart + Math.ceil(I.constructionMonths / 12);
-  const depreciableBase = totalCapex - I.dsraInitial;
+  const depreciableBase = totalCapex - dsraInitial;
   const annualDeprec = depreciableBase / I.depreciationYears;
 
   const rows: AnnualRow[] = [];
@@ -776,6 +781,8 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     ? debtAmount * (r * Math.pow(1 + r, amortYears)) / (Math.pow(1 + r, amortYears) - 1)
     : debtAmount / amortYears;
 
+  // First pass — compute debt service per year without DSRA movements.
+  const draft: AnnualRow[] = [];
   for (let y = 1; y <= N; y++) {
     const year = opsStartYear + y - 1;
     const escal = Math.pow(1 + I.cpi, y - 1);
@@ -822,29 +829,68 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     debt -= principal;
     if (debt < 1e-6) debt = 0;
 
-    const cffi = cfads - debtService;
     const dscr = debtService > 0 ? cfads / debtService : 0;
-
     ppe = Math.max(0, ppe - depreciation);
-    cash += cffi;
     equity += netIncome;
 
-    rows.push({
+    draft.push({
       year, mwh, revenue, carbonRevenue, opex, ebitda, depreciation, ebit,
       interest, ebt, tax, netIncome,
-      workingCapitalChange: wcChange, cfads, debtService, principal, cffi,
+      workingCapitalChange: wcChange, cfads, debtService, principal, cffi: 0,
       openingDebt, closingDebt: debt, dscr,
-      ppe, cash, receivables, payables, equity,
+      ppe, cash: 0, receivables, payables, equity,
+      dsraTarget: 0, dsraMovement: 0, dsraBalance: 0,
     });
   }
 
-  return { rows, totalCapex, equityAmount };
+  // Second pass — compute DSRA target as look-forward of debt service over
+  // dsraTargetMonths months, then bake the reserve movement into CFFI/cash.
+  // Build a per-year debt-service array (extended with zeros after tenor).
+  const M = Math.max(0, Math.round(I.dsraTargetMonths));
+  const yrs = M / 12;
+  const dsArr = draft.map(r => r.debtService);
+  const lookForward = (idx: number): number => {
+    // Avg debt service over the next `yrs` years starting at year idx (0-based).
+    if (yrs <= 0) return 0;
+    let sum = 0; let remaining = yrs;
+    let i = idx;
+    while (remaining > 1e-9 && i < dsArr.length) {
+      const take = Math.min(1, remaining);
+      sum += dsArr[i] * take;
+      remaining -= take;
+      i += 1;
+    }
+    // Express as a months-equivalent reserve (sum already in years × annual DS).
+    return sum;
+  };
+
+  let dsraPrev = dsraInitial;
+  let cashAcc = 0;
+  rows.length = 0;
+  for (let y = 0; y < draft.length; y++) {
+    // Target reserve at end of year y = look-forward of debt service for next M months.
+    const target = I.dsraSwitch === 1 ? lookForward(y + 1) : 0;
+    const movement = target - dsraPrev; // +ve = funding into reserve, -ve = release
+    const r = draft[y];
+    const cffi = r.cfads - r.debtService - movement;
+    cashAcc += cffi;
+    rows.push({
+      ...r,
+      cffi,
+      cash: cashAcc,
+      dsraTarget: target,
+      dsraMovement: movement,
+      dsraBalance: target,
+    });
+    dsraPrev = target;
+  }
+
+  return { rows, totalCapex, equityAmount, dsraInitialUsed: dsraInitial };
 }
 
 export function runModel(inputs: ProjectInputs): ModelOutputs {
   const I = inputs;
   const agg = aggregate(I);
-  const baseUses = agg.epcCost + agg.developmentCost + agg.substationContingency + I.dsraInitial;
   const consYears = I.constructionMonths / 12;
 
   // Normalise monthly draw profile to length = constructionMonths and sum to 1.
@@ -880,36 +926,47 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     return { idc, upfront, commitment, fees: upfront + commitment };
   };
 
-  let debt = I.gearing < 1 ? baseUses * I.gearing / (1 - I.gearing) : baseUses;
-  let iter = 0;
-  let converged = false;
+  // DSRA is auto-sized (look-forward). Iterate: debt depends on DSRA, DSRA depends on debt service.
+  let dsraInit = I.manualDSRASwitch === 1 ? I.manualDSRAInput : I.dsraInitial;
+  let debt = 0, iter = 0, converged = false;
+  let fc = { idc: 0, upfront: 0, commitment: 0, fees: 0 };
+  let sim: ReturnType<typeof simulate> = { rows: [], totalCapex: 0, equityAmount: 0, dsraInitialUsed: dsraInit } as any;
 
-  if (I.sizingMode === "fixed-gearing") {
-    for (iter = 0; iter < 50; iter++) {
-      const fc = computeFC(debt);
-      const totalUses = baseUses + fc.idc + fc.fees;
-      const newDebt = totalUses * I.gearing;
-      if (Math.abs(newDebt - debt) < 0.01) { converged = true; break; }
-      debt = newDebt;
+  for (let outer = 0; outer < 6; outer++) {
+    const baseUses = agg.epcCost + agg.developmentCost + agg.substationContingency + dsraInit;
+    if (I.sizingMode === "fixed-gearing") {
+      debt = I.gearing < 1 ? baseUses * I.gearing / (1 - I.gearing) : baseUses;
+      for (iter = 0; iter < 50; iter++) {
+        const fcc = computeFC(debt);
+        const tu = baseUses + fcc.idc + fcc.fees;
+        const nd = tu * I.gearing;
+        if (Math.abs(nd - debt) < 0.01) { converged = true; break; }
+        debt = nd;
+      }
+    } else {
+      let lo = 0, hi = baseUses * 5;
+      for (iter = 0; iter < 60; iter++) {
+        const mid = (lo + hi) / 2;
+        const fcc = computeFC(mid);
+        const s = simulate(I, agg, mid, fcc.idc, fcc.fees, dsraInit);
+        const dscrs = s.rows
+          .filter(r => r.debtService > 0 && r.year > I.constructionStart + Math.ceil(consYears) + I.graceYears - 1)
+          .map(r => r.dscr);
+        const minDSCR = dscrs.length ? Math.min(...dscrs) : 0;
+        if (minDSCR >= I.targetDSCR) lo = mid; else hi = mid;
+        if (hi - lo < 1) { converged = true; break; }
+      }
+      debt = lo;
     }
-  } else {
-    let lo = 0, hi = baseUses * 5;
-    for (iter = 0; iter < 60; iter++) {
-      const mid = (lo + hi) / 2;
-      const fc = computeFC(mid);
-      const sim = simulate(I, agg, mid, fc.idc, fc.fees);
-      const dscrs = sim.rows
-        .filter(r => r.debtService > 0 && r.year > I.constructionStart + Math.ceil(consYears) + I.graceYears - 1)
-        .map(r => r.dscr);
-      const minDSCR = dscrs.length ? Math.min(...dscrs) : 0;
-      if (minDSCR >= I.targetDSCR) lo = mid; else hi = mid;
-      if (hi - lo < 1) { converged = true; break; }
-    }
-    debt = lo;
+    fc = computeFC(debt);
+    sim = simulate(I, agg, debt, fc.idc, fc.fees, dsraInit);
+    // Auto DSRA = look-forward debt service of first operations year.
+    if (I.manualDSRASwitch === 1 || I.dsraSwitch !== 1) break;
+    const newDsra = sim.rows[0]?.dsraTarget ?? 0;
+    if (Math.abs(newDsra - dsraInit) < 1) { dsraInit = newDsra; break; }
+    dsraInit = newDsra;
   }
 
-  const fc = computeFC(debt);
-  const sim = simulate(I, agg, debt, fc.idc, fc.fees);
   const totalUses = sim.totalCapex;
 
   // Aggregate the monthly schedule into per-year construction draws.
@@ -944,7 +1001,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const eqCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) eqCF.push(-equityDraws[i]);
   sim.rows.forEach(r => eqCF.push(r.cffi));
-  if (eqCF.length > 0) eqCF[eqCF.length - 1] += I.dsraInitial;
+  if (eqCF.length > 0) eqCF[eqCF.length - 1] += dsraInit;
   const equityIRR = irr(eqCF, 0.12);
   const npvEquity = npv(I.discountRateEquity, eqCF);
 
@@ -987,6 +1044,8 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     iterations: iter, converged,
     allInRate1: agg.r1, allInRate2: agg.r2, allInRate3: agg.r3,
     blendedRate: agg.blendedRate,
+    dsraInitialAuto: dsraInit,
+    dsraLookForwardMonths: I.dsraTargetMonths,
   };
 }
 

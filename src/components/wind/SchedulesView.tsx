@@ -76,6 +76,8 @@ export const OutputsView = ({ m }: { m: ModelOutputs }) => {
     {
       title: "Cashflow for investors",
       rows: [
+        { label: "DSRA target balance", values: m.rows.map(r => r.dsraBalance), indent: true },
+        { label: "DSRA movement (funding)/release", values: m.rows.map(r => -r.dsraMovement), indent: true },
         { label: "CFFI", values: m.rows.map(r => r.cffi), bold: true },
       ],
     },
