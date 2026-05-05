@@ -810,7 +810,17 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
 
     const baseOpex = (I.oAndM + I.assetMgmt + I.spvCost + I.insurance + I.csrContribution + I.eetcCost) * escal;
     const realEstate = I.epcCost * 0.5 * I.realEstateTaxRate * I.realEstateTaxableAmount; // estimate per template note
-    const opex = baseOpex + realEstate + I.additionalLevy * totalRev;
+    // Additional fixed opex items from inputs tab (real, escalated by CPI)
+    const otherFixedOpex = (I.bondExpenses + I.lease + I.auxiliaryPower + I.opexContingency
+      + I.usufructEGP * I.fxEGP + I.migaPremium) * escal;
+    // Major maintenance (annualised average, escalated)
+    const majorMaintenance = (I.mmWindSpareParts + I.mmSubstationSpareParts + I.mmPmCm + I.mmSpare) * escal;
+    // % of revenue items
+    const revPctOpex = totalRev * (I.pctRevConvLocalEUR + I.pctRevUsufructLease + I.pctRevInsuranceOps);
+    // Decommissioning — booked in final operations year
+    const decommissioning = (y === N) ? I.mmDecommissioning * escal : 0;
+    const opex = baseOpex + realEstate + I.additionalLevy * totalRev
+      + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning;
     const ebitda = totalRev - opex;
 
     const depreciation = y <= I.depreciationYears ? annualDeprec : 0;
@@ -819,14 +829,20 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const ebit = ebitda - depreciation;
     const ebt = ebit - interest;
     const tax = (y <= I.taxHolidayYears || ebt <= 0) ? 0 : ebt * I.taxRate;
-    const netIncome = ebt - tax;
+    // NOKUS Norwegian top-up tax (above threshold, applied during NOKUS window)
+    const nokusOn = I.nokusRate > 0 && year >= I.nokusStartYear && year <= I.nokusEndYear;
+    const effectiveTaxRate = ebt > 0 ? tax / ebt : 0;
+    const nokusTax = nokusOn && effectiveTaxRate < I.nokusThresholdRate && ebt > 0
+      ? ebt * Math.max(0, I.nokusRate - effectiveTaxRate) : 0;
+    const totalTax = tax + nokusTax;
+    const netIncome = ebt - totalTax;
 
     const newReceivables = totalRev * (I.daysReceivable / 365);
     const newPayables = opex * (I.daysPayable / 365);
     const wcChange = -((newReceivables - receivables) - (newPayables - payables));
     receivables = newReceivables; payables = newPayables;
 
-    const cfads = ebitda - tax + wcChange;
+    const cfads = ebitda - totalTax + wcChange;
 
     let principal = 0;
     let debtService = interest;
@@ -843,7 +859,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
 
     draft.push({
       year, mwh, revenue, carbonRevenue, opex, ebitda, depreciation, ebit,
-      interest, ebt, tax, netIncome,
+      interest, ebt, tax: totalTax, netIncome,
       workingCapitalChange: wcChange, cfads, debtService, principal, cffi: 0,
       openingDebt, closingDebt: debt, dscr,
       ppe, cash: 0, receivables, payables, equity,
