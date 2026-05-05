@@ -19,7 +19,9 @@ export const SummaryView = ({ m }: { m: ModelOutputs }) => {
   ];
   const sources = [
     { label: "Senior debt", v: m.debtAmount },
-    { label: "Equity", v: m.equityAmount },
+    { label: "Common equity", v: m.commonEquityAmount },
+    { label: "Preferential equity", v: m.prefEquityAmount },
+    { label: "Shareholder loan", v: m.shLoanAmount },
   ];
 
   return (
@@ -29,7 +31,7 @@ export const SummaryView = ({ m }: { m: ModelOutputs }) => {
         <KpiCard label="Effective gearing" value={fmtPct(m.effectiveGearing)} hint={m.inputs.sizingMode === "dscr-sculpted" ? "DSCR-sculpted" : "Fixed"} icon={<Gauge className="h-5 w-5"/>} accent="accent"/>
         <KpiCard label="Min DSCR" value={fmt(m.minDSCR)} hint={`Avg ${fmt(m.avgDSCR)}`} icon={<Activity className="h-5 w-5"/>} accent="success"/>
         <KpiCard label="Project IRR" value={fmtPct(m.projectIRR)} hint="Pre-financing" icon={<TrendingUp className="h-5 w-5"/>} accent="primary"/>
-        <KpiCard label="Equity IRR" value={fmtPct(m.equityIRR)} hint="Post-tax" icon={<TrendingUp className="h-5 w-5"/>} accent="success"/>
+        <KpiCard label="Common Equity IRR" value={fmtPct(m.commonEquityIRR)} hint={`Blended ${fmtPct(m.blendedEquityIRR)}`} icon={<TrendingUp className="h-5 w-5"/>} accent="success"/>
         <KpiCard label="LCOE" value={`${fmt(m.lcoeUsdPerKWh * 100, 2)}¢/kWh`} hint="Levelized" icon={<Zap className="h-5 w-5"/>} accent="accent"/>
       </section>
 
