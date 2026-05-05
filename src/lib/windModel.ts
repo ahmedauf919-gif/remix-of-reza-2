@@ -1029,6 +1029,55 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const equityIRR = irr(eqCF, 0.12);
   const npvEquity = npv(I.discountRateEquity, eqCF);
 
+  // ── Equity tranche split (Common, Preferential, Shareholder Loan) ──
+  const totalEquityFunded = sim.equityAmount;
+  const prefAmt = Math.min(I.prefEquityFunding, totalEquityFunded);
+  const shLoanAmt = Math.min(I.shLoanFunding, Math.max(0, totalEquityFunded - prefAmt));
+  const commonAmt = Math.max(0, totalEquityFunded - prefAmt - shLoanAmt);
+
+  // Build per-tranche cashflows. Pref coupon and SH loan interest are paid
+  // before common equity distributions (waterfall).
+  const prefCF: number[] = [];
+  const shCF: number[] = [];
+  const commonCF: number[] = [];
+  for (let i = 0; i < consYearCount; i++) {
+    const draw = equityDraws[i];
+    const totalEq = totalEquityFunded || 1;
+    prefCF.push(-(draw * prefAmt / totalEq));
+    shCF.push(-(draw * shLoanAmt / totalEq));
+    commonCF.push(-(draw * commonAmt / totalEq));
+  }
+  let prefBal = prefAmt;
+  let shBal = shLoanAmt;
+  const prefAmortYears = Math.max(1, I.operationsYears);
+  const shAmortYears = Math.max(1, I.operationsYears);
+  sim.rows.forEach((r, idx) => {
+    let avail = r.cffi;
+    if (idx === sim.rows.length - 1) avail += dsraInit; // DSRA release at end
+    // Pref coupon + straight-line repayment
+    const prefCoupon = prefBal * I.prefEquityCoupon;
+    const prefPrincipal = Math.min(prefBal, prefAmt / prefAmortYears);
+    const prefPay = Math.min(avail, prefCoupon + prefPrincipal);
+    avail -= prefPay;
+    prefBal = Math.max(0, prefBal - prefPrincipal);
+    prefCF.push(prefPay);
+    // SH loan interest + principal
+    const shInt = shBal * I.shLoanRate;
+    const shPrincipal = I.shLoanFullyRepaid === 1 && idx === sim.rows.length - 1
+      ? shBal : Math.min(shBal, shLoanAmt / shAmortYears);
+    const shPay = Math.min(Math.max(0, avail), shInt + shPrincipal);
+    avail -= shPay;
+    shBal = Math.max(0, shBal - shPrincipal);
+    shCF.push(shPay);
+    // Remainder to common
+    commonCF.push(Math.max(0, avail));
+  });
+
+  const commonEquityIRR = commonAmt > 0 ? irr(commonCF, 0.10) : NaN;
+  const prefEquityIRR = prefAmt > 0 ? irr(prefCF, I.prefEquityCoupon) : NaN;
+  const shLoanIRR = shLoanAmt > 0 ? irr(shCF, I.shLoanRate) : NaN;
+  const blendedEquityIRR = equityIRR;
+
   let cum = 0, payback = NaN;
   for (let i = 0; i < eqCF.length; i++) {
     cum += eqCF[i];
@@ -1070,6 +1119,10 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     blendedRate: agg.blendedRate,
     dsraInitialAuto: dsraInit,
     dsraLookForwardMonths: I.dsraTargetMonths,
+    commonEquityIRR, prefEquityIRR, shLoanIRR, blendedEquityIRR,
+    commonEquityAmount: commonAmt,
+    prefEquityAmount: prefAmt,
+    shLoanAmount: shLoanAmt,
   };
 }
 
