@@ -689,6 +689,14 @@ export interface ModelOutputs {
   blendedRate: number;
   dsraInitialAuto: number;
   dsraLookForwardMonths: number;
+  // Equity tranche IRRs
+  commonEquityIRR: number;
+  prefEquityIRR: number;
+  shLoanIRR: number;
+  blendedEquityIRR: number;
+  commonEquityAmount: number;
+  prefEquityAmount: number;
+  shLoanAmount: number;
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
