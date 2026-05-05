@@ -35,6 +35,9 @@ export interface ProjectInputs {
   constructionMonths: number;
   preOpsMonths: number;
   operationsYears: number;
+  planningMonths: number;
+  delayMonths: number;
+  planningStartYear: number;
 
   // ── Capex breakdown (USD '000, fixed) ────────────────────────────────
   preConstructionCosts: number;
@@ -52,12 +55,48 @@ export interface ProjectInputs {
   substation: number;
   loanRepayment: number;          // capex line
   taxesCapex: number;
+  capexSpare15: number;
+  capexSpare16: number;
+  capexSpare17: number;
+  capexSpare18: number;
+  capexSpare19: number;
+  capexSpare20: number;
+  delayCostsPerMonth: number;     // USD '000 p.m.
+  // Compensation payments (during construction, USD '000)
+  compEsmp: number;
+  compCsr: number;
+  // Major maintenance (real, USD '000 — annualised average)
+  mmWindSpareParts: number;
+  mmSubstationSpareParts: number;
+  mmDecommissioning: number;
+  mmPmCm: number;
+  mmSpare: number;
 
   // ── Reserves ─────────────────────────────────────────────────────────
   dsraInitial: number;            // USD '000
   dsraTargetMonths: number;
   dsraSwitch: 0 | 1;
   performanceBond: number;        // USD '000
+  contingentLoanOnDSRA: 0 | 1;
+  feeOnDSRAPct: number;
+  corpGuaranteeMonths: number;
+  corpGuaranteeFeePct: number;
+  manualDSRASwitch: 0 | 1;
+  manualDSRAInput: number;
+  // Performance bond stepdown
+  pbStartExposure: number;
+  pbStep1Exposure: number;
+  pbStep2Exposure: number;
+  pbStartYear: number;
+  pbStep1Year: number;
+  pbStep2Year: number;
+  pbEndYear: number;
+  // Statutory reserve
+  statReserveMinNOPATPct: number;
+  shareCapital: number;
+  // Initial working capital
+  initialWCAmount: number;
+  cashShortageOpY1: number;
 
   // ── Production ───────────────────────────────────────────────────────
   capacityMWp: number;
@@ -66,6 +105,16 @@ export interface ProjectInputs {
   yieldCase: YieldCase;
   yieldP75Pct: number;            // 0.95
   yieldP90Pct: number;            // 0.90
+  yieldSparePct: number;
+  // Seasonal flow curve — 12 months (% of total year, per case). UI-only by default.
+  seasonalP50: number[];
+  seasonalP75: number[];
+  seasonalP90: number[];
+  // Availability cases
+  availabilityBase: number;
+  availabilityHigh: number;
+  availabilityLow: number;
+  availabilityCase: "Base" | "High" | "Low";
 
   // Loss factors (multiplicative, decimals)
   degradation: number;
@@ -82,6 +131,14 @@ export interface ProjectInputs {
   tariffEscalation: number;
   tariffPostYearGrowth: number;   // growth rate after fixed-price end
   tariffFixedYears: number;       // 25 in template
+  tariffIndexUSDWeight: number;   // 0.75
+  tariffIndexEGPWeight: number;   // 0.25
+  tariffPriceEGP: number;
+  tariffInflationChoice: "Zero-inflation" | "CPI" | "CPI US Dollar" | "CPI Blend US-EGP";
+  tariffLinkedTo: "Operation" | "Calendar";
+  tariffCase: "Base" | "Worst" | "Spare";
+  tariffWorstUsdPerKWh: number;
+  tariffSpareUsdPerKWh: number;
 
   // ── CDM / carbon ─────────────────────────────────────────────────────
   cdmSwitch: 0 | 1;
@@ -98,10 +155,26 @@ export interface ProjectInputs {
   csrContribution: number;
   eetcCost: number;
   cpi: number;                    // opex escalation
+  bondExpenses: number;
+  lease: number;
+  auxiliaryPower: number;
+  opexContingency: number;
+  usufructEGP: number;
+  // Variable per MWh
+  varOpexSpare1: number;
+  varOpexSpare2: number;
+  varOpexSpare3: number;
+  // % of revenue items
+  pctRevConvLocalEUR: number;
+  pctRevUsufructLease: number;
+  pctRevInsuranceOps: number;
+  migaPremium: number;
 
   // Working capital
   daysReceivable: number;
   daysPayable: number;
+  debtorMonths: number;
+  creditorMonths: number;
 
   // ── Debt sizing — overall ────────────────────────────────────────────
   sizingMode: "fixed-gearing" | "dscr-sculpted";
@@ -126,16 +199,55 @@ export interface ProjectInputs {
   refinanceYear: number;
   refinanceFee: number;
   refinanceMargin: number;
+  refinanceAmount: number;
 
   // Shareholder loan
   shLoanFunding: number;
   shLoanRate: number;
   shLoanFullyRepaid: 0 | 1;
 
+  // Preferential equity
+  prefEquityFunding: number;
+  prefEquityCoupon: number;
+  prefCashCollateralPct: number;
+  prefPlacementFeePct: number;
+  totalEquityExclPlanning: number;
+  planningPhaseEquity: number;
+
+  // Cost overrun facility
+  cofStandbyLimit: number;
+  cofGearing: number;
+  cofLimit: number;
+  cofTenorYears: number;
+  cofGraceYears: number;
+  cofHedgedPct: number;
+  cofHedgedRate: number;
+  cofMargin: number;
+  cofUpfrontFee: number;
+  cofCommitmentFeeOfMargin: number;
+  cofCommitmentFee: number;
+  cofTargetDSCR: number;
+
+  // Subordinated debt
+  subDebtLimit: number;
+  subDebtTenorYears: number;
+  subDebtGraceYears: number;
+  subDebtMargin: number;
+  subDebtUpfrontFee: number;
+  subDebtCommitmentFeeOfMargin: number;
+  subDebtCommitmentFee: number;
+  subDebtAgencyFee: number;
+  subDebtMethod: SizingMethod;
+  subDebtTargetDSCR: number;
+  subDebtManualRepayment: number;
+
   // ── Distributions ────────────────────────────────────────────────────
   payoutRatio: number;            // 0..1
   divRestrictedToRetainedEarnings: 0 | 1;
   minCashBalance: number;
+  minCashBalanceMultiple: number;
+  linkOpexLoanTenor: 0 | 1;
+  linkOpexMonths: number;
   carriedInterestPct: number;
   carriedInterestOneTime: number;
 
@@ -143,13 +255,24 @@ export interface ProjectInputs {
   taxRate: number;
   taxStartYear: number;
   taxPeriods: number;
+  taxEndYear: number;
   additionalLevy: number;
   realEstateTaxRate: number;
   realEstateTaxableAmount: number;
   exemptedProportion: number;
   rentalValuePct: number;
   taxHolidayYears: number;
+  taxHolidayStartYear: number;
+  taxHolidayEndYear: number;
   csrTaxDeductible: 0 | 1;
+  // NOKUS (Norwegian)
+  nokusRate: number;
+  nokusStartYear: number;
+  nokusEndYear: number;
+  nokusThresholdRate: number;
+  taxCalcMonths: number;
+  taxAdvanceMonths: number;
+  taxBalanceMonths: number;
 
   whtDividendsSwitch: 0 | 1;
   whtDividendsRate: number;
@@ -174,6 +297,8 @@ export interface ProjectInputs {
   // ── Macro ────────────────────────────────────────────────────────────
   baseRateSelection: string;
   baseRate: number;               // SOFR
+  baseRateLIBOR: number;
+  baseRateCBE: number;
   cpiGeneral: number;
   cpiUSDollar: number;
   cpiBlend: number;
@@ -181,11 +306,24 @@ export interface ProjectInputs {
   lcoeDiscountFactor: number;
   depositRate: number;
   modelInflationOn: 0 | 1;
+  inflationSelection: "CPI" | "Zero-inflation" | "CPI US Dollar" | "CPI Blend US-EGP";
 
   // FX
   fxEUR: number;
   fxEGP: number;
   fxSpare: number;
+
+  // Covenants — targets
+  covInPeriodP50: number;
+  covInPeriodP90: number;
+  cov12moBwP50: number;
+  cov12moBwP90: number;
+  cov12moFwP50: number;
+  cov12moFwP90: number;
+  llcrP50: number;
+  llcrP90: number;
+  plcrP50: number;
+  plcrP90: number;
 
   // ── Construction drawdown schedule ───────────────────────────────────
   // Percent of total capex spent in each construction month (sum should = 100%).
@@ -223,6 +361,9 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   constructionMonths: 24,
   preOpsMonths: 0,
   operationsYears: 25,
+  planningMonths: 0,
+  delayMonths: 0,
+  planningStartYear: 2027,
 
   preConstructionCosts: 0,
   epcCost: 336168,
@@ -239,11 +380,42 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   substation: 41500,
   loanRepayment: 50000,
   taxesCapex: 34706.37,
+  capexSpare15: 0,
+  capexSpare16: 0,
+  capexSpare17: 0,
+  capexSpare18: 0,
+  capexSpare19: 0,
+  capexSpare20: 0,
+  delayCostsPerMonth: 0,
+  compEsmp: 0,
+  compCsr: 0,
+  mmWindSpareParts: 0,
+  mmSubstationSpareParts: 0,
+  mmDecommissioning: 0,
+  mmPmCm: 0,
+  mmSpare: 0,
 
   dsraInitial: 44820,
   dsraTargetMonths: 12,
   dsraSwitch: 1,
   performanceBond: 0,
+  contingentLoanOnDSRA: 0,
+  feeOnDSRAPct: 0,
+  corpGuaranteeMonths: 0,
+  corpGuaranteeFeePct: 0,
+  manualDSRASwitch: 0,
+  manualDSRAInput: 0,
+  pbStartExposure: 1,
+  pbStep1Exposure: 0.25,
+  pbStep2Exposure: 1,
+  pbStartYear: 2027,
+  pbStep1Year: 2029,
+  pbStep2Year: 2039,
+  pbEndYear: 2053,
+  statReserveMinNOPATPct: 0,
+  shareCapital: 0,
+  initialWCAmount: 0,
+  cashShortageOpY1: 0,
 
   capacityMWp: 552,
   hoursPerDay: 24,
@@ -251,6 +423,14 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   yieldCase: "P50",
   yieldP75Pct: 0.95,
   yieldP90Pct: 0.90,
+  yieldSparePct: 0,
+  seasonalP50: Array(12).fill(1/12),
+  seasonalP75: Array(12).fill(1/12),
+  seasonalP90: Array(12).fill(1/12),
+  availabilityBase: 1,
+  availabilityHigh: 1,
+  availabilityLow: 1,
+  availabilityCase: "Base",
 
   degradation: 0.005,
   ownConsumption: 0.01,
@@ -265,6 +445,14 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   tariffEscalation: 0.0,
   tariffPostYearGrowth: 0.0,
   tariffFixedYears: 25,
+  tariffIndexUSDWeight: 0.75,
+  tariffIndexEGPWeight: 0.25,
+  tariffPriceEGP: 1,
+  tariffInflationChoice: "Zero-inflation",
+  tariffLinkedTo: "Operation",
+  tariffCase: "Base",
+  tariffWorstUsdPerKWh: 0,
+  tariffSpareUsdPerKWh: 0,
 
   cdmSwitch: 1,
   cdmStartYear: 2027,
@@ -279,9 +467,23 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   csrContribution: 0,
   eetcCost: 0,
   cpi: 0.022,
+  bondExpenses: 0,
+  lease: 0,
+  auxiliaryPower: 0,
+  opexContingency: 0,
+  usufructEGP: 0,
+  varOpexSpare1: 0,
+  varOpexSpare2: 0,
+  varOpexSpare3: 0,
+  pctRevConvLocalEUR: 0,
+  pctRevUsufructLease: 0,
+  pctRevInsuranceOps: 0,
+  migaPremium: 0,
 
   daysReceivable: 60,
   daysPayable: 30,
+  debtorMonths: 1,
+  creditorMonths: 1,
 
   sizingMode: "dscr-sculpted",
   gearing: 0.8,
@@ -302,27 +504,73 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   refinanceYear: 2035,
   refinanceFee: 0.008,
   refinanceMargin: 0.01,
+  refinanceAmount: 0,
 
   shLoanFunding: 0,
   shLoanRate: 0.09,
   shLoanFullyRepaid: 0,
 
+  prefEquityFunding: 0,
+  prefEquityCoupon: 0.06,
+  prefCashCollateralPct: 1,
+  prefPlacementFeePct: 0,
+  totalEquityExclPlanning: 114628.11,
+  planningPhaseEquity: 0,
+
+  cofStandbyLimit: 0,
+  cofGearing: 0.8,
+  cofLimit: 0,
+  cofTenorYears: 0,
+  cofGraceYears: 0,
+  cofHedgedPct: 0,
+  cofHedgedRate: 0,
+  cofMargin: 0,
+  cofUpfrontFee: 0,
+  cofCommitmentFeeOfMargin: 0,
+  cofCommitmentFee: 0,
+  cofTargetDSCR: 1.30,
+
+  subDebtLimit: 0,
+  subDebtTenorYears: 22,
+  subDebtGraceYears: 2,
+  subDebtMargin: 0.06,
+  subDebtUpfrontFee: 0.0125,
+  subDebtCommitmentFeeOfMargin: 0.0125,
+  subDebtCommitmentFee: 0.0008,
+  subDebtAgencyFee: 0,
+  subDebtMethod: "sculpted",
+  subDebtTargetDSCR: 1.30,
+  subDebtManualRepayment: 0,
+
   payoutRatio: 1.0,
   divRestrictedToRetainedEarnings: 1,
   minCashBalance: 0,
+  minCashBalanceMultiple: 0,
+  linkOpexLoanTenor: 0,
+  linkOpexMonths: 6,
   carriedInterestPct: 0,
   carriedInterestOneTime: 0,
 
   taxRate: 0.225,
   taxStartYear: 2029,
   taxPeriods: 25,
+  taxEndYear: 2054,
   additionalLevy: 0,
   realEstateTaxRate: 0.00136,
   realEstateTaxableAmount: 1.0,
   exemptedProportion: 0,
   rentalValuePct: 0,
   taxHolidayYears: 0,
+  taxHolidayStartYear: 2029,
+  taxHolidayEndYear: 2028,
   csrTaxDeductible: 0,
+  nokusRate: 0,
+  nokusStartYear: 2029,
+  nokusEndYear: 2017,
+  nokusThresholdRate: 0,
+  taxCalcMonths: 12,
+  taxAdvanceMonths: 3,
+  taxBalanceMonths: 9,
 
   whtDividendsSwitch: 0,
   whtDividendsRate: 0.20,
@@ -345,6 +593,8 @@ export const DEFAULT_INPUTS: ProjectInputs = {
 
   baseRateSelection: "US SOFR 6M",
   baseRate: 0.041,
+  baseRateLIBOR: 0,
+  baseRateCBE: 0.1525,
   cpiGeneral: 0.07,
   cpiUSDollar: 0.03,
   cpiBlend: 0.04,
@@ -352,10 +602,22 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   lcoeDiscountFactor: 0.06,
   depositRate: 0,
   modelInflationOn: 1,
+  inflationSelection: "CPI",
 
   fxEUR: 1.05,
   fxEGP: 0.0205339,
   fxSpare: 0,
+
+  covInPeriodP50: 1.2,
+  covInPeriodP90: 1.2,
+  cov12moBwP50: 1.2,
+  cov12moBwP90: 1.2,
+  cov12moFwP50: 1.2,
+  cov12moFwP90: 1.2,
+  llcrP50: 1.2,
+  llcrP90: 1.2,
+  plcrP50: 1.2,
+  plcrP90: 1.2,
 
   // 24 months — straight-line by default; user can edit per-month %.
   capexSchedulePct: Array.from({ length: 24 }, () => 100 / 24),

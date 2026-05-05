@@ -153,6 +153,9 @@ const TIMING: Field[] = [
   { key: "constructionStart", label: "Construction start year" },
   { key: "preOpsMonths", label: "Pre-operations period", unit: "months" },
   { key: "operationsYears", label: "Operations period", unit: "years" },
+  { key: "planningStartYear", label: "Planning start year" },
+  { key: "planningMonths", label: "Planning duration", unit: "months" },
+  { key: "delayMonths", label: "Delay duration", unit: "months" },
 ];
 
 const CAPEX: Field[] = [
@@ -171,12 +174,50 @@ const CAPEX: Field[] = [
   { key: "substation", label: "Substation", unit: "USD '000" },
   { key: "loanRepayment", label: "Loan repayment (capex)", unit: "USD '000" },
   { key: "taxesCapex", label: "Taxes (capex)", unit: "USD '000" },
+  { key: "capexSpare15", label: "Spare 15", unit: "USD '000" },
+  { key: "capexSpare16", label: "Spare 16", unit: "USD '000" },
+  { key: "capexSpare17", label: "Spare 17", unit: "USD '000" },
+  { key: "capexSpare18", label: "Spare 18", unit: "USD '000" },
+  { key: "capexSpare19", label: "Spare 19", unit: "USD '000" },
+  { key: "capexSpare20", label: "Spare 20", unit: "USD '000" },
+  { key: "delayCostsPerMonth", label: "Construction delay costs", unit: "USD '000 p.m." },
+];
+
+const COMP_PAYMENTS: Field[] = [
+  { key: "compEsmp", label: "ESMP", unit: "USD '000" },
+  { key: "compCsr", label: "CSR", unit: "USD '000" },
+];
+
+const MAJOR_MAINT: Field[] = [
+  { key: "mmWindSpareParts", label: "Wind spare parts", unit: "USD '000 p.a." },
+  { key: "mmSubstationSpareParts", label: "Substation spare parts", unit: "USD '000 p.a." },
+  { key: "mmDecommissioning", label: "Decommissioning", unit: "USD '000 p.a." },
+  { key: "mmPmCm", label: "PM & CM", unit: "USD '000 p.a." },
+  { key: "mmSpare", label: "Spare", unit: "USD '000 p.a." },
 ];
 
 const RESERVES: Field[] = [
   { key: "dsraInitial", label: "DSRA initial funding", unit: "USD '000" },
   { key: "dsraTargetMonths", label: "DSRA target lookforward", unit: "months" },
   { key: "performanceBond", label: "Performance bond (Land)", unit: "USD '000" },
+  { key: "feeOnDSRAPct", label: "Fee on DSRA amount", pct: true, step: 0.001 },
+  { key: "corpGuaranteeMonths", label: "Corp. guarantee months", unit: "months" },
+  { key: "corpGuaranteeFeePct", label: "Corp. guarantee fee", pct: true, step: 0.001 },
+  { key: "manualDSRAInput", label: "Manual DSRA input", unit: "USD '000" },
+  { key: "statReserveMinNOPATPct", label: "Statutory reserve min", pct: true, step: 0.01 },
+  { key: "shareCapital", label: "Share capital", unit: "USD '000" },
+  { key: "initialWCAmount", label: "Initial WC amount", unit: "USD '000" },
+  { key: "cashShortageOpY1", label: "Cash shortage OpY1", unit: "USD '000" },
+];
+
+const PERF_BOND: Field[] = [
+  { key: "pbStartYear", label: "PB start year" },
+  { key: "pbStep1Year", label: "PB stepdown 1 year" },
+  { key: "pbStep2Year", label: "PB stepdown 2 year" },
+  { key: "pbEndYear", label: "PB end year" },
+  { key: "pbStartExposure", label: "Start exposure", pct: true, step: 0.01 },
+  { key: "pbStep1Exposure", label: "Stepdown 1 exposure", pct: true, step: 0.01 },
+  { key: "pbStep2Exposure", label: "Stepdown 2 exposure", pct: true, step: 0.01 },
 ];
 
 const PRODUCTION: Field[] = [
@@ -185,6 +226,10 @@ const PRODUCTION: Field[] = [
   { key: "yieldKWhPerKWp", label: "P50 yield per MW", unit: "kWh/kWp", step: 0.01 },
   { key: "yieldP75Pct", label: "P75 % of P50", pct: true, step: 0.01 },
   { key: "yieldP90Pct", label: "P90 % of P50", pct: true, step: 0.01 },
+  { key: "yieldSparePct", label: "Spare % of P50", pct: true, step: 0.01 },
+  { key: "availabilityBase", label: "Availability — Base", pct: true, step: 0.01 },
+  { key: "availabilityHigh", label: "Availability — High", pct: true, step: 0.01 },
+  { key: "availabilityLow", label: "Availability — Low", pct: true, step: 0.01 },
 ];
 
 const LOSSES: Field[] = [
@@ -201,6 +246,11 @@ const TARIFF: Field[] = [
   { key: "tariffEscalation", label: "Tariff escalation p.a.", pct: true, step: 0.001 },
   { key: "tariffFixedYears", label: "Fixed-price agreement", unit: "years" },
   { key: "tariffPostYearGrowth", label: "Growth post fixed-price", pct: true, step: 0.001 },
+  { key: "tariffIndexUSDWeight", label: "Index USD weight", pct: true, step: 0.01 },
+  { key: "tariffIndexEGPWeight", label: "Index EGP weight", pct: true, step: 0.01 },
+  { key: "tariffPriceEGP", label: "Price EGP", step: 0.01 },
+  { key: "tariffWorstUsdPerKWh", label: "Worst-case price", unit: "USD/kWh", step: 0.001 },
+  { key: "tariffSpareUsdPerKWh", label: "Spare-case price", unit: "USD/kWh", step: 0.001 },
 ];
 
 const CDM: Field[] = [
@@ -217,9 +267,26 @@ const OPEX: Field[] = [
   { key: "insurance", label: "Insurance during ops", unit: "USD '000 p.a." },
   { key: "csrContribution", label: "CSR contribution", unit: "USD '000 p.a." },
   { key: "eetcCost", label: "EETC cost", unit: "USD '000 p.a." },
+  { key: "bondExpenses", label: "Bond expenses", unit: "USD '000 p.a." },
+  { key: "lease", label: "Lease", unit: "USD '000 p.a." },
+  { key: "auxiliaryPower", label: "Auxiliary power", unit: "USD '000 p.a." },
+  { key: "opexContingency", label: "Opex contingency", unit: "USD '000 p.a." },
+  { key: "usufructEGP", label: "User's share usufruct (EGP)", unit: "EGP '000 p.a." },
   { key: "cpi", label: "Opex escalation (CPI)", pct: true, step: 0.001 },
   { key: "daysReceivable", label: "Debtor days", unit: "days" },
   { key: "daysPayable", label: "Creditor days", unit: "days" },
+  { key: "debtorMonths", label: "Debtors", unit: "months" },
+  { key: "creditorMonths", label: "Creditors", unit: "months" },
+];
+
+const VAR_OPEX: Field[] = [
+  { key: "varOpexSpare1", label: "Variable opex spare 1", unit: "USD/MWh", step: 0.01 },
+  { key: "varOpexSpare2", label: "Variable opex spare 2", unit: "USD/MWh", step: 0.01 },
+  { key: "varOpexSpare3", label: "Variable opex spare 3", unit: "USD/MWh", step: 0.01 },
+  { key: "pctRevConvLocalEUR", label: "Conv. local to EUR", pct: true, step: 0.001 },
+  { key: "pctRevUsufructLease", label: "Usufruct lease", pct: true, step: 0.001 },
+  { key: "pctRevInsuranceOps", label: "Insurance during ops", pct: true, step: 0.001 },
+  { key: "migaPremium", label: "Equity cover - MIGA", unit: "USD '000" },
 ];
 
 const DEBT_OVERALL: Field[] = [
@@ -233,6 +300,7 @@ const REFI: Field[] = [
   { key: "refinanceYear", label: "Refinance year" },
   { key: "refinanceFee", label: "Refinance fee", pct: true, step: 0.001 },
   { key: "refinanceMargin", label: "Refinance margin", pct: true, step: 0.001 },
+  { key: "refinanceAmount", label: "Refinance amount", unit: "USD '000" },
 ];
 
 const SHLOAN: Field[] = [
@@ -240,9 +308,48 @@ const SHLOAN: Field[] = [
   { key: "shLoanRate", label: "SH loan all-in rate", pct: true, step: 0.001 },
 ];
 
+const PREF_EQUITY: Field[] = [
+  { key: "totalEquityExclPlanning", label: "Total equity (excl. planning)", unit: "USD '000" },
+  { key: "planningPhaseEquity", label: "Planning phase equity", unit: "USD '000" },
+  { key: "prefEquityFunding", label: "Preferential equity funding", unit: "USD '000" },
+  { key: "prefEquityCoupon", label: "Pref. equity coupon rate", pct: true, step: 0.001 },
+  { key: "prefCashCollateralPct", label: "Cash collateral for EQ LC", pct: true, step: 0.01 },
+  { key: "prefPlacementFeePct", label: "Placement fee", pct: true, step: 0.001 },
+];
+
+const COF: Field[] = [
+  { key: "cofStandbyLimit", label: "Standby debt/equity limit", unit: "USD '000" },
+  { key: "cofGearing", label: "Senior debt gearing", pct: true, step: 0.01 },
+  { key: "cofLimit", label: "Cost overrun limit", unit: "USD '000" },
+  { key: "cofTenorYears", label: "Tenor", unit: "years" },
+  { key: "cofGraceYears", label: "Grace", unit: "years" },
+  { key: "cofHedgedPct", label: "% hedged", pct: true, step: 0.01 },
+  { key: "cofHedgedRate", label: "Hedged rate", pct: true, step: 0.001 },
+  { key: "cofMargin", label: "Margin over base", pct: true, step: 0.001 },
+  { key: "cofUpfrontFee", label: "Upfront fee", pct: true, step: 0.001 },
+  { key: "cofCommitmentFeeOfMargin", label: "Commitment fee % of margin", pct: true, step: 0.001 },
+  { key: "cofCommitmentFee", label: "Commitment fee p.a.", pct: true, step: 0.0001 },
+  { key: "cofTargetDSCR", label: "Target DSCR", step: 0.01 },
+];
+
+const SUBDEBT: Field[] = [
+  { key: "subDebtLimit", label: "Limit", unit: "Ref_Curr '000" },
+  { key: "subDebtTenorYears", label: "Tenor", unit: "years" },
+  { key: "subDebtGraceYears", label: "Grace", unit: "years" },
+  { key: "subDebtMargin", label: "Margin over base", pct: true, step: 0.001 },
+  { key: "subDebtUpfrontFee", label: "Upfront fee", pct: true, step: 0.001 },
+  { key: "subDebtCommitmentFeeOfMargin", label: "Commitment fee % of margin", pct: true, step: 0.001 },
+  { key: "subDebtCommitmentFee", label: "Commitment fee p.a.", pct: true, step: 0.0001 },
+  { key: "subDebtAgencyFee", label: "Agency fee", unit: "USD '000 p.a." },
+  { key: "subDebtTargetDSCR", label: "Target DSCR", step: 0.01 },
+  { key: "subDebtManualRepayment", label: "Manual repayment", unit: "USD '000" },
+];
+
 const DISTRIBUTIONS: Field[] = [
   { key: "payoutRatio", label: "Payout ratio", pct: true, step: 0.01 },
   { key: "minCashBalance", label: "Min cash balance", unit: "USD '000" },
+  { key: "minCashBalanceMultiple", label: "Min cash balance multiple", step: 0.5 },
+  { key: "linkOpexMonths", label: "Link to OPEX months", unit: "months" },
   { key: "carriedInterestPct", label: "Carried interest", pct: true, step: 0.01 },
   { key: "carriedInterestOneTime", label: "Carried interest one-time", unit: "USD '000" },
 ];
@@ -250,6 +357,7 @@ const DISTRIBUTIONS: Field[] = [
 const TAX_CORE: Field[] = [
   { key: "taxRate", label: "Corporate tax rate", pct: true, step: 0.005 },
   { key: "taxStartYear", label: "Tax start year" },
+  { key: "taxEndYear", label: "Tax end year" },
   { key: "taxPeriods", label: "Tax periods", unit: "years" },
   { key: "additionalLevy", label: "Additional levy on revenue", pct: true, step: 0.001 },
   { key: "realEstateTaxRate", label: "Real estate tax rate", pct: true, step: 0.0001 },
@@ -257,6 +365,18 @@ const TAX_CORE: Field[] = [
   { key: "exemptedProportion", label: "Exempted proportion", unit: "USD '000" },
   { key: "rentalValuePct", label: "Rental value", pct: true, step: 0.001 },
   { key: "taxHolidayYears", label: "Tax holiday", unit: "years" },
+  { key: "taxHolidayStartYear", label: "Tax holiday start year" },
+  { key: "taxHolidayEndYear", label: "Tax holiday end year" },
+  { key: "taxCalcMonths", label: "Calculation of tax due", unit: "months" },
+  { key: "taxAdvanceMonths", label: "Payment of advance", unit: "months" },
+  { key: "taxBalanceMonths", label: "Payment of balance", unit: "months" },
+];
+
+const NOKUS: Field[] = [
+  { key: "nokusRate", label: "NOKUS tax rate", pct: true, step: 0.001 },
+  { key: "nokusStartYear", label: "NOKUS start year" },
+  { key: "nokusEndYear", label: "NOKUS end year" },
+  { key: "nokusThresholdRate", label: "Threshold tax rate", pct: true, step: 0.001 },
 ];
 
 const WHT: Field[] = [
@@ -281,6 +401,8 @@ const DISCOUNT: Field[] = [
 
 const MACRO: Field[] = [
   { key: "baseRate", label: "Base rate (SOFR)", pct: true, step: 0.001 },
+  { key: "baseRateLIBOR", label: "Base rate (LIBOR 6m)", pct: true, step: 0.001 },
+  { key: "baseRateCBE", label: "Base rate (CBE)", pct: true, step: 0.001 },
   { key: "cpiGeneral", label: "CPI (general)", pct: true, step: 0.001 },
   { key: "cpiUSDollar", label: "CPI USD", pct: true, step: 0.001 },
   { key: "cpiBlend", label: "CPI blend US-EGP", pct: true, step: 0.001 },
@@ -293,6 +415,19 @@ const FX: Field[] = [
   { key: "fxEUR", label: "EUR : USD", step: 0.001 },
   { key: "fxEGP", label: "EGP : USD", step: 0.0001 },
   { key: "fxSpare", label: "Spare : USD", step: 0.001 },
+];
+
+const COVENANTS: Field[] = [
+  { key: "covInPeriodP50", label: "DSCR (in period) — P50", step: 0.01 },
+  { key: "covInPeriodP90", label: "DSCR (in period) — P90", step: 0.01 },
+  { key: "cov12moBwP50", label: "DSCR (12m b/w) — P50", step: 0.01 },
+  { key: "cov12moBwP90", label: "DSCR (12m b/w) — P90", step: 0.01 },
+  { key: "cov12moFwP50", label: "DSCR (12m f/w) — P50", step: 0.01 },
+  { key: "cov12moFwP90", label: "DSCR (12m f/w) — P90", step: 0.01 },
+  { key: "llcrP50", label: "LLCR — P50", step: 0.01 },
+  { key: "llcrP90", label: "LLCR — P90", step: 0.01 },
+  { key: "plcrP50", label: "PLCR — P50", step: 0.01 },
+  { key: "plcrP90", label: "PLCR — P90", step: 0.01 },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -427,9 +562,21 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
                 <AccordionTrigger>Capital expenditure</AccordionTrigger>
                 <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={CAPEX}/></AccordionContent>
               </AccordionItem>
+              <AccordionItem value="comp">
+                <AccordionTrigger>Compensation payments</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={COMP_PAYMENTS}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="mm">
+                <AccordionTrigger>Major maintenance (real)</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={MAJOR_MAINT}/></AccordionContent>
+              </AccordionItem>
               <AccordionItem value="reserves">
-                <AccordionTrigger>Reserves</AccordionTrigger>
+                <AccordionTrigger>Reserves & DSRA</AccordionTrigger>
                 <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={RESERVES}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="pb">
+                <AccordionTrigger>Performance bond (Land/Usufruct)</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={PERF_BOND}/></AccordionContent>
               </AccordionItem>
             </Accordion>
           </TabsContent>
@@ -502,7 +649,16 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
 
           {/* Opex */}
           <TabsContent value="opex" className="m-0 pt-4">
-            <FieldsGrid inputs={inputs} onChange={onChange} fields={OPEX}/>
+            <Accordion type="multiple" defaultValue={["fixed", "var"]}>
+              <AccordionItem value="fixed">
+                <AccordionTrigger>Fixed operating costs</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={OPEX}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="var">
+                <AccordionTrigger>Variable opex & % of revenue</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={VAR_OPEX}/></AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </TabsContent>
 
           {/* Debt */}
@@ -565,12 +721,32 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
                   <FieldsGrid inputs={inputs} onChange={onChange} fields={SHLOAN}/>
                 </AccordionContent>
               </AccordionItem>
+              <AccordionItem value="cof">
+                <AccordionTrigger>Cost overrun facility</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={COF}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="sub">
+                <AccordionTrigger>Subordinated debt</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={SUBDEBT}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="cov">
+                <AccordionTrigger>Covenants — target ratios</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={COVENANTS}/></AccordionContent>
+              </AccordionItem>
             </Accordion>
           </TabsContent>
 
           {/* Equity & distributions */}
           <TabsContent value="equity" className="m-0 pt-4">
-            <FieldsGrid inputs={inputs} onChange={onChange} fields={DISTRIBUTIONS}/>
+            <Accordion type="multiple" defaultValue={["pref", "dist", "disc"]}>
+              <AccordionItem value="pref">
+                <AccordionTrigger>Equity, preferential equity & SH loan</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={PREF_EQUITY}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="dist">
+                <AccordionTrigger>Distributions</AccordionTrigger>
+                <AccordionContent>
+                  <FieldsGrid inputs={inputs} onChange={onChange} fields={DISTRIBUTIONS}/>
             <div className="mt-4 max-w-xs">
               <Label className="text-xs text-muted-foreground">Dividends restricted to retained earnings?</Label>
               <Select value={String(inputs.divRestrictedToRetainedEarnings)} onValueChange={(v) => set("divRestrictedToRetainedEarnings", Number(v) as 0|1)}>
@@ -581,10 +757,13 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="mt-6">
-              <h4 className="font-semibold text-sm mb-2">Discount rates</h4>
-              <FieldsGrid inputs={inputs} onChange={onChange} fields={DISCOUNT}/>
-            </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="disc">
+                <AccordionTrigger>Discount rates</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={DISCOUNT}/></AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </TabsContent>
 
           {/* Tax */}
@@ -601,6 +780,10 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
               <AccordionItem value="deprec">
                 <AccordionTrigger>Depreciation</AccordionTrigger>
                 <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={DEPREC}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="nokus">
+                <AccordionTrigger>NOKUS (Norwegian Private Investor)</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={NOKUS}/></AccordionContent>
               </AccordionItem>
             </Accordion>
           </TabsContent>
