@@ -562,9 +562,21 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
                 <AccordionTrigger>Capital expenditure</AccordionTrigger>
                 <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={CAPEX}/></AccordionContent>
               </AccordionItem>
+              <AccordionItem value="comp">
+                <AccordionTrigger>Compensation payments</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={COMP_PAYMENTS}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="mm">
+                <AccordionTrigger>Major maintenance (real)</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={MAJOR_MAINT}/></AccordionContent>
+              </AccordionItem>
               <AccordionItem value="reserves">
-                <AccordionTrigger>Reserves</AccordionTrigger>
+                <AccordionTrigger>Reserves & DSRA</AccordionTrigger>
                 <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={RESERVES}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="pb">
+                <AccordionTrigger>Performance bond (Land/Usufruct)</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={PERF_BOND}/></AccordionContent>
               </AccordionItem>
             </Accordion>
           </TabsContent>
@@ -637,7 +649,16 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
 
           {/* Opex */}
           <TabsContent value="opex" className="m-0 pt-4">
-            <FieldsGrid inputs={inputs} onChange={onChange} fields={OPEX}/>
+            <Accordion type="multiple" defaultValue={["fixed", "var"]}>
+              <AccordionItem value="fixed">
+                <AccordionTrigger>Fixed operating costs</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={OPEX}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="var">
+                <AccordionTrigger>Variable opex & % of revenue</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={VAR_OPEX}/></AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </TabsContent>
 
           {/* Debt */}
@@ -700,12 +721,32 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
                   <FieldsGrid inputs={inputs} onChange={onChange} fields={SHLOAN}/>
                 </AccordionContent>
               </AccordionItem>
+              <AccordionItem value="cof">
+                <AccordionTrigger>Cost overrun facility</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={COF}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="sub">
+                <AccordionTrigger>Subordinated debt</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={SUBDEBT}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="cov">
+                <AccordionTrigger>Covenants — target ratios</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={COVENANTS}/></AccordionContent>
+              </AccordionItem>
             </Accordion>
           </TabsContent>
 
           {/* Equity & distributions */}
           <TabsContent value="equity" className="m-0 pt-4">
-            <FieldsGrid inputs={inputs} onChange={onChange} fields={DISTRIBUTIONS}/>
+            <Accordion type="multiple" defaultValue={["pref", "dist", "disc"]}>
+              <AccordionItem value="pref">
+                <AccordionTrigger>Equity, preferential equity & SH loan</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={PREF_EQUITY}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="dist">
+                <AccordionTrigger>Distributions</AccordionTrigger>
+                <AccordionContent>
+                  <FieldsGrid inputs={inputs} onChange={onChange} fields={DISTRIBUTIONS}/>
             <div className="mt-4 max-w-xs">
               <Label className="text-xs text-muted-foreground">Dividends restricted to retained earnings?</Label>
               <Select value={String(inputs.divRestrictedToRetainedEarnings)} onValueChange={(v) => set("divRestrictedToRetainedEarnings", Number(v) as 0|1)}>
@@ -716,10 +757,13 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="mt-6">
-              <h4 className="font-semibold text-sm mb-2">Discount rates</h4>
-              <FieldsGrid inputs={inputs} onChange={onChange} fields={DISCOUNT}/>
-            </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="disc">
+                <AccordionTrigger>Discount rates</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={DISCOUNT}/></AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </TabsContent>
 
           {/* Tax */}
@@ -736,6 +780,10 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
               <AccordionItem value="deprec">
                 <AccordionTrigger>Depreciation</AccordionTrigger>
                 <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={DEPREC}/></AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="nokus">
+                <AccordionTrigger>NOKUS (Norwegian Private Investor)</AccordionTrigger>
+                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={NOKUS}/></AccordionContent>
               </AccordionItem>
             </Accordion>
           </TabsContent>
