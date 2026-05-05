@@ -197,7 +197,6 @@ const MAJOR_MAINT: Field[] = [
 ];
 
 const RESERVES: Field[] = [
-  { key: "dsraInitial", label: "DSRA initial funding", unit: "USD '000" },
   { key: "dsraTargetMonths", label: "DSRA target lookforward", unit: "months" },
   { key: "performanceBond", label: "Performance bond (Land)", unit: "USD '000" },
   { key: "feeOnDSRAPct", label: "Fee on DSRA amount", pct: true, step: 0.001 },
