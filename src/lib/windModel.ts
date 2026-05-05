@@ -689,6 +689,14 @@ export interface ModelOutputs {
   blendedRate: number;
   dsraInitialAuto: number;
   dsraLookForwardMonths: number;
+  // Equity tranche IRRs
+  commonEquityIRR: number;
+  prefEquityIRR: number;
+  shLoanIRR: number;
+  blendedEquityIRR: number;
+  commonEquityAmount: number;
+  prefEquityAmount: number;
+  shLoanAmount: number;
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
@@ -802,7 +810,17 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
 
     const baseOpex = (I.oAndM + I.assetMgmt + I.spvCost + I.insurance + I.csrContribution + I.eetcCost) * escal;
     const realEstate = I.epcCost * 0.5 * I.realEstateTaxRate * I.realEstateTaxableAmount; // estimate per template note
-    const opex = baseOpex + realEstate + I.additionalLevy * totalRev;
+    // Additional fixed opex items from inputs tab (real, escalated by CPI)
+    const otherFixedOpex = (I.bondExpenses + I.lease + I.auxiliaryPower + I.opexContingency
+      + I.usufructEGP * I.fxEGP + I.migaPremium) * escal;
+    // Major maintenance (annualised average, escalated)
+    const majorMaintenance = (I.mmWindSpareParts + I.mmSubstationSpareParts + I.mmPmCm + I.mmSpare) * escal;
+    // % of revenue items
+    const revPctOpex = totalRev * (I.pctRevConvLocalEUR + I.pctRevUsufructLease + I.pctRevInsuranceOps);
+    // Decommissioning — booked in final operations year
+    const decommissioning = (y === N) ? I.mmDecommissioning * escal : 0;
+    const opex = baseOpex + realEstate + I.additionalLevy * totalRev
+      + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning;
     const ebitda = totalRev - opex;
 
     const depreciation = y <= I.depreciationYears ? annualDeprec : 0;
@@ -811,14 +829,20 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const ebit = ebitda - depreciation;
     const ebt = ebit - interest;
     const tax = (y <= I.taxHolidayYears || ebt <= 0) ? 0 : ebt * I.taxRate;
-    const netIncome = ebt - tax;
+    // NOKUS Norwegian top-up tax (above threshold, applied during NOKUS window)
+    const nokusOn = I.nokusRate > 0 && year >= I.nokusStartYear && year <= I.nokusEndYear;
+    const effectiveTaxRate = ebt > 0 ? tax / ebt : 0;
+    const nokusTax = nokusOn && effectiveTaxRate < I.nokusThresholdRate && ebt > 0
+      ? ebt * Math.max(0, I.nokusRate - effectiveTaxRate) : 0;
+    const totalTax = tax + nokusTax;
+    const netIncome = ebt - totalTax;
 
     const newReceivables = totalRev * (I.daysReceivable / 365);
     const newPayables = opex * (I.daysPayable / 365);
     const wcChange = -((newReceivables - receivables) - (newPayables - payables));
     receivables = newReceivables; payables = newPayables;
 
-    const cfads = ebitda - tax + wcChange;
+    const cfads = ebitda - totalTax + wcChange;
 
     let principal = 0;
     let debtService = interest;
@@ -835,7 +859,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
 
     draft.push({
       year, mwh, revenue, carbonRevenue, opex, ebitda, depreciation, ebit,
-      interest, ebt, tax, netIncome,
+      interest, ebt, tax: totalTax, netIncome,
       workingCapitalChange: wcChange, cfads, debtService, principal, cffi: 0,
       openingDebt, closingDebt: debt, dscr,
       ppe, cash: 0, receivables, payables, equity,
@@ -1005,6 +1029,55 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const equityIRR = irr(eqCF, 0.12);
   const npvEquity = npv(I.discountRateEquity, eqCF);
 
+  // ── Equity tranche split (Common, Preferential, Shareholder Loan) ──
+  const totalEquityFunded = sim.equityAmount;
+  const prefAmt = Math.min(I.prefEquityFunding, totalEquityFunded);
+  const shLoanAmt = Math.min(I.shLoanFunding, Math.max(0, totalEquityFunded - prefAmt));
+  const commonAmt = Math.max(0, totalEquityFunded - prefAmt - shLoanAmt);
+
+  // Build per-tranche cashflows. Pref coupon and SH loan interest are paid
+  // before common equity distributions (waterfall).
+  const prefCF: number[] = [];
+  const shCF: number[] = [];
+  const commonCF: number[] = [];
+  for (let i = 0; i < consYearCount; i++) {
+    const draw = equityDraws[i];
+    const totalEq = totalEquityFunded || 1;
+    prefCF.push(-(draw * prefAmt / totalEq));
+    shCF.push(-(draw * shLoanAmt / totalEq));
+    commonCF.push(-(draw * commonAmt / totalEq));
+  }
+  let prefBal = prefAmt;
+  let shBal = shLoanAmt;
+  const prefAmortYears = Math.max(1, I.operationsYears);
+  const shAmortYears = Math.max(1, I.operationsYears);
+  sim.rows.forEach((r, idx) => {
+    let avail = r.cffi;
+    if (idx === sim.rows.length - 1) avail += dsraInit; // DSRA release at end
+    // Pref coupon + straight-line repayment
+    const prefCoupon = prefBal * I.prefEquityCoupon;
+    const prefPrincipal = Math.min(prefBal, prefAmt / prefAmortYears);
+    const prefPay = Math.min(avail, prefCoupon + prefPrincipal);
+    avail -= prefPay;
+    prefBal = Math.max(0, prefBal - prefPrincipal);
+    prefCF.push(prefPay);
+    // SH loan interest + principal
+    const shInt = shBal * I.shLoanRate;
+    const shPrincipal = I.shLoanFullyRepaid === 1 && idx === sim.rows.length - 1
+      ? shBal : Math.min(shBal, shLoanAmt / shAmortYears);
+    const shPay = Math.min(Math.max(0, avail), shInt + shPrincipal);
+    avail -= shPay;
+    shBal = Math.max(0, shBal - shPrincipal);
+    shCF.push(shPay);
+    // Remainder to common
+    commonCF.push(Math.max(0, avail));
+  });
+
+  const commonEquityIRR = commonAmt > 0 ? irr(commonCF, 0.10) : NaN;
+  const prefEquityIRR = prefAmt > 0 ? irr(prefCF, I.prefEquityCoupon) : NaN;
+  const shLoanIRR = shLoanAmt > 0 ? irr(shCF, I.shLoanRate) : NaN;
+  const blendedEquityIRR = equityIRR;
+
   let cum = 0, payback = NaN;
   for (let i = 0; i < eqCF.length; i++) {
     cum += eqCF[i];
@@ -1046,6 +1119,10 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     blendedRate: agg.blendedRate,
     dsraInitialAuto: dsraInit,
     dsraLookForwardMonths: I.dsraTargetMonths,
+    commonEquityIRR, prefEquityIRR, shLoanIRR, blendedEquityIRR,
+    commonEquityAmount: commonAmt,
+    prefEquityAmount: prefAmt,
+    shLoanAmount: shLoanAmt,
   };
 }
 
