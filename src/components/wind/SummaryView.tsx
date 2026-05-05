@@ -12,7 +12,7 @@ export const SummaryView = ({ m }: { m: ModelOutputs }) => {
     { label: "EPC costs", v: I.epcCost },
     { label: "Development & soft costs", v: development },
     { label: "Substation, contingency & taxes", v: subCont },
-    { label: "DSRA", v: I.dsraInitial },
+    { label: `DSRA (auto, ${I.dsraTargetMonths}-mo look-fwd)`, v: m.dsraInitialAuto },
     { label: "IDC", v: m.idc },
     { label: "Upfront fees", v: m.upfrontFee },
     { label: "Commitment fees", v: m.commitmentFee },
