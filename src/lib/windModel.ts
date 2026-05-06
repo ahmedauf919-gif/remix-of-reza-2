@@ -1149,7 +1149,8 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     return sum;
   };
   // LLCR / PLCR: PV of future CFADS over remaining loan life (or project life) / outstanding debt
-  const dr = Math.max(0.001, I.discountRateProjectPostTax || I.discountRateProject || 0.07);
+  // Industry standard: discount at the loan's pre-tax cost of debt (blended rate).
+  const dr = Math.max(0.001, agg.blendedRate || I.discountRateProjectPostTax || I.discountRateProject || 0.07);
   const pvFromIdx = (idx: number, untilIdx: number) => {
     let pv = 0;
     for (let k = idx; k < Math.min(untilIdx, draft.length); k++) {
