@@ -716,6 +716,15 @@ export const DEFAULT_INPUTS: ProjectInputs = {
 
   // 24 months — straight-line by default; user can edit per-month %.
   capexSchedulePct: Array.from({ length: 24 }, () => 100 / 24),
+
+  // Phase 2 defaults
+  taxesCapexAuto: 1,
+  vatRate: 0.14,
+  customsDutyRate: 0.05,
+  capexBasisPerMW: {},
+  capexTaxable: {},
+  capexOnshorePct: {},
+  opexBasisPerMW: {},
 };
 
 export interface AnnualRow {
