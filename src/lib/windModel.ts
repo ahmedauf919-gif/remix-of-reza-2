@@ -362,6 +362,63 @@ export interface ProjectInputs {
   // Optional per-capex-item monthly allocation (% per month, length up to constructionMonths).
   // If a key is missing or its array is empty, the global capexSchedulePct is used for that item.
   capexItemSchedulesPct?: Partial<Record<string, number[]>>;
+
+  // ── Phase 2: per-item basis / tax engine ─────────────────────────────
+  // Per-capex-item: basis = "perMW" → stored amount is USD/MW (×capacity to get USD '000); else "abs" (USD '000 as today).
+  capexBasisPerMW?: Partial<Record<string, 0 | 1>>;
+  // Per-capex-item: taxable flag (drives auto VAT + customs). Defaults true for EPC/BoP/civil/grid items, false for financing/reserves.
+  capexTaxable?: Partial<Record<string, boolean>>;
+  // Per-capex-item: % of supply that is onshore (subject to local VAT). Remainder is offshore (subject to customs duty).
+  capexOnshorePct?: Partial<Record<string, number>>;
+  // Auto-compute taxesCapex from the above (1 = auto, 0 = manual). When 1, the manual taxesCapex value is overridden.
+  taxesCapexAuto?: 0 | 1;
+  vatRate: number;            // local VAT, decimal (e.g. 0.14)
+  customsDutyRate: number;    // customs duty on offshore supply, decimal (e.g. 0.05)
+
+  // Per-OPEX-item: basis = "perMW" → stored amount is USD/MW p.a.; else absolute USD '000 p.a.
+  opexBasisPerMW?: Partial<Record<string, 0 | 1>>;
+}
+
+// Phase 2 helpers ---------------------------------------------------------------
+// Items that should NEVER be auto-taxed (financing/reserves/already-tax line itself).
+export const CAPEX_TAX_EXCLUDED = new Set<string>([
+  "loanRepayment", "taxesCapex",
+]);
+// Default taxable items (EPC + BoP/civil/grid + everything physical). Financing items default off.
+export const CAPEX_TAXABLE_DEFAULT: Record<string, boolean> = {
+  epcCost: true, substation: true, contingency: true,
+  preConstructionCosts: true, developmentPremiums: true, developmentExpenses: true,
+  land: true, esMeasures: true, lendersTechAdvisors: true, legalExpenses: true,
+  administrativeCosts: true, financialAudit: true, insuranceConstruction: true,
+  compEsmp: true, compCsr: true,
+  capexSpare15: true, capexSpare16: true, capexSpare17: true,
+  capexSpare18: true, capexSpare19: true, capexSpare20: true,
+};
+
+/** Resolve effective capex amount in USD '000, applying per-MW basis if set. */
+export function effectiveCapexAmount(I: ProjectInputs, key: string, raw: number): number {
+  const basis = I.capexBasisPerMW?.[key] ?? 0;
+  if (basis === 1) return (raw || 0) * (I.capacityMWp || 0); // USD/MW × MW = USD '000 if user entered amount in $'000/MW
+  return raw || 0;
+}
+/** Resolve effective opex amount in USD '000 p.a., applying per-MW basis if set. */
+export function effectiveOpexAmount(I: ProjectInputs, key: string, raw: number): number {
+  const basis = I.opexBasisPerMW?.[key] ?? 0;
+  if (basis === 1) return (raw || 0) * (I.capacityMWp || 0);
+  return raw || 0;
+}
+/** Compute auto taxesCapex (USD '000) from VAT + customs across taxable items. */
+export function computeAutoTaxesCapex(I: ProjectInputs, items: Record<string, number>): number {
+  const vat = I.vatRate || 0, duty = I.customsDutyRate || 0;
+  let total = 0;
+  for (const [k, amt] of Object.entries(items)) {
+    if (CAPEX_TAX_EXCLUDED.has(k)) continue;
+    const taxable = I.capexTaxable?.[k] ?? CAPEX_TAXABLE_DEFAULT[k] ?? false;
+    if (!taxable) continue;
+    const onshore = Math.max(0, Math.min(1, I.capexOnshorePct?.[k] ?? 1));
+    total += amt * (onshore * vat + (1 - onshore) * duty);
+  }
+  return total;
 }
 
 export const DEFAULT_DEBT1: DebtTranche = {
