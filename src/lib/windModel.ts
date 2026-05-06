@@ -73,6 +73,8 @@ export interface ProjectInputs {
   mmDecommissioning: number;
   mmPmCm: number;
   mmSpare: number;
+  // Major maintenance schedule — % of hard capex per operations year (length = operationsYears)
+  mmSchedulePctOfCapex?: number[];
 
   // ── Reserves ─────────────────────────────────────────────────────────
   dsraInitial: number;            // USD '000
