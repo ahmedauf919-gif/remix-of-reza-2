@@ -1063,7 +1063,9 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
 
   const projCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) projCF.push(-constructionDraws[i]);
-  sim.rows.forEach(r => projCF.push(r.ebitda - r.tax + r.workingCapitalChange));
+  // Project CF = CFADS net of DSRA movements (so terminal release is captured
+  // exactly once, and reserve build-up reduces project cash).
+  sim.rows.forEach(r => projCF.push(r.cfads - r.dsraMovement));
   const projectIRR = irr(projCF, 0.08);
   const npvProject = npv(I.discountRateProject, projCF);
 
