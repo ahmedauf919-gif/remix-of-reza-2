@@ -472,6 +472,22 @@ const TrancheEditor = ({ t, onChange, label }: { t: DebtTranche; label: string; 
             <SelectContent>
               <SelectItem value="annuity">Annuity</SelectItem>
               <SelectItem value="sculpted">Sculpted</SelectItem>
+              <SelectItem value="llcr-sculpted">LLCR-sculpted</SelectItem>
+              <SelectItem value="manual">Manual schedule</SelectItem>
+              <SelectItem value="bullet">Bullet / Balloon</SelectItem>
+              <SelectItem value="mortgage">Mortgage-style</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="min-w-[160px]">
+          <Label className="text-xs text-muted-foreground">Base rate reference</Label>
+          <Select value={t.baseRateRef ?? "SOFR"} onValueChange={v => set("baseRateRef", v as any)}>
+            <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="SOFR">SOFR</SelectItem>
+              <SelectItem value="LIBOR">LIBOR 6m</SelectItem>
+              <SelectItem value="CBE">CBE</SelectItem>
+              <SelectItem value="Fixed">Fixed</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -527,6 +543,10 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
               <SelectContent>
                 <SelectItem value="fixed-gearing">Fixed gearing</SelectItem>
                 <SelectItem value="dscr-sculpted">DSCR-sculpted (max debt)</SelectItem>
+                <SelectItem value="llcr-sculpted">LLCR-sculpted</SelectItem>
+                <SelectItem value="manual">Manual repayment schedule</SelectItem>
+                <SelectItem value="bullet">Bullet / Balloon</SelectItem>
+                <SelectItem value="mortgage">Mortgage-style (equal P+I)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -666,16 +686,44 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
               <AccordionItem value="overall">
                 <AccordionTrigger>Overall debt sizing</AccordionTrigger>
                 <AccordionContent>
-                  <div className="mb-3 max-w-xs">
-                    <Label className="text-xs text-muted-foreground">Payment periodicity</Label>
-                    <Select value={inputs.paymentPeriodicity} onValueChange={(v) => set("paymentPeriodicity", v as ProjectInputs["paymentPeriodicity"])}>
-                      <SelectTrigger className="h-9 mt-1"><SelectValue/></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Quarterly">Quarterly</SelectItem>
-                        <SelectItem value="Semi-annual">Semi-annual</SelectItem>
-                        <SelectItem value="Annual">Annual</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Payment periodicity</Label>
+                      <Select value={inputs.paymentPeriodicity} onValueChange={(v) => set("paymentPeriodicity", v as ProjectInputs["paymentPeriodicity"])}>
+                        <SelectTrigger className="h-9 mt-1"><SelectValue/></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Quarterly">Quarterly</SelectItem>
+                          <SelectItem value="Semi-annual">Semi-annual</SelectItem>
+                          <SelectItem value="Annual">Annual</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Sizing mode</Label>
+                      <Select value={inputs.sizingMode} onValueChange={(v) => set("sizingMode", v as ProjectInputs["sizingMode"])}>
+                        <SelectTrigger className="h-9 mt-1"><SelectValue/></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed-gearing">Fixed gearing</SelectItem>
+                          <SelectItem value="dscr-sculpted">DSCR-sculpted</SelectItem>
+                          <SelectItem value="llcr-sculpted">LLCR-sculpted</SelectItem>
+                          <SelectItem value="manual">Manual schedule</SelectItem>
+                          <SelectItem value="bullet">Bullet / Balloon</SelectItem>
+                          <SelectItem value="mortgage">Mortgage-style</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Base rate reference</Label>
+                      <Select value={inputs.baseRateRef ?? "SOFR"} onValueChange={(v) => set("baseRateRef", v as any)}>
+                        <SelectTrigger className="h-9 mt-1"><SelectValue/></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="SOFR">SOFR</SelectItem>
+                          <SelectItem value="LIBOR">LIBOR 6m</SelectItem>
+                          <SelectItem value="CBE">CBE</SelectItem>
+                          <SelectItem value="Fixed">Fixed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <FieldsGrid inputs={inputs} onChange={onChange} fields={DEBT_OVERALL}/>
                 </AccordionContent>
