@@ -580,6 +580,8 @@ const OpexEditor = ({ inputs, onChange }: Props) => {
     </div>
   );
 };
+
+const VAR_OPEX: Field[] = [
   { key: "varOpexSpare1", label: "Variable opex spare 1", unit: "USD/MWh", step: 0.01 },
   { key: "varOpexSpare2", label: "Variable opex spare 2", unit: "USD/MWh", step: 0.01 },
   { key: "varOpexSpare3", label: "Variable opex spare 3", unit: "USD/MWh", step: 0.01 },
