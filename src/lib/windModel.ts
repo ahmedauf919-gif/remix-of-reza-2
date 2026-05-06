@@ -618,6 +618,10 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   modelInflationOn: 1,
   inflationSelection: "CPI",
 
+  riskFreeRate: 0.045,
+  equityBeta: 0.85,
+  useWaccForLcoe: 1,
+
   fxEUR: 1.05,
   fxEGP: 0.0205339,
   fxSpare: 0,
