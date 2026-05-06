@@ -103,7 +103,7 @@ export function ReferenceRatesView() {
           <div>
             <CardTitle>Reference Rates</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Live SOFR, LIBOR (legacy), Treasuries, and global central-bank policy rates from FRED.
+              Live SOFR, Treasuries, and global central-bank policy rates from FRED.
               {fetchedAt && <> Last update: {new Date(fetchedAt).toLocaleString()}</>}
             </p>
           </div>
