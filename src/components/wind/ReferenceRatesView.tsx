@@ -13,6 +13,7 @@ type Rate = {
   country?: string;
   value: number | null;
   date: string | null;
+  source?: string;
 };
 
 const CACHE_KEY = "reference-rates-cache";
@@ -24,6 +25,7 @@ export function ReferenceRatesView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [fillingMissing, setFillingMissing] = useState(false);
 
   const load = async (force = false) => {
     setError(null);
@@ -49,6 +51,30 @@ export function ReferenceRatesView() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fillMissing = async () => {
+    setError(null);
+    const missing = rates.filter(r => r.value == null).map(r => ({ id: r.id, label: r.label, country: r.country }));
+    if (missing.length === 0) return;
+    setFillingMissing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fetch-missing-rates", { body: { items: missing } });
+      if (error) throw error;
+      const map = new Map<string, { value: number; date: string; source?: string }>();
+      for (const r of (data.rates ?? [])) map.set(r.id, r);
+      const merged = rates.map(r => {
+        if (r.value != null) return r;
+        const m = map.get(r.id);
+        return m ? { ...r, value: m.value, date: m.date, source: m.source } : r;
+      });
+      setRates(merged);
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), rates: merged, fetchedAt }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setFillingMissing(false);
     }
   };
 
@@ -83,6 +109,9 @@ export function ReferenceRatesView() {
           </div>
           <div className="flex gap-2">
             <Input placeholder="Search rate or country…" value={search} onChange={e => setSearch(e.target.value)} className="w-64" />
+            <Button onClick={fillMissing} disabled={fillingMissing || rates.every(r => r.value != null)} variant="secondary" className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${fillingMissing ? "animate-spin" : ""}`} /> Fill missing from public sources
+            </Button>
             <Button onClick={() => load(true)} disabled={loading} variant="outline" className="gap-2">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
             </Button>
@@ -110,7 +139,10 @@ export function ReferenceRatesView() {
                         <TableCell className="font-medium">{r.label}</TableCell>
                         <TableCell className="text-muted-foreground">{r.country ?? "—"}</TableCell>
                         <TableCell className="text-right tabular-nums">{r.value != null ? r.value.toFixed(3) : "—"}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">{r.date ?? "—"}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {r.date ?? "—"}
+                          {r.source && <div className="text-[10px] opacity-70 truncate max-w-[200px]">{r.source}</div>}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
