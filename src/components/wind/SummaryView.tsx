@@ -80,17 +80,27 @@ export const SummaryView = ({ m }: { m: ModelOutputs }) => {
         <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
           <h3 className="font-semibold mb-3">Sources of funds</h3>
           <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-muted-foreground">
+                <th className="py-1.5 text-left font-medium">Item</th>
+                <th className="py-1.5 text-right font-medium">Amount (USD '000)</th>
+                <th className="py-1.5 text-right font-medium">$/MW ('000)</th>
+                <th className="py-1.5 text-right font-medium w-16">% Total</th>
+              </tr>
+            </thead>
             <tbody>
               {sources.map(u => (
                 <tr key={u.label} className="border-t border-border/40">
                   <td className="py-1.5">{u.label}</td>
                   <td className="py-1.5 text-right font-mono">{fmt(u.v)}</td>
+                  <td className="py-1.5 text-right font-mono text-muted-foreground">{fmt(u.v / I.capacityMWp)}</td>
                   <td className="py-1.5 text-right text-xs text-muted-foreground w-16">{fmtPct(u.v / m.totalSources, 1)}</td>
                 </tr>
               ))}
               <tr className="border-t-2 border-border font-semibold">
                 <td className="py-2">Total</td>
                 <td className="py-2 text-right font-mono">{fmt(m.totalSources)}</td>
+                <td className="py-2 text-right font-mono">{fmt(m.totalSources / I.capacityMWp)}</td>
                 <td className="py-2 text-right text-xs">100%</td>
               </tr>
             </tbody>
