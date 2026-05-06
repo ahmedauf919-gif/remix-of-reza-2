@@ -1448,6 +1448,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     shLoanAmount: shLoanAmt,
     minLLCR, avgLLCR, minPLCR, maxBalanceCheck, loanLifeYears, debtServiceCoverageOk,
     projectIRRSeries, equityIRRSeries,
+    lcoeContributions,
   };
 }
 
