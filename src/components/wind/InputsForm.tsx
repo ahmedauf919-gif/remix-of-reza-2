@@ -298,22 +298,40 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <NumberField obj={inputs} k={"constructionMonths" as keyof ProjectInputs}
           f={{ label: "Construction period", unit: "months" }}
           onSet={(v) => onChange({ ...inputs, constructionMonths: Math.max(1, Math.min(36, Math.round(v))) })} />
+        <NumberField obj={inputs} k={"capacityMWp" as keyof ProjectInputs}
+          f={{ label: "Capacity (used for USD/MW basis)", unit: "MW" }}
+          onSet={(v) => onChange({ ...inputs, capacityMWp: v })} />
+        <NumberField obj={inputs} k={"vatRate" as keyof ProjectInputs}
+          f={{ label: "VAT rate (onshore supply)", pct: true, step: 0.001 }}
+          onSet={(v) => onChange({ ...inputs, vatRate: v })} />
+        <NumberField obj={inputs} k={"customsDutyRate" as keyof ProjectInputs}
+          f={{ label: "Customs duty (offshore supply)", pct: true, step: 0.001 }}
+          onSet={(v) => onChange({ ...inputs, customsDutyRate: v })} />
+      </div>
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <Switch checked={(inputs.taxesCapexAuto ?? 1) === 1}
+          onCheckedChange={(v) => onChange({ ...inputs, taxesCapexAuto: v ? 1 : 0 })} />
+        <span>Auto-compute "Taxes (capex)" from VAT × onshore + Customs × offshore on every taxable line. Loan repayment is excluded.</span>
       </div>
       <p className="text-xs text-muted-foreground">
-        Allocate each capex line across construction months. Cells are % of that line item (should sum to 100%).
-        Items left at 0% fall back to the global drawdown profile above. The blended profile drives IDC and commitment fees.
+        Per-line basis: <b>USD '000</b> = absolute amount; <b>USD/MW</b> = amount per MW × capacity.
+        Loan repayment is always treated as an absolute amount and is excluded from auto-tax.
       </p>
       <div className="overflow-x-auto rounded-lg border border-border/60">
         <table className="w-full text-xs">
           <thead className="bg-secondary/40 sticky top-0">
             <tr>
-              <th className="text-left p-2 min-w-[180px]">Capex item</th>
-              <th className="text-right p-2 min-w-[110px]">Amount (USD '000)</th>
-              <th className="p-2 min-w-[170px]">Actions</th>
+              <th className="text-left p-2 min-w-[170px]">Capex item</th>
+              <th className="p-2 min-w-[110px]">Basis</th>
+              <th className="text-right p-2 min-w-[110px]">Amount</th>
+              <th className="text-right p-2 min-w-[110px]">Resolved (USD '000)</th>
+              <th className="p-2 min-w-[80px]">Taxable</th>
+              <th className="text-right p-2 min-w-[90px]">Onshore %</th>
+              <th className="p-2 min-w-[150px]">Actions</th>
               {monthsHeader.map(h => (
                 <th key={h.m} className="text-right p-1 font-mono text-[10px] min-w-[52px]">
                   Y{h.year}M{h.mInYear}
@@ -324,29 +342,71 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
           </thead>
           <tbody>
             {CAPEX_ITEMS.map(it => {
-              const sched = getSched(it.key as string);
+              const k = it.key as string;
+              const sched = getSched(k);
               const sum = sched.reduce((a, b) => a + b, 0);
               const amount = inputs[it.key] as unknown as number;
+              const basisPerMW = (inputs.capexBasisPerMW?.[k] ?? 0) === 1;
+              const resolved = basisPerMW ? (amount || 0) * (inputs.capacityMWp || 0) : (amount || 0);
+              const taxExcluded = CAPEX_TAX_EXCLUDED.has(k);
+              const taxable = inputs.capexTaxable?.[k] ?? CAPEX_TAXABLE_DEFAULT[k] ?? false;
+              const onshorePct = (inputs.capexOnshorePct?.[k] ?? 1) * 100;
+              const setBasis = (v: 0 | 1) =>
+                onChange({ ...inputs, capexBasisPerMW: { ...(inputs.capexBasisPerMW ?? {}), [k]: v } });
+              const setTaxable = (v: boolean) =>
+                onChange({ ...inputs, capexTaxable: { ...(inputs.capexTaxable ?? {}), [k]: v } });
+              const setOnshore = (pct: number) =>
+                onChange({ ...inputs, capexOnshorePct: { ...(inputs.capexOnshorePct ?? {}), [k]: Math.max(0, Math.min(1, pct / 100)) } });
               return (
                 <tr key={String(it.key)} className="border-t border-border/40 hover:bg-secondary/20">
                   <td className="p-2 font-medium">{it.label}</td>
+                  <td className="p-1">
+                    {k === "loanRepayment" ? (
+                      <span className="text-[10px] text-muted-foreground">USD '000 (fixed)</span>
+                    ) : (
+                      <Select value={basisPerMW ? "perMW" : "abs"} onValueChange={(v) => setBasis(v === "perMW" ? 1 : 0)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="abs">USD '000</SelectItem>
+                          <SelectItem value="perMW">USD '000 / MW</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </td>
                   <td className="p-1">
                     <Input type="number" step={1} className="h-8 font-mono text-xs text-right"
                       value={String(amount ?? 0)}
                       onChange={(e) => onChange({ ...inputs, [it.key]: parseFloat(e.target.value) || 0 })} />
                   </td>
+                  <td className="p-2 text-right font-mono text-muted-foreground">{resolved.toLocaleString(undefined, { maximumFractionDigits: 1 })}</td>
+                  <td className="p-1 text-center">
+                    {taxExcluded ? (
+                      <span className="text-[10px] text-muted-foreground">—</span>
+                    ) : (
+                      <Switch checked={!!taxable} onCheckedChange={setTaxable} />
+                    )}
+                  </td>
+                  <td className="p-1">
+                    {taxExcluded ? (
+                      <span className="text-[10px] text-muted-foreground">—</span>
+                    ) : (
+                      <Input type="number" step={1} min={0} max={100} className="h-8 font-mono text-xs text-right"
+                        value={onshorePct.toFixed(0)}
+                        onChange={(e) => setOnshore(parseFloat(e.target.value) || 0)} />
+                    )}
+                  </td>
                   <td className="p-1">
                     <div className="flex gap-1">
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => distributeEvenly(it.key as string)}>Even</Button>
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => clearItem(it.key as string)}>Clear</Button>
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => applyToAll(it.key as string)}>Copy→all</Button>
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => distributeEvenly(k)}>Even</Button>
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => clearItem(k)}>Clear</Button>
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => applyToAll(k)}>Copy→all</Button>
                     </div>
                   </td>
                   {monthsHeader.map(h => (
                     <td key={h.m} className="p-0.5">
                       <Input type="number" step={0.1} className="h-8 font-mono text-[11px] text-right px-1"
                         value={Number(sched[h.m] ?? 0).toFixed(2)}
-                        onChange={(e) => setSchedCell(it.key as string, h.m, parseFloat(e.target.value))} />
+                        onChange={(e) => setSchedCell(k, h.m, parseFloat(e.target.value))} />
                     </td>
                   ))}
                   <td className={`p-2 text-right font-mono ${Math.abs(sum - 100) < 0.01 || sum === 0 ? "text-muted-foreground" : "text-destructive"}`}>
