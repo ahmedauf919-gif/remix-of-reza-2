@@ -1128,8 +1128,10 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const openingDebt = debt;
     const interest = interestByY[y];
     const principal = principalByY[y];
+    const refiProceeds = refiProceedsByY[y];
     const debtService = dsByY[y];
-    debt = Math.max(0, debt - principal);
+    // Apply refi step-up first (cash-out), then principal repayment.
+    debt = Math.max(0, debt + refiProceeds - principal);
     const ebt = p.ebit - interest;
     const taxOnEbt = (!taxYearsActive(p.year) || ebt <= 0) ? 0 : ebt * I.taxRate;
     const nokusOn = I.nokusRate > 0 && p.year >= I.nokusStartYear && p.year <= I.nokusEndYear;
