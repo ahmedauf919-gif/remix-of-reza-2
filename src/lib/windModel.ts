@@ -792,8 +792,8 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   const totalCapex = baseUses + idc + fees;
   const equityAmount = totalCapex - debtAmount;
 
-  const N = I.operationsYears;
-  const opsStartYear = I.constructionStart + Math.ceil(I.constructionMonths / 12);
+  const N = Math.max(1, Math.floor(Number(I.operationsYears) || 0));
+  const opsStartYear = I.constructionStart + Math.ceil((Number(I.constructionMonths) || 0) / 12);
   const depreciableBase = totalCapex - dsraInitial;
   const annualDeprec = depreciableBase / I.depreciationYears;
 
@@ -982,7 +982,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const consYears = I.constructionMonths / 12;
 
   // Normalise monthly draw profile to length = constructionMonths and sum to 1.
-  const M = Math.max(1, Math.round(I.constructionMonths));
+  const M = Math.max(1, Math.round(Number(I.constructionMonths) || 0));
   const rawSched = (I.capexSchedulePct && I.capexSchedulePct.length > 0)
     ? I.capexSchedulePct.slice(0, M)
     : Array.from({ length: M }, () => 100 / M);
@@ -1066,7 +1066,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const totalUses = sim.totalCapex;
 
   // Aggregate the monthly schedule into per-year construction draws.
-  const consYearCount = Math.max(1, Math.ceil(consYears));
+  const consYearCount = Math.max(1, Math.ceil(Number.isFinite(consYears) ? consYears : 1));
   const yearFrac: number[] = Array(consYearCount).fill(0);
   for (let m = 0; m < M; m++) {
     const yIdx = Math.min(consYearCount - 1, Math.floor(m / 12));
