@@ -569,7 +569,7 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   csrTaxDeductible: 0,
   nokusRate: 0,
   nokusStartYear: 2029,
-  nokusEndYear: 2017,
+  nokusEndYear: 2054,
   nokusThresholdRate: 0,
   taxCalcMonths: 12,
   taxAdvanceMonths: 3,
@@ -653,6 +653,7 @@ export interface AnnualRow {
   debtService: number;
   principal: number;
   cffi: number;
+  dividends: number;
   openingDebt: number;
   closingDebt: number;
   dscr: number;
@@ -806,24 +807,43 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
 
   const N = Math.max(1, Math.floor(Number(I.operationsYears) || 0));
   const opsStartYear = I.constructionStart + Math.ceil((Number(I.constructionMonths) || 0) / 12);
-  const depreciableBase = totalCapex - dsraInitial;
-  const annualDeprec = depreciableBase / I.depreciationYears;
+  // Split depreciable base: hard capex (PPE life) vs IDC + upfront fees (financing life).
+  const hardCapex = agg.epcCost + agg.developmentCost + agg.substationContingency;
+  const financingCapex = idc + fees;
+  const depYearsPPE = Math.max(1, I.depreciationYears);
+  const depYearsIDC = Math.max(1, I.idcDepreciationYears || I.depreciationYears);
+  const depAnnualPPE = hardCapex / depYearsPPE;
+  const depAnnualIDC = financingCapex / depYearsIDC;
 
   const rows: AnnualRow[] = [];
   let debt = debtAmount;
   let cash = 0, receivables = 0, payables = 0;
-  let ppe = depreciableBase;
+  let ppe = hardCapex + financingCapex;
   let equity = equityAmount;
 
   const grace = I.graceYears;
   const amortYears = Math.max(1, I.debtTenorYears - grace);
-  const r = agg.interestRate;
-  const annuityPmt = r > 0
-    ? debtAmount * (r * Math.pow(1 + r, amortYears)) / (Math.pow(1 + r, amortYears) - 1)
-    : debtAmount / amortYears;
-
+  const rBase = agg.interestRate;
   const refiOn = I.refinanceSwitch === 1;
   const refiOpsYear = refiOn ? Math.max(1, I.refinanceYear - opsStartYear + 1) : -1;
+  const rateForY = (y: number) => (refiOn && y >= refiOpsYear) ? rBase + (I.refinanceMargin || 0) : rBase;
+
+  // Availability case selector
+  const availabilityEff = I.availabilityCase === "High" ? I.availabilityHigh
+    : I.availabilityCase === "Low" ? I.availabilityLow
+    : (I.availabilityBase || I.availability);
+
+  // Tax window helper (year-based, with holiday window override)
+  const taxYearsActive = (yr: number) => {
+    const inWindow = yr >= I.taxStartYear && yr <= I.taxEndYear;
+    const inHoliday = I.taxHolidayYears > 0 || I.taxHolidayEndYear >= I.taxHolidayStartYear
+      ? (yr >= I.taxHolidayStartYear && yr <= I.taxHolidayEndYear)
+      : false;
+    return inWindow && !inHoliday;
+  };
+
+  // Decommissioning as annual sinking-fund accrual (real, escalated)
+  const decommissioningAnnual = (I.mmDecommissioning || 0) / Math.max(1, N);
 
   // ── PASS A: economics independent of debt service (revenue/opex/EBITDA/CFADS-pre-tax-shield)
   type Pre = {
@@ -844,27 +864,31 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
       : Math.pow(1 + I.tariffEscalation, I.tariffFixedYears - 1) * Math.pow(1 + I.tariffPostYearGrowth, y - I.tariffFixedYears);
     const degr = Math.pow(1 - I.degradation, y - 1);
     const lossKept = (1 - agg.lossFactor);
-    const mwh = I.capacityMWp * agg.yieldKWhPerKWp * I.availability * lossKept * degr;
+    const mwh = I.capacityMWp * agg.yieldKWhPerKWp * availabilityEff * lossKept * degr;
     const revenue = mwh * I.tariffUsdPerKWh * tariffEsc;
     const carbonOn = I.cdmSwitch === 1 && year >= I.cdmStartYear && year < I.cdmStartYear + I.cdmDurationYears;
     const carbonRevenue = carbonOn ? mwh * I.gridEmissionFactor * I.cdmPriceUSD / 1000 : 0;
     const totalRev = revenue + carbonRevenue;
     const baseOpex = (I.oAndM + I.assetMgmt + I.spvCost + I.insurance + I.csrContribution + I.eetcCost) * escal;
     const rentalValue = I.epcCost * (I.rentalValuePct || 0.5);
-    const realEstate = rentalValue * I.realEstateTaxableAmount * I.realEstateTaxRate * (1 - (I.exemptedProportion || 0));
+    const realEstate = rentalValue * I.realEstateTaxableAmount * I.realEstateTaxRate * (1 - (I.exemptedProportion || 0)) * escal;
     const otherFixedOpex = (I.bondExpenses + I.lease + I.auxiliaryPower + I.opexContingency
       + I.usufructEGP * I.fxEGP + I.migaPremium) * escal;
     const majorMaintenance = (I.mmWindSpareParts + I.mmSubstationSpareParts + I.mmPmCm + I.mmSpare) * escal;
     const revPctOpex = totalRev * (I.pctRevConvLocalEUR + I.pctRevUsufructLease + I.pctRevInsuranceOps);
-    const decommissioning = (y === N) ? I.mmDecommissioning * escal : 0;
+    const decommissioning = decommissioningAnnual * escal;
     const levy = I.additionalLevy * totalRev;
     const opex = baseOpex + realEstate + levy + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning;
     const ebitda = totalRev - opex;
-    const depreciation = y <= I.depreciationYears ? annualDeprec : 0;
+    const depPPE = y <= depYearsPPE ? depAnnualPPE : 0;
+    const depIDC = y <= depYearsIDC ? depAnnualIDC : 0;
+    const depreciation = depPPE + depIDC;
     const ebit = ebitda - depreciation;
-    const ebitdaTax = (y <= I.taxHolidayYears || ebit <= 0) ? 0 : ebit * I.taxRate;
+    const ebitdaTax = (!taxYearsActive(year) || ebit <= 0) ? 0 : ebit * I.taxRate;
     const newReceivables = totalRev * (I.daysReceivable / 365);
-    const newPayables = opex * (I.daysPayable / 365);
+    // Payables on cash opex only (exclude real-estate tax & decommissioning sinking fund)
+    const cashOpexForDPO = baseOpex + otherFixedOpex + majorMaintenance + revPctOpex + levy;
+    const newPayables = cashOpexForDPO * (I.daysPayable / 365);
     const wcChange = -((newReceivables - recv) - (newPayables - pay));
     recv = newReceivables; pay = newPayables;
     const cfadsPreShield = ebitda - ebitdaTax + wcChange;
@@ -875,43 +899,67 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
       ebitda, depreciation, ebit, ebitdaTax, cfadsPreShield, wcChange, newReceivables, newPayables });
   }
 
-  // ── PASS B: size principal year-by-year per sizingMode
+  // ── PASS B: size principal year-by-year per repayment shape
+  // Two fixed-point passes so DSCR-sculpting accounts for realised tax.
   const principalByY: number[] = Array(N + 1).fill(0);
   const interestByY: number[] = Array(N + 1).fill(0);
   const dsByY: number[] = Array(N + 1).fill(0);
-  let dbt = debtAmount;
-  for (let y = 1; y <= N; y++) {
-    const opening = dbt;
-    const interest = opening * r;
-    interestByY[y] = interest;
-    if (y <= grace || dbt <= 1e-6) { dsByY[y] = interest; continue; }
-    let principal = 0;
-    if (I.sizingMode === "dscr-sculpted" || I.sizingMode === "llcr-sculpted") {
-      // Approx CFADS with interest tax shield (stable: shield doesn't depend on principal)
-      const shield = (y <= I.taxHolidayYears) ? 0 : interest * I.taxRate;
-      const cfadsApprox = pre[y - 1].cfadsPreShield + shield;
-      const targetDS = cfadsApprox / Math.max(1.001, I.targetDSCR);
-      principal = Math.max(0, Math.min(dbt, targetDS - interest));
-    } else if (I.sizingMode === "manual") {
-      principal = Math.min(dbt, debtAmount / amortYears);
-    } else if (I.sizingMode === "bullet") {
+  const sizePass = (taxByY: number[]) => {
+    let dbt = debtAmount;
+    // Recompute annuity payment for current rate; if refi, splice tenor.
+    const annuityPmtFor = (bal: number, rate: number, n: number) =>
+      rate > 0 ? bal * (rate * Math.pow(1 + rate, n)) / (Math.pow(1 + rate, n) - 1) : bal / Math.max(1, n);
+    let curAnnuity = annuityPmtFor(debtAmount, rBase, amortYears);
+    for (let y = 1; y <= N; y++) {
+      const rate = rateForY(y);
+      // If refi year: rebalance to refinanceAmount (treat shortfall as principal payment), reset annuity for remaining tenor.
+      if (refiOn && y === refiOpsYear && I.refinanceAmount > 0 && dbt > I.refinanceAmount) {
+        const refiPay = dbt - I.refinanceAmount;
+        principalByY[y] = (principalByY[y] || 0) + refiPay;
+        dbt = I.refinanceAmount;
+        const remTenor = Math.max(1, I.debtTenorYears - (y - 1));
+        curAnnuity = annuityPmtFor(dbt, rate, remTenor);
+      }
+      const opening = dbt;
+      const interest = opening * rate;
+      interestByY[y] = interest;
+      if (y <= grace || dbt <= 1e-6) { dsByY[y] = interest + (principalByY[y] || 0); continue; }
+      let principal = 0;
+      if (I.sizingMode === "dscr-sculpted" || I.sizingMode === "llcr-sculpted") {
+        const realisedTax = taxByY[y] ?? ((y <= I.taxHolidayYears) ? 0 : interest * I.taxRate);
+        const cfadsApprox = pre[y - 1].ebitda - realisedTax + pre[y - 1].wcChange;
+        const targetDS = cfadsApprox / Math.max(1.001, I.targetDSCR);
+        principal = Math.max(0, Math.min(dbt, targetDS - interest));
+      } else if (I.sizingMode === "manual" || I.sizingMode === "mortgage") {
+        principal = Math.min(dbt, debtAmount / amortYears);
+      } else if (I.sizingMode === "bullet") {
+        const yEnd = Math.min(N, grace + amortYears);
+        principal = (y === yEnd) ? dbt : 0;
+      } else { // annuity / fixed-gearing default
+        principal = Math.max(0, Math.min(dbt, curAnnuity - interest));
+      }
+      principalByY[y] = (principalByY[y] || 0) + principal;
+      dsByY[y] = interest + principalByY[y];
+      dbt = Math.max(0, dbt - principal);
+    }
+    // Force terminal repayment if balance remains at end of tenor
+    if (dbt > 1e-3) {
       const yEnd = Math.min(N, grace + amortYears);
-      principal = (y === yEnd) ? dbt : 0;
-    } else { // annuity / mortgage / fixed-gearing
-      principal = Math.max(0, Math.min(dbt, annuityPmt - interest));
+      principalByY[yEnd] += dbt;
+      dsByY[yEnd] += dbt;
     }
-    if (refiOn && y === refiOpsYear && I.refinanceAmount > 0) {
-      principal = Math.max(0, dbt - I.refinanceAmount);
+  };
+  // Pass 1 with shield approximation
+  sizePass([]);
+  // Recompute tax with realised interest, then resize once more for sculpting accuracy
+  if (I.sizingMode === "dscr-sculpted" || I.sizingMode === "llcr-sculpted") {
+    const realisedTax: number[] = Array(N + 1).fill(0);
+    for (let y = 1; y <= N; y++) {
+      const ebt = pre[y - 1].ebit - interestByY[y];
+      realisedTax[y] = (!taxYearsActive(pre[y - 1].year) || ebt <= 0) ? 0 : ebt * I.taxRate;
     }
-    principalByY[y] = principal;
-    dsByY[y] = interest + principal;
-    dbt = Math.max(0, dbt - principal);
-  }
-  // Force terminal repayment if balance remains at end of tenor
-  if (dbt > 1e-3) {
-    const yEnd = Math.min(N, grace + amortYears);
-    principalByY[yEnd] += dbt;
-    dsByY[yEnd] += dbt;
+    principalByY.fill(0); interestByY.fill(0); dsByY.fill(0);
+    sizePass(realisedTax);
   }
 
   // ── PASS C: assemble draft rows (interest tax shield captured exactly)
@@ -925,7 +973,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const debtService = dsByY[y];
     debt = Math.max(0, debt - principal);
     const ebt = p.ebit - interest;
-    const taxOnEbt = (y <= I.taxHolidayYears || ebt <= 0) ? 0 : ebt * I.taxRate;
+    const taxOnEbt = (!taxYearsActive(p.year) || ebt <= 0) ? 0 : ebt * I.taxRate;
     const nokusOn = I.nokusRate > 0 && p.year >= I.nokusStartYear && p.year <= I.nokusEndYear;
     const effRate = ebt > 0 ? taxOnEbt / ebt : 0;
     const nokusTax = nokusOn && effRate < I.nokusThresholdRate && ebt > 0
@@ -935,7 +983,6 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const cfads = p.ebitda - totalTax + p.wcChange;
     const dscr = debtService > 0 ? cfads / debtService : 0;
     ppe = Math.max(0, ppe - p.depreciation);
-    equity += netIncome;
     draft.push({
       year: p.year, mwh: p.mwh, revenue: p.revenue, carbonRevenue: p.carbonRevenue,
       opex: p.opex, opexBase: p.opexBase, opexRealEstate: p.opexRealEstate, opexOtherFixed: p.opexOtherFixed,
@@ -944,7 +991,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
       tariffEsc: p.tariffEsc, effectiveTariff: p.effectiveTariff,
       ebitda: p.ebitda, depreciation: p.depreciation, ebit: p.ebit,
       interest, ebt, tax: totalTax, netIncome,
-      workingCapitalChange: p.wcChange, cfads, debtService, principal, cffi: 0,
+      workingCapitalChange: p.wcChange, cfads, debtService, principal, cffi: 0, dividends: 0,
       openingDebt, closingDebt: debt, dscr,
       ppe, cash: 0, receivables: p.newReceivables, payables: p.newPayables, equity,
       dsraTarget: 0, dsraMovement: 0, dsraBalance: 0,
@@ -952,7 +999,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     });
   }
 
-  // ── PASS D: DSRA, LLCR, PLCR, cash & balance check
+  // ── PASS D: DSRA, distributions, LLCR/PLCR, cash & balance check
   const Mdsra = Math.max(0, Math.round(I.dsraTargetMonths));
   const yrs = Mdsra / 12;
   const dsArr = draft.map(r => r.debtService);
@@ -979,21 +1026,33 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
 
   let dsraPrev = dsraInitial;
   let cashAcc = 0;
+  let retainedEarnings = equityAmount; // equity book = paid-in + retained
   rows.length = 0;
   for (let y = 0; y < draft.length; y++) {
     const target = I.dsraSwitch === 1 ? lookForward(y + 1) : 0;
     const movement = target - dsraPrev;
     const row = draft[y];
     const cffi = row.cfads - row.debtService - movement;
-    cashAcc += cffi;
-    const llcr = row.openingDebt > 1e-3 ? (pvFromIdx(y, loanLifeEnd) + target) / row.openingDebt : 0;
-    const plcr = row.openingDebt > 1e-3 ? (pvFromIdx(y, draft.length) + target) / row.openingDebt : 0;
-    // Balance-sheet check: Assets - (Debt + Equity book + Payables - Receivables) ≈ 0
-    // Simplified consistency proxy
+    // Distributions: payout ratio applied; restricted to retained earnings if flagged; respect min cash balance.
+    let distributable = Math.max(0, cffi) * (I.payoutRatio ?? 1);
+    if (I.divRestrictedToRetainedEarnings === 1) {
+      const re = retainedEarnings - equityAmount + row.netIncome; // accumulated NI before this year's div
+      distributable = Math.min(distributable, Math.max(0, re));
+    }
+    const minCash = (I.minCashBalance || 0) + (I.minCashBalanceMultiple || 0) * row.debtService;
+    distributable = Math.min(distributable, Math.max(0, cashAcc + cffi - minCash));
+    distributable = Math.max(0, distributable);
+    cashAcc += cffi - distributable;
+    retainedEarnings += row.netIncome - distributable;
+    const llcrDen = row.openingDebt;
+    const llcr = llcrDen > 1e-3 ? (pvFromIdx(y, loanLifeEnd) + dsraPrev) / llcrDen : 0;
+    const plcr = llcrDen > 1e-3 ? (pvFromIdx(y, draft.length) + dsraPrev) / llcrDen : 0;
+    // Balance-sheet check: Assets (PPE + Cash + DSRA + Receivables) = Liab+Equity (Debt + Payables + Equity book)
     const assets = row.ppe + cashAcc + row.receivables + target;
-    const liabEq = row.closingDebt + row.equity + row.payables;
+    const liabEq = row.closingDebt + row.payables + retainedEarnings;
     const balanceCheck = assets - liabEq;
-    rows.push({ ...row, cffi, cash: cashAcc, dsraTarget: target, dsraMovement: movement, dsraBalance: target, llcr, plcr, balanceCheck });
+    rows.push({ ...row, cffi, dividends: distributable, cash: cashAcc, equity: retainedEarnings,
+      dsraTarget: target, dsraMovement: movement, dsraBalance: target, llcr, plcr, balanceCheck });
     dsraPrev = target;
   }
 
@@ -1046,7 +1105,11 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
 
   for (let outer = 0; outer < 6; outer++) {
     const baseUses = agg.epcCost + agg.developmentCost + agg.substationContingency + dsraInit;
-    if (I.sizingMode === "fixed-gearing") {
+    const sizingByGearing = I.sizingMode === "fixed-gearing"
+      || I.sizingMode === "manual"
+      || I.sizingMode === "bullet"
+      || I.sizingMode === "mortgage";
+    if (sizingByGearing) {
       debt = I.gearing < 1 ? baseUses * I.gearing / (1 - I.gearing) : baseUses;
       for (iter = 0; iter < 50; iter++) {
         const fcc = computeFC(debt);
@@ -1055,7 +1118,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
         if (Math.abs(nd - debt) < 0.01) { converged = true; break; }
         debt = nd;
       }
-    } else {
+    } else { // dscr-sculpted | llcr-sculpted → bisect on debt to hit min DSCR
       let lo = 0, hi = baseUses * 5;
       for (iter = 0; iter < 60; iter++) {
         const mid = (lo + hi) / 2;
