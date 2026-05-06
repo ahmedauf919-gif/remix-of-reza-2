@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ModelOutputs, fmt, fmtPct } from "@/lib/windModel";
+import { ModelOutputs, ProjectInputs, fmt, fmtPct } from "@/lib/windModel";
 import damodaran from "@/lib/damodaranERP.json";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,10 +15,10 @@ type Row = {
 
 const DATA = damodaran as Row[];
 
-export const CostOfCapitalView = ({ m }: { m: ModelOutputs }) => {
-  const [country, setCountry] = useState<string>("Egypt");
-  const [riskFree, setRiskFree] = useState<number>(4.5);   // % US 10Y treasury
-  const [beta, setBeta] = useState<number>(0.85);          // unlevered renewables ~0.6, levered ~0.85
+export const CostOfCapitalView = ({ m, onChange }: { m: ModelOutputs; onChange?: (patch: Partial<ProjectInputs>) => void }) => {
+  const country = m.inputs.country;
+  const riskFree = (m.inputs.riskFreeRate || 0) * 100;
+  const beta = m.inputs.equityBeta || 0;
   const [search, setSearch] = useState<string>("");
 
   const row = useMemo(() => DATA.find(r => r.country.toLowerCase() === country.toLowerCase()), [country]);
@@ -52,8 +52,8 @@ export const CostOfCapitalView = ({ m }: { m: ModelOutputs }) => {
         <h3 className="font-semibold mb-3">WACC inputs</h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
-            <Label className="text-xs">Country</Label>
-            <select className="mt-1 w-full rounded-md border border-input bg-background px-2 py-2 text-sm" value={country} onChange={(e) => setCountry(e.target.value)}>
+            <Label className="text-xs">Country (from inputs)</Label>
+            <select className="mt-1 w-full rounded-md border border-input bg-background px-2 py-2 text-sm" value={country} onChange={(e) => onChange?.({ country: e.target.value })}>
               {[...DATA].sort((a,b)=>a.country.localeCompare(b.country)).map(r => (
                 <option key={r.country} value={r.country}>{r.country}</option>
               ))}
@@ -61,15 +61,16 @@ export const CostOfCapitalView = ({ m }: { m: ModelOutputs }) => {
           </div>
           <div>
             <Label className="text-xs">Risk-free rate (%)</Label>
-            <Input type="number" step={0.1} value={riskFree} onChange={(e) => setRiskFree(parseFloat(e.target.value) || 0)}/>
+            <Input type="number" step={0.1} value={riskFree} onChange={(e) => onChange?.({ riskFreeRate: (parseFloat(e.target.value) || 0) / 100 })}/>
           </div>
           <div>
             <Label className="text-xs">Equity beta (levered)</Label>
-            <Input type="number" step={0.05} value={beta} onChange={(e) => setBeta(parseFloat(e.target.value) || 0)}/>
+            <Input type="number" step={0.05} value={beta} onChange={(e) => onChange?.({ equityBeta: parseFloat(e.target.value) || 0 })}/>
           </div>
           <div className="text-xs text-muted-foreground self-end">
             Cost of Equity = Rf + β × ERP<br/>
-            WACC = E/V × Ke + D/V × Kd × (1 − t)
+            WACC = E/V × Ke + D/V × Kd × (1 − t)<br/>
+            <span className="text-primary">LCOE discount factor uses this WACC ({fmt(wacc,2)}%)</span>
           </div>
         </div>
       </section>
@@ -109,7 +110,7 @@ export const CostOfCapitalView = ({ m }: { m: ModelOutputs }) => {
                   <td className="px-3 py-1.5 text-right font-mono">{r.sovCDS != null ? `${fmt(r.sovCDS,2)}%` : "—"}</td>
                   <td className="px-3 py-1.5 text-right font-mono">{r.cdsErp != null ? `${fmt(r.cdsErp,2)}%` : "—"}</td>
                   <td className="px-3 py-1.5 text-right">
-                    <button className="text-xs text-primary hover:underline" onClick={() => setCountry(r.country)}>Select</button>
+                    <button className="text-xs text-primary hover:underline" onClick={() => onChange?.({ country: r.country })}>Select</button>
                   </td>
                 </tr>
               ))}
