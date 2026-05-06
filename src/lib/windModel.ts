@@ -631,7 +631,16 @@ export interface AnnualRow {
   mwh: number;
   revenue: number;
   carbonRevenue: number;
+  tariffEsc: number;
+  effectiveTariff: number;
   opex: number;
+  opexBase: number;
+  opexRealEstate: number;
+  opexOtherFixed: number;
+  opexMajorMaintenance: number;
+  opexPctRevenue: number;
+  opexDecommissioning: number;
+  opexLevy: number;
   ebitda: number;
   depreciation: number;
   ebit: number;
@@ -709,6 +718,9 @@ export interface ModelOutputs {
   maxBalanceCheck: number;
   loanLifeYears: number;
   debtServiceCoverageOk: boolean;
+  // IRR rundowns (year-by-year cashflows)
+  projectIRRSeries: { year: number; capex: number; cfads: number; dsraMovement: number; net: number }[];
+  equityIRRSeries: { year: number; equityDraw: number; cffi: number; net: number }[];
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
