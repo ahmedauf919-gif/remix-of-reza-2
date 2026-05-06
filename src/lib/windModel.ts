@@ -828,7 +828,7 @@ export interface ModelOutputs {
   projectIRRSeries: { year: number; capex: number; cfads: number; dsraMovement: number; net: number }[];
   equityIRRSeries: { year: number; equityDraw: number; cffi: number; net: number }[];
   // LCOE contribution by item (% of LCOE) — for the waterfall chart
-  lcoeContributions: { label: string; pct: number; usdPerMWh: number }[];
+  lcoeContributions: { label: string; pv: number; pct: number; usdPerMWh: number }[];
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
