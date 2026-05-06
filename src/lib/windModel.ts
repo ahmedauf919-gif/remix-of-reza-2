@@ -1261,21 +1261,29 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const minDSCR = dscrs.length ? Math.min(...dscrs) : 0;
   const avgDSCR = dscrs.length ? dscrs.reduce((a, b) => a + b, 0) / dscrs.length : 0;
 
+  // ── WACC for project-level discounting and equity NPV ──
+  const waccCalcEarly = computeWACC({
+    country: I.country,
+    riskFreeRate: I.riskFreeRate,
+    equityBeta: I.equityBeta,
+    gearing: totalUses > 0 ? debt / totalUses : 0,
+    costOfDebt: agg.blendedRate,
+    taxRate: I.taxRate,
+  });
+  const projectDiscountRate = waccCalcEarly.wacc;
+  const equityDiscountRate = waccCalcEarly.costOfEquity;
+
   const projCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) projCF.push(-constructionDraws[i]);
-  // Project CF = CFADS net of DSRA movements (so terminal release is captured
-  // exactly once, and reserve build-up reduces project cash).
   sim.rows.forEach(r => projCF.push(r.cfads - r.dsraMovement));
   const projectIRR = irr(projCF, 0.08);
-  const npvProject = npv(I.discountRateProject, projCF);
+  const npvProject = npv(projectDiscountRate, projCF);
 
   const eqCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) eqCF.push(-equityDraws[i]);
   sim.rows.forEach(r => eqCF.push(r.cffi));
-  // DSRA release is already captured in the final-year cffi via the negative
-  // movement (target falls to 0). Do not double-count it here.
   const equityIRR = irr(eqCF, 0.12);
-  const npvEquity = npv(I.discountRateEquity, eqCF);
+  const npvEquity = npv(equityDiscountRate, eqCF);
 
   // ── Equity tranche split (Common, Preferential, Shareholder Loan) ──
   const totalEquityFunded = sim.equityAmount;
