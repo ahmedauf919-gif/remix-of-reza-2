@@ -1207,6 +1207,20 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   sim.rows.forEach((r, i) => { if (r.debtService > 1e-3) loanLifeYears = i + 1; });
   const debtServiceCoverageOk = minDSCR >= I.targetDSCR - 0.005;
 
+  // Build IRR rundown series (year-aligned starting at first construction year)
+  const projectIRRSeries: { year: number; capex: number; cfads: number; dsraMovement: number; net: number }[] = [];
+  for (let i = 0; i < consYearCount; i++) {
+    projectIRRSeries.push({ year: constructionYears[i], capex: -constructionDraws[i], cfads: 0, dsraMovement: 0, net: -constructionDraws[i] });
+  }
+  sim.rows.forEach(r => projectIRRSeries.push({
+    year: r.year, capex: 0, cfads: r.cfads, dsraMovement: -r.dsraMovement, net: r.cfads - r.dsraMovement,
+  }));
+  const equityIRRSeries: { year: number; equityDraw: number; cffi: number; net: number }[] = [];
+  for (let i = 0; i < consYearCount; i++) {
+    equityIRRSeries.push({ year: constructionYears[i], equityDraw: -equityDraws[i], cffi: 0, net: -equityDraws[i] });
+  }
+  sim.rows.forEach(r => equityIRRSeries.push({ year: r.year, equityDraw: 0, cffi: r.cffi, net: r.cffi }));
+
   return {
     inputs: I,
     totalUses,
@@ -1234,6 +1248,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     prefEquityAmount: prefAmt,
     shLoanAmount: shLoanAmt,
     minLLCR, avgLLCR, minPLCR, maxBalanceCheck, loanLifeYears, debtServiceCoverageOk,
+    projectIRRSeries, equityIRRSeries,
   };
 }
 
