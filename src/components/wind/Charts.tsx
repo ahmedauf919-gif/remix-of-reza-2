@@ -38,7 +38,7 @@ export const CashflowChart = ({ m }: { m: ModelOutputs }) => {
 };
 
 export const DSCRChart = ({ m }: { m: ModelOutputs }) => {
-  const data = m.rows.map(r => ({ year: r.year, DSCR: +r.dscr.toFixed(3) }));
+  const data = m.rows.map(r => ({ year: r.year, DSCR: r.debtService > 0 ? +r.dscr.toFixed(3) : null }));
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
       <h3 className="font-semibold mb-3">DSCR profile</h3>

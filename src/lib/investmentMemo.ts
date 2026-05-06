@@ -239,7 +239,7 @@ export async function generateInvestmentMemo(I: ProjectInputs, m: ModelOutputs) 
   h1("6. Operating Cashflow Snapshot");
   para(`First ${cf.length} years of operations (USD '000)`);
   dataTable(["Year", "Revenue", "EBITDA", "CFADS", "Debt service", "DSCR"],
-    cf.map(r => [String(r.year), fmt(r.revenue), fmt(r.ebitda), fmt(r.cfads), fmt(-r.debtService), `${fmt(r.dscr)}x`]),
+    cf.map(r => [String(r.year), fmt(r.revenue), fmt(r.ebitda), fmt(r.cfads), fmt(-r.debtService), r.debtService > 0 ? `${fmt(r.dscr)}x` : "n/a"]),
   );
 
   // ── 7. Risks ───────────────────────────────────────────────────────
