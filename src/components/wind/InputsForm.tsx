@@ -719,20 +719,6 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
             <Label className="text-xs text-muted-foreground">Country</Label>
             <Input className="h-9 mt-1" value={inputs.country} onChange={(e) => set("country", e.target.value)} />
           </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Debt sizing mode</Label>
-            <Select value={inputs.sizingMode} onValueChange={(v) => set("sizingMode", v as ProjectInputs["sizingMode"])}>
-              <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fixed-gearing">Fixed gearing</SelectItem>
-                <SelectItem value="dscr-sculpted">DSCR-sculpted (max debt)</SelectItem>
-                <SelectItem value="llcr-sculpted">LLCR-sculpted</SelectItem>
-                <SelectItem value="manual">Manual repayment schedule</SelectItem>
-                <SelectItem value="bullet">Bullet / Balloon</SelectItem>
-                <SelectItem value="mortgage">Mortgage-style (equal P+I)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         <Tabs defaultValue="construction">
