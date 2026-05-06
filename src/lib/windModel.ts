@@ -15,8 +15,8 @@ export function getCountryERP(country: string): number {
 }
 
 /** Compute WACC (decimal) from project inputs and current capital structure. */
-export function computeWACC(opts: { country: string; riskFreeRate: number; equityBeta: number; gearing: number; costOfDebt: number; taxRate: number }): { wacc: number; costOfEquity: number; afterTaxKd: number; erp: number } {
-  const erp = getCountryERP(opts.country);
+export function computeWACC(opts: { country: string; riskFreeRate: number; equityBeta: number; gearing: number; costOfDebt: number; taxRate: number; useErpOverride?: 0 | 1; erpOverride?: number }): { wacc: number; costOfEquity: number; afterTaxKd: number; erp: number } {
+  const erp = opts.useErpOverride ? (opts.erpOverride ?? 0) : getCountryERP(opts.country);
   const costOfEquity = opts.riskFreeRate + opts.equityBeta * erp;
   const afterTaxKd = opts.costOfDebt * (1 - opts.taxRate);
   const wacc = (1 - opts.gearing) * costOfEquity + opts.gearing * afterTaxKd;
@@ -336,6 +336,8 @@ export interface ProjectInputs {
   // ── Cost of Capital (Damodaran-based WACC) ───────────────────────────
   riskFreeRate: number;            // decimal e.g. 0.045
   equityBeta: number;              // levered beta
+  useErpOverride: 0 | 1;           // when 1, use erpOverride instead of Damodaran country lookup
+  erpOverride: number;             // decimal ERP to use when override is on (0 disables CRP)
   useWaccForLcoe: 0 | 1;           // when 1, LCOE uses computed WACC instead of lcoeDiscountFactor
 
   // FX
@@ -696,7 +698,9 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   inflationSelection: "CPI",
 
   riskFreeRate: 0.045,
-  equityBeta: 0.85,
+  equityBeta: 0.92,                 // Damodaran "Green & Renewable Energy" sector levered beta
+  useErpOverride: 1,                // override Damodaran country ERP lookup
+  erpOverride: 0,                   // CRP set to 0 per user request
   useWaccForLcoe: 1,
 
   fxEUR: 1.05,
@@ -1362,6 +1366,8 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     gearing: totalUses > 0 ? debt / totalUses : 0,
     costOfDebt: agg.blendedRate,
     taxRate: I.taxRate,
+    useErpOverride: I.useErpOverride,
+    erpOverride: I.erpOverride,
   });
   const projectDiscountRate = waccCalcEarly.wacc;
   const equityDiscountRate = waccCalcEarly.costOfEquity;
