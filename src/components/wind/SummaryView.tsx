@@ -7,16 +7,18 @@ export const SummaryView = ({ m }: { m: ModelOutputs }) => {
   const development = I.preConstructionCosts + I.developmentPremiums + I.developmentExpenses
     + I.land + I.esMeasures + I.lendersTechAdvisors + I.legalExpenses
     + I.administrativeCosts + I.financialAudit + I.insuranceConstruction;
-  const subCont = I.contingency + I.substation + I.loanRepayment + I.taxesCapex;
   const uses = [
     { label: "EPC costs", v: I.epcCost },
     { label: "Development & soft costs", v: development },
-    { label: "Substation, contingency & taxes", v: subCont },
+    { label: "Substation", v: I.substation },
+    { label: "Contingency", v: I.contingency },
+    { label: "Taxes (capex)", v: I.taxesCapex },
+    { label: "Loan repayment (existing)", v: I.loanRepayment },
     { label: `DSRA (auto, ${I.dsraTargetMonths}-mo look-fwd)`, v: m.dsraInitialAuto },
     { label: "IDC", v: m.idc },
     { label: "Upfront fees", v: m.upfrontFee },
     { label: "Commitment fees", v: m.commitmentFee },
-  ];
+  ].filter(u => u.v > 0 || u.label === "EPC costs");
   const sources = [
     { label: "Senior debt", v: m.debtAmount },
     { label: "Common equity", v: m.commonEquityAmount },
