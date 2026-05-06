@@ -829,7 +829,10 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const totalRev = revenue + carbonRevenue;
 
     const baseOpex = (I.oAndM + I.assetMgmt + I.spvCost + I.insurance + I.csrContribution + I.eetcCost) * escal;
-    const realEstate = I.epcCost * 0.5 * I.realEstateTaxRate * I.realEstateTaxableAmount; // estimate per template note
+    // Real-estate tax: rental value % of EPC × taxable proportion × rate (matches Excel)
+    const rentalValue = I.epcCost * (I.rentalValuePct || 0.5);
+    const realEstate = rentalValue * I.realEstateTaxableAmount * I.realEstateTaxRate
+      * (1 - (I.exemptedProportion || 0));
     // Additional fixed opex items from inputs tab (real, escalated by CPI)
     const otherFixedOpex = (I.bondExpenses + I.lease + I.auxiliaryPower + I.opexContingency
       + I.usufructEGP * I.fxEGP + I.migaPremium) * escal;
