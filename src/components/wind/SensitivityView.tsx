@@ -27,6 +27,10 @@ const VARIABLES: VarDef[] = [
   { key: "cpi", label: "Opex inflation", unit: "pct" },
   { key: "tariffEscalation", label: "Tariff escalation", unit: "pct" },
   { key: "degradation", label: "Degradation", unit: "pct" },
+  { key: "riskFreeRate", label: "Risk-free rate (WACC)", unit: "pct" },
+  { key: "equityBeta", label: "Equity beta (WACC)", unit: "abs" },
+  { key: "vatRate", label: "VAT rate (capex)", unit: "pct" },
+  { key: "customsDutyRate", label: "Customs duty (capex)", unit: "pct" },
 ];
 
 const DEFAULT_DELTAS_REL = [-0.2, -0.1, -0.05, 0, 0.05, 0.1, 0.2];   // relative
