@@ -703,6 +703,12 @@ export interface ModelOutputs {
   commonEquityAmount: number;
   prefEquityAmount: number;
   shLoanAmount: number;
+  minLLCR: number;
+  avgLLCR: number;
+  minPLCR: number;
+  maxBalanceCheck: number;
+  loanLifeYears: number;
+  debtServiceCoverageOk: boolean;
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
