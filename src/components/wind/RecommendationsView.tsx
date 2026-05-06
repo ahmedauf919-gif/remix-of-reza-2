@@ -84,8 +84,10 @@ function buildShareholderScore(m: ModelOutputs): { items: ScoreItem[]; score: nu
     rationale: "Unlevered economics — does the asset itself create value?",
   });
 
-  // 7) Equity multiple (MOIC)
-  const moic = m.equityMOIC;
+  // 7) Equity multiple (MOIC) — derived from equityIRRSeries
+  const inflows = m.equityIRRSeries.reduce((s, r) => s + Math.max(0, r.net), 0);
+  const outflows = m.equityIRRSeries.reduce((s, r) => s + Math.max(0, -r.net), 0);
+  const moic = outflows > 0 ? inflows / outflows : NaN;
   const moicOk = Number.isFinite(moic) && moic > 0;
   items.push({
     metric: "Equity multiple (MOIC)",
