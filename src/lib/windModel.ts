@@ -1116,7 +1116,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
       const ebt = pre[y - 1].ebit - interestByY[y];
       realisedTax[y] = (!taxYearsActive(pre[y - 1].year) || ebt <= 0) ? 0 : ebt * I.taxRate;
     }
-    principalByY.fill(0); interestByY.fill(0); dsByY.fill(0);
+    principalByY.fill(0); interestByY.fill(0); dsByY.fill(0); refiProceedsByY.fill(0);
     sizePass(realisedTax);
   }
 
