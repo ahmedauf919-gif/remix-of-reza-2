@@ -1061,7 +1061,8 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const eqCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) eqCF.push(-equityDraws[i]);
   sim.rows.forEach(r => eqCF.push(r.cffi));
-  if (eqCF.length > 0) eqCF[eqCF.length - 1] += dsraInit;
+  // DSRA release is already captured in the final-year cffi via the negative
+  // movement (target falls to 0). Do not double-count it here.
   const equityIRR = irr(eqCF, 0.12);
   const npvEquity = npv(I.discountRateEquity, eqCF);
 
@@ -1089,7 +1090,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const shAmortYears = Math.max(1, I.operationsYears);
   sim.rows.forEach((r, idx) => {
     let avail = r.cffi;
-    if (idx === sim.rows.length - 1) avail += dsraInit; // DSRA release at end
+    // (DSRA release already in r.cffi via dsraMovement)
     // Pref coupon + straight-line repayment
     const prefCoupon = prefBal * I.prefEquityCoupon;
     const prefPrincipal = Math.min(prefBal, prefAmt / prefAmortYears);
