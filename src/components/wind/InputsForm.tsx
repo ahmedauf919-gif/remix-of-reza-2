@@ -307,13 +307,13 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
             <tr>
               <th className="text-left p-2 min-w-[180px]">Capex item</th>
               <th className="text-right p-2 min-w-[110px]">Amount (USD '000)</th>
+              <th className="p-2 min-w-[170px]">Actions</th>
               {monthsHeader.map(h => (
                 <th key={h.m} className="text-right p-1 font-mono text-[10px] min-w-[52px]">
                   Y{h.year}M{h.mInYear}
                 </th>
               ))}
               <th className="text-right p-2 min-w-[60px]">Σ%</th>
-              <th className="p-2 min-w-[120px]"></th>
             </tr>
           </thead>
           <tbody>
@@ -329,6 +329,13 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
                       value={String(amount ?? 0)}
                       onChange={(e) => onChange({ ...inputs, [it.key]: parseFloat(e.target.value) || 0 })} />
                   </td>
+                  <td className="p-1">
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => distributeEvenly(it.key as string)}>Even</Button>
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => clearItem(it.key as string)}>Clear</Button>
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => applyToAll(it.key as string)}>Copy→all</Button>
+                    </div>
+                  </td>
                   {monthsHeader.map(h => (
                     <td key={h.m} className="p-0.5">
                       <Input type="number" step={0.1} className="h-8 font-mono text-[11px] text-right px-1"
@@ -338,13 +345,6 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
                   ))}
                   <td className={`p-2 text-right font-mono ${Math.abs(sum - 100) < 0.01 || sum === 0 ? "text-muted-foreground" : "text-destructive"}`}>
                     {sum.toFixed(1)}
-                  </td>
-                  <td className="p-1">
-                    <div className="flex gap-1">
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => distributeEvenly(it.key as string)}>Even</Button>
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => clearItem(it.key as string)}>Clear</Button>
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => applyToAll(it.key as string)}>Copy→all</Button>
-                    </div>
                   </td>
                 </tr>
               );
