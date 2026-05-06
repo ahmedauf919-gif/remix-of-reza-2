@@ -18,6 +18,8 @@ type Field<T = ProjectInputs> = {
   step?: number;
   pct?: boolean;
   switch01?: boolean;
+  min?: number;
+  max?: number;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -33,12 +35,15 @@ const NumberField = <T extends Record<string, any>>({ obj, k, f, onSet }: {
       <Label className="text-xs text-muted-foreground">
         {f.label} {f.unit && <span className="opacity-60">({f.unit})</span>}{f.pct && <span className="opacity-60">(%)</span>}
       </Label>
-      <Input type="number" step={f.step ?? 1} className="h-9 font-mono"
+      <Input type="number" step={f.step ?? 1} min={f.min} max={f.max} className="h-9 font-mono"
         value={display}
         onChange={(e) => {
           const n = parseFloat(e.target.value);
           if (isNaN(n)) return;
-          onSet(f.pct ? n / 100 : n);
+          let val = f.pct ? n / 100 : n;
+          if (f.min !== undefined) val = Math.max(f.min, val);
+          if (f.max !== undefined) val = Math.min(f.max, val);
+          onSet(val);
         }}/>
     </div>
   );
@@ -340,7 +345,7 @@ const VAR_OPEX: Field[] = [
 
 const DEBT_OVERALL: Field[] = [
   { key: "gearing", label: "Target gearing (fixed mode)", pct: true, step: 0.01 },
-  { key: "targetDSCR", label: "Target DSCR (sculpt mode)", step: 0.01 },
+  { key: "targetDSCR", label: "Target DSCR (sculpt mode)", step: 0.01, min: 0, max: 4 },
   { key: "debtTenorYears", label: "Debt tenor", unit: "years" },
   { key: "graceYears", label: "Grace period", unit: "years" },
 ];
@@ -378,7 +383,7 @@ const COF: Field[] = [
   { key: "cofUpfrontFee", label: "Upfront fee", pct: true, step: 0.001 },
   { key: "cofCommitmentFeeOfMargin", label: "Commitment fee % of margin", pct: true, step: 0.001 },
   { key: "cofCommitmentFee", label: "Commitment fee p.a.", pct: true, step: 0.0001 },
-  { key: "cofTargetDSCR", label: "Target DSCR", step: 0.01 },
+  { key: "cofTargetDSCR", label: "Target DSCR", step: 0.01, min: 0, max: 4 },
 ];
 
 const SUBDEBT: Field[] = [
@@ -390,7 +395,7 @@ const SUBDEBT: Field[] = [
   { key: "subDebtCommitmentFeeOfMargin", label: "Commitment fee % of margin", pct: true, step: 0.001 },
   { key: "subDebtCommitmentFee", label: "Commitment fee p.a.", pct: true, step: 0.0001 },
   { key: "subDebtAgencyFee", label: "Agency fee", unit: "USD '000 p.a." },
-  { key: "subDebtTargetDSCR", label: "Target DSCR", step: 0.01 },
+  { key: "subDebtTargetDSCR", label: "Target DSCR", step: 0.01, min: 0, max: 4 },
   { key: "subDebtManualRepayment", label: "Manual repayment", unit: "USD '000" },
 ];
 
@@ -467,16 +472,16 @@ const FX: Field[] = [
 ];
 
 const COVENANTS: Field[] = [
-  { key: "covInPeriodP50", label: "DSCR (in period) — P50", step: 0.01 },
-  { key: "covInPeriodP90", label: "DSCR (in period) — P90", step: 0.01 },
-  { key: "cov12moBwP50", label: "DSCR (12m b/w) — P50", step: 0.01 },
-  { key: "cov12moBwP90", label: "DSCR (12m b/w) — P90", step: 0.01 },
-  { key: "cov12moFwP50", label: "DSCR (12m f/w) — P50", step: 0.01 },
-  { key: "cov12moFwP90", label: "DSCR (12m f/w) — P90", step: 0.01 },
-  { key: "llcrP50", label: "LLCR — P50", step: 0.01 },
-  { key: "llcrP90", label: "LLCR — P90", step: 0.01 },
-  { key: "plcrP50", label: "PLCR — P50", step: 0.01 },
-  { key: "plcrP90", label: "PLCR — P90", step: 0.01 },
+  { key: "covInPeriodP50", label: "DSCR (in period) — P50", step: 0.01, min: 0, max: 4 },
+  { key: "covInPeriodP90", label: "DSCR (in period) — P90", step: 0.01, min: 0, max: 4 },
+  { key: "cov12moBwP50", label: "DSCR (12m b/w) — P50", step: 0.01, min: 0, max: 4 },
+  { key: "cov12moBwP90", label: "DSCR (12m b/w) — P90", step: 0.01, min: 0, max: 4 },
+  { key: "cov12moFwP50", label: "DSCR (12m f/w) — P50", step: 0.01, min: 0, max: 4 },
+  { key: "cov12moFwP90", label: "DSCR (12m f/w) — P90", step: 0.01, min: 0, max: 4 },
+  { key: "llcrP50", label: "LLCR — P50", step: 0.01, min: 0, max: 4 },
+  { key: "llcrP90", label: "LLCR — P90", step: 0.01, min: 0, max: 4 },
+  { key: "plcrP50", label: "PLCR — P50", step: 0.01, min: 0, max: 4 },
+  { key: "plcrP90", label: "PLCR — P90", step: 0.01, min: 0, max: 4 },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -495,7 +500,7 @@ const TrancheEditor = ({ t, onChange, label }: { t: DebtTranche; label: string; 
     { key: "upfrontFeePct", label: "Upfront fee", pct: true, step: 0.001 },
     { key: "commitmentFeePct", label: "Commitment fee p.a.", pct: true, step: 0.001 },
     { key: "agencyFee", label: "Agency fee", unit: "USD '000 p.a." },
-    { key: "targetDSCR", label: "Tranche target DSCR", step: 0.01 },
+    { key: "targetDSCR", label: "Tranche target DSCR", step: 0.01, min: 0, max: 4 },
     { key: "sharePct", label: "Share of total debt", pct: true, step: 0.01 },
   ];
   return (
