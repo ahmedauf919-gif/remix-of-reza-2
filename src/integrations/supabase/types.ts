@@ -14,7 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      shared_scenario: {
+        Row: {
+          id: number
+          inputs: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          inputs: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          inputs?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

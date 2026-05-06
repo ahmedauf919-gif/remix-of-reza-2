@@ -971,8 +971,14 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="disc">
-                <AccordionTrigger>Discount rates</AccordionTrigger>
-                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={DISCOUNT}/></AccordionContent>
+                <AccordionTrigger>Discount rate (auto WACC)</AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-xs text-muted-foreground">
+                    Project NPV, equity NPV and LCOE are now discounted at the WACC computed from your
+                    current capital structure (Ke = Rf + β × country ERP, Kd after-tax, gearing solved by the model).
+                    Adjust risk-free rate, equity beta and country in the Cost of Capital / Macro sections.
+                  </p>
+                </AccordionContent>
               </AccordionItem>
             </Accordion>
           </TabsContent>

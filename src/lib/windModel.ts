@@ -761,6 +761,8 @@ export interface ModelOutputs {
   // IRR rundowns (year-by-year cashflows)
   projectIRRSeries: { year: number; capex: number; cfads: number; dsraMovement: number; net: number }[];
   equityIRRSeries: { year: number; equityDraw: number; cffi: number; net: number }[];
+  // LCOE contribution by item (% of LCOE) — for the waterfall chart
+  lcoeContributions: { label: string; pct: number; usdPerMWh: number }[];
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
@@ -1261,21 +1263,29 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const minDSCR = dscrs.length ? Math.min(...dscrs) : 0;
   const avgDSCR = dscrs.length ? dscrs.reduce((a, b) => a + b, 0) / dscrs.length : 0;
 
+  // ── WACC for project-level discounting and equity NPV ──
+  const waccCalcEarly = computeWACC({
+    country: I.country,
+    riskFreeRate: I.riskFreeRate,
+    equityBeta: I.equityBeta,
+    gearing: totalUses > 0 ? debt / totalUses : 0,
+    costOfDebt: agg.blendedRate,
+    taxRate: I.taxRate,
+  });
+  const projectDiscountRate = waccCalcEarly.wacc;
+  const equityDiscountRate = waccCalcEarly.costOfEquity;
+
   const projCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) projCF.push(-constructionDraws[i]);
-  // Project CF = CFADS net of DSRA movements (so terminal release is captured
-  // exactly once, and reserve build-up reduces project cash).
   sim.rows.forEach(r => projCF.push(r.cfads - r.dsraMovement));
   const projectIRR = irr(projCF, 0.08);
-  const npvProject = npv(I.discountRateProject, projCF);
+  const npvProject = npv(projectDiscountRate, projCF);
 
   const eqCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) eqCF.push(-equityDraws[i]);
   sim.rows.forEach(r => eqCF.push(r.cffi));
-  // DSRA release is already captured in the final-year cffi via the negative
-  // movement (target falls to 0). Do not double-count it here.
   const equityIRR = irr(eqCF, 0.12);
-  const npvEquity = npv(I.discountRateEquity, eqCF);
+  const npvEquity = npv(equityDiscountRate, eqCF);
 
   // ── Equity tranche split (Common, Preferential, Shareholder Loan) ──
   const totalEquityFunded = sim.equityAmount;
@@ -1336,22 +1346,50 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const totalOpex = sim.rows.reduce((s, r) => s + r.opex, 0);
   const totalCFADS = sim.rows.reduce((s, r) => s + r.cfads, 0);
 
-  let dCost = 0, dMWh = 0;
-  const waccCalc = computeWACC({
-    country: I.country,
-    riskFreeRate: I.riskFreeRate,
-    equityBeta: I.equityBeta,
-    gearing: totalUses > 0 ? debt / totalUses : 0,
-    costOfDebt: agg.blendedRate,
-    taxRate: I.taxRate,
-  });
-  const dr = (I.useWaccForLcoe ? waccCalc.wacc : (I.lcoeDiscountFactor || I.discountRateProject));
-  for (let i = 0; i < consYearCount; i++) dCost += constructionDraws[i] * 1000 / Math.pow(1 + dr, i);
-  sim.rows.forEach((r, i) => {
-    dCost += (r.opex + r.tax) * 1000 / Math.pow(1 + dr, consYearCount + i);
-    dMWh += r.mwh / Math.pow(1 + dr, consYearCount + i);
-  });
+  // ── LCOE: discounted cost / discounted energy, all at WACC ──
+  const waccCalc = waccCalcEarly;
+  const dr = waccCalc.wacc;
+
+  // Helper to PV a per-year operations stream (USD '000) starting at year consYearCount
+  const pvOpsThousands = (vals: number[]) => vals.reduce((s, v, i) =>
+    s + v * 1000 / Math.pow(1 + dr, consYearCount + i), 0);
+  const pvConsThousands = (vals: number[]) => vals.reduce((s, v, i) =>
+    s + v * 1000 / Math.pow(1 + dr, i), 0);
+
+  let dMWh = 0;
+  sim.rows.forEach((r, i) => { dMWh += r.mwh / Math.pow(1 + dr, consYearCount + i); });
+
+  // Capex split (construction-period draws are already weighted by monthFrac)
+  // Total capex draws by year include IDC + fees blended into totalUses.
+  const pvCapex = pvConsThousands(constructionDraws);
+  const pvBaseOpex = pvOpsThousands(sim.rows.map(r => r.opexBase));
+  const pvRealEstate = pvOpsThousands(sim.rows.map(r => r.opexRealEstate));
+  const pvOtherFixed = pvOpsThousands(sim.rows.map(r => r.opexOtherFixed));
+  const pvMajorMaint = pvOpsThousands(sim.rows.map(r => r.opexMajorMaintenance));
+  const pvPctRev = pvOpsThousands(sim.rows.map(r => r.opexPctRevenue));
+  const pvLevy = pvOpsThousands(sim.rows.map(r => r.opexLevy));
+  const pvDecomm = pvOpsThousands(sim.rows.map(r => r.opexDecommissioning));
+  const pvTax = pvOpsThousands(sim.rows.map(r => r.tax));
+
+  const dCost = pvCapex + pvBaseOpex + pvRealEstate + pvOtherFixed + pvMajorMaint + pvPctRev + pvLevy + pvDecomm + pvTax;
   const lcoeUsdPerKWh = dMWh > 0 ? dCost / (dMWh * 1000) : 0;
+
+  const buckets: { label: string; pv: number }[] = [
+    { label: "Capex (incl. IDC & fees)", pv: pvCapex },
+    { label: "Base O&M / Asset Mgmt / SPV / Insurance", pv: pvBaseOpex },
+    { label: "Major maintenance", pv: pvMajorMaint },
+    { label: "Real-estate tax", pv: pvRealEstate },
+    { label: "Other fixed opex", pv: pvOtherFixed },
+    { label: "% of revenue items", pv: pvPctRev },
+    { label: "Additional levy", pv: pvLevy },
+    { label: "Decommissioning", pv: pvDecomm },
+    { label: "Corporate income tax", pv: pvTax },
+  ];
+  const lcoeContributions = buckets.map(b => ({
+    label: b.label,
+    pct: dCost > 0 ? b.pv / dCost : 0,
+    usdPerMWh: dMWh > 0 ? b.pv / dMWh : 0,
+  })).filter(b => b.pct > 0.0001).sort((a, b) => b.pct - a.pct);
 
   // Coverage ratios + balance check rollup
   const llcrs = sim.rows.filter(r => r.llcr > 0).map(r => r.llcr);
@@ -1410,6 +1448,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     shLoanAmount: shLoanAmt,
     minLLCR, avgLLCR, minPLCR, maxBalanceCheck, loanLifeYears, debtServiceCoverageOk,
     projectIRRSeries, equityIRRSeries,
+    lcoeContributions,
   };
 }
 
