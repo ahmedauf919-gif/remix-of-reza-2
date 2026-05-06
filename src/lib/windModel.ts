@@ -1366,6 +1366,8 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     gearing: totalUses > 0 ? debt / totalUses : 0,
     costOfDebt: agg.blendedRate,
     taxRate: I.taxRate,
+    useErpOverride: I.useErpOverride,
+    erpOverride: I.erpOverride,
   });
   const projectDiscountRate = waccCalcEarly.wacc;
   const equityDiscountRate = waccCalcEarly.costOfEquity;
