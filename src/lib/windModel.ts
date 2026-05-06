@@ -1170,7 +1170,32 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
 }
 
 export function runModel(inputs: ProjectInputs): ModelOutputs {
-  const I = inputs;
+  // ── Phase 2: resolve per-MW basis and auto tax before anything else ──
+  const CAPEX_KEYS = [
+    "preConstructionCosts","epcCost","developmentPremiums","developmentExpenses","land",
+    "esMeasures","lendersTechAdvisors","legalExpenses","administrativeCosts","financialAudit",
+    "insuranceConstruction","contingency","substation","loanRepayment",
+    "capexSpare15","capexSpare16","capexSpare17","capexSpare18","capexSpare19","capexSpare20",
+    "compEsmp","compCsr",
+  ] as const;
+  const OPEX_KEYS = [
+    "oAndM","assetMgmt","spvCost","insurance","csrContribution","eetcCost",
+    "bondExpenses","lease","auxiliaryPower","opexContingency","usufructEGP","migaPremium",
+  ] as const;
+  const resolved: ProjectInputs = { ...inputs };
+  for (const k of CAPEX_KEYS) {
+    (resolved as any)[k] = effectiveCapexAmount(inputs, k as string, (inputs as any)[k]);
+  }
+  for (const k of OPEX_KEYS) {
+    (resolved as any)[k] = effectiveOpexAmount(inputs, k as string, (inputs as any)[k]);
+  }
+  // Auto-compute taxesCapex (VAT + customs) from resolved taxable items.
+  if ((inputs.taxesCapexAuto ?? 1) === 1) {
+    const itemMap: Record<string, number> = {};
+    for (const k of CAPEX_KEYS) itemMap[k] = (resolved as any)[k];
+    resolved.taxesCapex = computeAutoTaxesCapex(inputs, itemMap);
+  }
+  const I = resolved;
   const agg = aggregate(I);
   const consYears = I.constructionMonths / 12;
 
