@@ -79,10 +79,12 @@ const Index = () => {
 
           <TabsContent value="summary" className="m-0 pt-6 space-y-6">
             <SummaryView m={model} />
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <DSCRChart m={model}/>
-              <DebtBalanceChart m={model}/>
-            </div>
+            <Suspense fallback={<TabFallback/>}>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <DSCRChart m={model}/>
+                <DebtBalanceChart m={model}/>
+              </div>
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="inputs" className="m-0 pt-6">
@@ -90,28 +92,30 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="outputs" className="m-0 pt-6">
-            <OutputsView m={model}/>
+            <Suspense fallback={<TabFallback/>}><OutputsView m={model}/></Suspense>
           </TabsContent>
 
           <TabsContent value="statements" className="m-0 pt-6">
-            <StatementsView m={model}/>
+            <Suspense fallback={<TabFallback/>}><StatementsView m={model}/></Suspense>
           </TabsContent>
 
           <TabsContent value="charts" className="m-0 pt-6 space-y-6">
-            <CashflowChart m={model}/>
-            <LcoeWaterfallChart m={model}/>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <DSCRChart m={model}/>
-              <DebtBalanceChart m={model}/>
-            </div>
+            <Suspense fallback={<TabFallback/>}>
+              <CashflowChart m={model}/>
+              <LcoeWaterfallChart m={model}/>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <DSCRChart m={model}/>
+                <DebtBalanceChart m={model}/>
+              </div>
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="sensitivity" className="m-0 pt-6">
-            <SensitivityView inputs={inputs}/>
+            <Suspense fallback={<TabFallback/>}><SensitivityView inputs={deferredInputs}/></Suspense>
           </TabsContent>
 
           <TabsContent value="recommendations" className="m-0 pt-6">
-            <RecommendationsView m={model}/>
+            <Suspense fallback={<TabFallback/>}><RecommendationsView m={model}/></Suspense>
           </TabsContent>
         </Tabs>
 
