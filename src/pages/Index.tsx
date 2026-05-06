@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import * as XLSX from "xlsx";
-import { Wind, Download, RotateCcw } from "lucide-react";
+import { Wind, FileText, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { DEFAULT_INPUTS, ProjectInputs, runModel, fmt } from "@/lib/windModel";
+import { DEFAULT_INPUTS, ProjectInputs, runModel } from "@/lib/windModel";
+import { generateInvestmentMemo } from "@/lib/investmentMemo";
 import { InputsForm } from "@/components/wind/InputsForm";
 import { SummaryView } from "@/components/wind/SummaryView";
 import { OutputsView, IncomeStatementView, BalanceSheetView } from "@/components/wind/SchedulesView";
@@ -14,29 +14,15 @@ const Index = () => {
   const [inputs, setInputs] = useState<ProjectInputs>(DEFAULT_INPUTS);
   const model = useMemo(() => runModel(inputs), [inputs]);
 
-  const exportXlsx = () => {
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
-      [`${inputs.projectName} — ${inputs.scenario}`],
-      [],
-      ["Total uses (USD '000)", +model.totalUses.toFixed(2)],
-      ["Senior debt", +model.debtAmount.toFixed(2)],
-      ["Equity", +model.equityAmount.toFixed(2)],
-      ["Effective gearing", +(model.effectiveGearing).toFixed(4)],
-      ["IDC", +model.idc.toFixed(2)],
-      ["Min DSCR", +model.minDSCR.toFixed(3)],
-      ["Avg DSCR", +model.avgDSCR.toFixed(3)],
-      ["Project IRR", +model.projectIRR.toFixed(5)],
-      ["Equity IRR", +model.equityIRR.toFixed(5)],
-      ["LCOE (USD/kWh)", +model.lcoeUsdPerKWh.toFixed(5)],
-    ]), "Summary");
-
-    const head = ["Year", "Revenue", "Opex", "EBITDA", "Depreciation", "Interest", "Tax", "NetIncome", "WC change", "CFADS", "Principal", "Debt service", "DSCR", "CFFI", "Closing debt"];
-    const rows = model.rows.map(r => [r.year, r.revenue, -r.opex, r.ebitda, -r.depreciation, -r.interest, -r.tax, r.netIncome, r.workingCapitalChange, r.cfads, -r.principal, -r.debtService, r.dscr, r.cffi, r.closingDebt].map(v => typeof v === "number" ? +v.toFixed(2) : v));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([head, ...rows]), "Outputs");
-
-    XLSX.writeFile(wb, `${inputs.projectName.replace(/\s+/g, "_")}_Model.xlsx`);
-    toast.success("Exported to Excel");
+  const exportMemo = async () => {
+    try {
+      toast.loading("Generating investment memo…", { id: "memo" });
+      await generateInvestmentMemo(inputs, model);
+      toast.success("Investment memo downloaded", { id: "memo" });
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to generate memo", { id: "memo" });
+    }
   };
 
   const reset = () => { setInputs(DEFAULT_INPUTS); toast.info("Reset to defaults"); };
@@ -49,14 +35,10 @@ const Index = () => {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-[var(--shadow-glow)]">
               <Wind className="h-6 w-6 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{inputs.projectName} — Project Finance</h1>
-              <p className="text-sm text-white/70">{inputs.scenario} · Dynamic recalc · IDC closed-form · DSCR sculpting in JS</p>
-            </div>
           </div>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={reset} className="gap-2"><RotateCcw className="h-4 w-4"/>Reset</Button>
-            <Button onClick={exportXlsx} className="gap-2 bg-primary hover:bg-primary/90"><Download className="h-4 w-4"/>Export Excel</Button>
+            <Button onClick={exportMemo} className="gap-2 bg-primary hover:bg-primary/90"><FileText className="h-4 w-4"/>Export Investment Memo</Button>
           </div>
         </div>
       </header>
