@@ -23,7 +23,7 @@ export const LcoeWaterfallChart = ({ m }: { m: ModelOutputs }) => {
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
-      <div className="flex items-baseline justify-between mb-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
         <h3 className="font-semibold">LCOE waterfall — % weight per item (per CAPEX & OPEX line)</h3>
         <div className="text-sm text-muted-foreground">
           LCOE: <span className="font-mono font-semibold text-foreground">{fmt(lcoeUsd, 2)} USD/MWh</span>
@@ -32,6 +32,31 @@ export const LcoeWaterfallChart = ({ m }: { m: ModelOutputs }) => {
           <span className="mx-2">·</span>
           Margin: <span className={`font-mono font-semibold ${ppaUsd >= lcoeUsd ? "text-success" : "text-destructive"}`}>{fmt(ppaUsd - lcoeUsd, 2)}</span>
         </div>
+      </div>
+      <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+        <div className="rounded-lg border border-border bg-muted/30 p-2">
+          <div className="text-muted-foreground">WACC (discount rate)</div>
+          <div className="font-mono font-semibold text-foreground text-sm">{fmtPct(m.wacc, 2)}</div>
+        </div>
+        <div className="rounded-lg border border-border bg-muted/30 p-2">
+          <div className="text-muted-foreground">Cost of Equity</div>
+          <div className="font-mono font-semibold text-foreground text-sm">{fmtPct(m.costOfEquity, 2)}</div>
+        </div>
+        <div className="rounded-lg border border-border bg-muted/30 p-2">
+          <div className="text-muted-foreground">After-tax Cost of Debt</div>
+          <div className="font-mono font-semibold text-foreground text-sm">{fmtPct(m.inputs.costOfDebt * (1 - m.inputs.taxRate), 2)}</div>
+        </div>
+        <div className="rounded-lg border border-border bg-muted/30 p-2">
+          <div className="text-muted-foreground">Gearing (D/(D+E))</div>
+          <div className="font-mono font-semibold text-foreground text-sm">{fmtPct(m.inputs.gearing, 1)}</div>
+        </div>
+      </div>
+      <div className={`mb-4 rounded-lg border p-3 text-xs ${ppaUsd >= lcoeUsd ? "border-success/40 bg-success/5 text-foreground" : "border-destructive/40 bg-destructive/5 text-foreground"}`}>
+        {ppaUsd >= lcoeUsd ? (
+          <>✓ PPA price ({fmt(ppaUsd, 2)} USD/MWh) is above LCOE ({fmt(lcoeUsd, 2)} USD/MWh) — the project earns <span className="font-semibold">{fmt(ppaUsd - lcoeUsd, 2)} USD/MWh</span> margin over its full lifecycle cost (discounted at WACC = {fmtPct(m.wacc, 2)}).</>
+        ) : (
+          <>⚠ LCOE ({fmt(lcoeUsd, 2)} USD/MWh) exceeds PPA ({fmt(ppaUsd, 2)} USD/MWh) by <span className="font-semibold">{fmt(lcoeUsd - ppaUsd, 2)} USD/MWh</span>. Likely drivers: WACC is high ({fmtPct(m.wacc, 2)}) which inflates the discounted cost base, CAPEX/MW or OPEX assumptions are heavy, capacity factor (net energy) is low, or PPA tariff is set below the project's break-even. Lower WACC, reduce CAPEX/MW, increase capacity factor, or raise PPA to close the gap.</>
+        )}
       </div>
       <ResponsiveContainer width="100%" height={Math.max(360, 32 * data.length + 80)}>
         <BarChart data={data} layout="vertical" margin={{ left: 10, right: 80, top: 10, bottom: 10 }}>
