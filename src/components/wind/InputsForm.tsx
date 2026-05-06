@@ -331,6 +331,7 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
               <th className="text-right p-2 min-w-[110px]">Resolved (USD '000)</th>
               <th className="p-2 min-w-[80px]">Taxable</th>
               <th className="text-right p-2 min-w-[90px]">Onshore %</th>
+              <th className="text-right p-2 min-w-[90px]">Offshore %</th>
               <th className="p-2 min-w-[150px]">Actions</th>
               {monthsHeader.map(h => (
                 <th key={h.m} className="text-right p-1 font-mono text-[10px] min-w-[52px]">
@@ -393,6 +394,15 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
                       <Input type="number" step={1} min={0} max={100} className="h-8 font-mono text-xs text-right"
                         value={onshorePct.toFixed(0)}
                         onChange={(e) => setOnshore(parseFloat(e.target.value) || 0)} />
+                    )}
+                  </td>
+                  <td className="p-1">
+                    {taxExcluded ? (
+                      <span className="text-[10px] text-muted-foreground">—</span>
+                    ) : (
+                      <Input type="number" step={1} min={0} max={100} className="h-8 font-mono text-xs text-right"
+                        value={(100 - onshorePct).toFixed(0)}
+                        onChange={(e) => setOnshore(100 - (parseFloat(e.target.value) || 0))} />
                     )}
                   </td>
                   <td className="p-1">
