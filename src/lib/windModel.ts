@@ -214,6 +214,7 @@ export interface ProjectInputs {
   pctRevUsufructLease: number;
   pctRevInsuranceOps: number;
   migaPremium: number;
+  opexVat: number;                // manual VAT applied on final opex (USD '000 p.a., escalated by CPI)
 
   // Working capital
   daysReceivable: number;
@@ -594,6 +595,7 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   pctRevUsufructLease: 0,
   pctRevInsuranceOps: 0,
   migaPremium: 0,
+  opexVat: 0,
 
   daysReceivable: 60,
   daysPayable: 30,
@@ -1027,7 +1029,8 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const revPctOpex = totalRev * (I.pctRevConvLocalEUR + I.pctRevUsufructLease + I.pctRevInsuranceOps);
     const decommissioning = decommissioningAnnual * escal;
     const levy = I.additionalLevy * totalRev;
-    const opex = baseOpex + realEstate + levy + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning;
+    const opexVat = (I.opexVat || 0) * escal;
+    const opex = baseOpex + realEstate + levy + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning + opexVat;
     const ebitda = totalRev - opex;
     const depPPE = y <= depYearsPPE ? depAnnualPPE : 0;
     const depIDC = y <= depYearsIDC ? depAnnualIDC : 0;
@@ -1036,7 +1039,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const ebitdaTax = (!taxYearsActive(year) || ebit <= 0) ? 0 : ebit * I.taxRate;
     const newReceivables = totalRev * (I.daysReceivable / 365);
     // Payables on cash opex only (exclude real-estate tax & decommissioning sinking fund)
-    const cashOpexForDPO = baseOpex + otherFixedOpex + majorMaintenance + revPctOpex + levy;
+    const cashOpexForDPO = baseOpex + otherFixedOpex + majorMaintenance + revPctOpex + levy + opexVat;
     const newPayables = cashOpexForDPO * (I.daysPayable / 365);
     const wcChange = -((newReceivables - recv) - (newPayables - pay));
     recv = newReceivables; pay = newPayables;

@@ -309,13 +309,13 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
           f={{ label: "VAT rate (onshore supply)", pct: true, step: 0.001 }}
           onSet={(v) => onChange({ ...inputs, vatRate: v })} />
         <NumberField obj={inputs} k={"customsDutyRate" as keyof ProjectInputs}
-          f={{ label: "Customs duty (offshore supply)", pct: true, step: 0.001 }}
+          f={{ label: "VAT rate (offshore supply)", pct: true, step: 0.001 }}
           onSet={(v) => onChange({ ...inputs, customsDutyRate: v })} />
       </div>
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <Switch checked={(inputs.taxesCapexAuto ?? 1) === 1}
           onCheckedChange={(v) => onChange({ ...inputs, taxesCapexAuto: v ? 1 : 0 })} />
-        <span>Auto-compute "Taxes (capex)" from VAT × onshore + Customs × offshore on every taxable line. Loan repayment is excluded.</span>
+        <span>Auto-compute "Taxes (capex)" from Onshore VAT × onshore portion + Offshore VAT × offshore portion on every taxable line. Onshore % + Offshore % must sum to 100. Loan repayment is excluded.</span>
       </div>
       <p className="text-xs text-muted-foreground">
         Per-line basis: <b>USD '000</b> = absolute amount; <b>USD/MW</b> = amount per MW × capacity.
@@ -331,6 +331,7 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
               <th className="text-right p-2 min-w-[110px]">Resolved (USD '000)</th>
               <th className="p-2 min-w-[80px]">Taxable</th>
               <th className="text-right p-2 min-w-[90px]">Onshore %</th>
+              <th className="text-right p-2 min-w-[90px]">Offshore %</th>
               <th className="p-2 min-w-[150px]">Actions</th>
               {monthsHeader.map(h => (
                 <th key={h.m} className="text-right p-1 font-mono text-[10px] min-w-[52px]">
@@ -393,6 +394,15 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
                       <Input type="number" step={1} min={0} max={100} className="h-8 font-mono text-xs text-right"
                         value={onshorePct.toFixed(0)}
                         onChange={(e) => setOnshore(parseFloat(e.target.value) || 0)} />
+                    )}
+                  </td>
+                  <td className="p-1">
+                    {taxExcluded ? (
+                      <span className="text-[10px] text-muted-foreground">—</span>
+                    ) : (
+                      <Input type="number" step={1} min={0} max={100} className="h-8 font-mono text-xs text-right"
+                        value={(100 - onshorePct).toFixed(0)}
+                        onChange={(e) => setOnshore(100 - (parseFloat(e.target.value) || 0))} />
                     )}
                   </td>
                   <td className="p-1">
@@ -515,6 +525,7 @@ const OPEX: Field[] = [
   { key: "auxiliaryPower", label: "Auxiliary power", unit: "USD '000 p.a." },
   { key: "opexContingency", label: "Opex contingency", unit: "USD '000 p.a." },
   { key: "usufructEGP", label: "User's share usufruct (EGP)", unit: "EGP '000 p.a." },
+  { key: "opexVat", label: "VAT on opex (manual)", unit: "USD '000 p.a." },
   { key: "cpi", label: "Opex escalation (CPI)", pct: true, step: 0.001 },
   { key: "daysReceivable", label: "Debtor days", unit: "days" },
   { key: "daysPayable", label: "Creditor days", unit: "days" },
