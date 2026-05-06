@@ -1106,7 +1106,6 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   for (let outer = 0; outer < 6; outer++) {
     const baseUses = agg.epcCost + agg.developmentCost + agg.substationContingency + dsraInit;
     const sizingByGearing = I.sizingMode === "fixed-gearing"
-      || I.sizingMode === "annuity"
       || I.sizingMode === "manual"
       || I.sizingMode === "bullet"
       || I.sizingMode === "mortgage";
