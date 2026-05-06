@@ -44,7 +44,7 @@ export const LcoeWaterfallChart = ({ m }: { m: ModelOutputs }) => {
         </div>
         <div className="rounded-lg border border-border bg-muted/30 p-2">
           <div className="text-muted-foreground">After-tax Cost of Debt</div>
-          <div className="font-mono font-semibold text-foreground text-sm">{fmtPct(m.inputs.costOfDebt * (1 - m.inputs.taxRate), 2)}</div>
+          <div className="font-mono font-semibold text-foreground text-sm">{fmtPct(m.blendedRate * (1 - m.inputs.taxRate), 2)}</div>
         </div>
         <div className="rounded-lg border border-border bg-muted/30 p-2">
           <div className="text-muted-foreground">Gearing (D/(D+E))</div>
