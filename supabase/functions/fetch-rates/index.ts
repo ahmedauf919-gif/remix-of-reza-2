@@ -44,6 +44,36 @@ const SERIES: { id: string; label: string; category: string; country?: string }[
   // Reference benchmark replacements
   { id: "ESTRRATE", label: "€STR (Euro Short-Term Rate)", category: "EUR Reference", country: "Eurozone" },
   { id: "IUDSOIA", label: "SONIA (UK Overnight Indexed)", category: "GBP Reference", country: "United Kingdom" },
+  // EUR / EURIBOR
+  { id: "IR3TIB01EZM156N", label: "Euribor 3-Month", category: "EUR Reference", country: "Eurozone" },
+  { id: "IR3TIB01DEM156N", label: "Germany 3-Month Interbank", category: "EUR Reference", country: "Germany" },
+  { id: "IR3TIB01FRM156N", label: "France 3-Month Interbank", category: "EUR Reference", country: "France" },
+  { id: "IR3TIB01ITM156N", label: "Italy 3-Month Interbank", category: "EUR Reference", country: "Italy" },
+  { id: "IR3TIB01ESM156N", label: "Spain 3-Month Interbank", category: "EUR Reference", country: "Spain" },
+  // Additional central-bank policy / discount rates
+  { id: "INTDSREGM193N", label: "Central Bank of Egypt Discount Rate", category: "Central Bank Policy", country: "Egypt" },
+  { id: "INTDSRSAM193N", label: "Saudi Arabia Discount Rate", category: "Central Bank Policy", country: "Saudi Arabia" },
+  { id: "INTDSRRUM193N", label: "Russia Discount Rate", category: "Central Bank Policy", country: "Russia" },
+  { id: "INTDSRKRM193N", label: "Bank of Korea Discount Rate", category: "Central Bank Policy", country: "South Korea" },
+  { id: "INTDSRIDM193N", label: "Bank Indonesia Discount Rate", category: "Central Bank Policy", country: "Indonesia" },
+  { id: "INTDSRTHM193N", label: "Bank of Thailand Discount Rate", category: "Central Bank Policy", country: "Thailand" },
+  { id: "INTDSRMYM193N", label: "Bank Negara Malaysia Discount Rate", category: "Central Bank Policy", country: "Malaysia" },
+  { id: "INTDSRARM193N", label: "Argentina Discount Rate", category: "Central Bank Policy", country: "Argentina" },
+  { id: "INTDSRCLM193N", label: "Chile Discount Rate", category: "Central Bank Policy", country: "Chile" },
+  { id: "INTDSRCOM193N", label: "Colombia Discount Rate", category: "Central Bank Policy", country: "Colombia" },
+  { id: "INTDSRPHM193N", label: "Philippines Discount Rate", category: "Central Bank Policy", country: "Philippines" },
+  { id: "INTDSRNZM193N", label: "Reserve Bank of New Zealand Discount Rate", category: "Central Bank Policy", country: "New Zealand" },
+  { id: "INTDSRCHM193N", label: "Switzerland Discount Rate", category: "Central Bank Policy", country: "Switzerland" },
+  { id: "INTDSRNOM193N", label: "Norway Discount Rate", category: "Central Bank Policy", country: "Norway" },
+  { id: "INTDSRSEM193N", label: "Sweden Discount Rate", category: "Central Bank Policy", country: "Sweden" },
+  { id: "INTDSRDKM193N", label: "Denmark Discount Rate", category: "Central Bank Policy", country: "Denmark" },
+  { id: "INTDSRPLM193N", label: "Poland Discount Rate", category: "Central Bank Policy", country: "Poland" },
+  { id: "INTDSRHUM193N", label: "Hungary Discount Rate", category: "Central Bank Policy", country: "Hungary" },
+  { id: "INTDSRCZM193N", label: "Czech Republic Discount Rate", category: "Central Bank Policy", country: "Czech Republic" },
+  // Egyptian deposit/lending rates (Central Bank of Egypt monthly series on FRED)
+  { id: "IR3TCD01EGM156N", label: "Egypt 3-Month T-Bill / Deposit Rate", category: "EGP Reference", country: "Egypt" },
+  { id: "IRSTCI01EGM156N", label: "Egypt Lending Rate", category: "EGP Reference", country: "Egypt" },
+  { id: "FRINR01EGM156N", label: "Egypt Money Market / Interbank Rate", category: "EGP Reference", country: "Egypt" },
 ];
 
 async function fetchSeries(id: string, apiKey: string) {
