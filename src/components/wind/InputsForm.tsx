@@ -472,6 +472,22 @@ const TrancheEditor = ({ t, onChange, label }: { t: DebtTranche; label: string; 
             <SelectContent>
               <SelectItem value="annuity">Annuity</SelectItem>
               <SelectItem value="sculpted">Sculpted</SelectItem>
+              <SelectItem value="llcr-sculpted">LLCR-sculpted</SelectItem>
+              <SelectItem value="manual">Manual schedule</SelectItem>
+              <SelectItem value="bullet">Bullet / Balloon</SelectItem>
+              <SelectItem value="mortgage">Mortgage-style</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="min-w-[160px]">
+          <Label className="text-xs text-muted-foreground">Base rate reference</Label>
+          <Select value={t.baseRateRef ?? "SOFR"} onValueChange={v => set("baseRateRef", v as any)}>
+            <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="SOFR">SOFR</SelectItem>
+              <SelectItem value="LIBOR">LIBOR 6m</SelectItem>
+              <SelectItem value="CBE">CBE</SelectItem>
+              <SelectItem value="Fixed">Fixed</SelectItem>
             </SelectContent>
           </Select>
         </div>
