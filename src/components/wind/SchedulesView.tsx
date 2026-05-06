@@ -130,7 +130,6 @@ const IRRRundownTable = ({ title, headers, rows, footerLabel, irr }: {
   footerLabel: string;
   irr: number;
 }) => {
-  const totals = headers.map((_, ci) => rows.reduce((s, r) => s + (r.values[ci] || 0), 0));
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)]">
       <div className="flex items-center justify-between border-b border-border bg-secondary/40 px-5 py-3">
@@ -157,12 +156,6 @@ const IRRRundownTable = ({ title, headers, rows, footerLabel, irr }: {
                 ))}
               </tr>
             ))}
-            <tr className="border-t-2 border-border bg-muted/30 font-semibold">
-              <td className="px-3 py-2">Total</td>
-              {totals.map((t, ti) => (
-                <td key={ti} className="px-2 py-2 text-right font-mono tabular-nums">{fmt(t)}</td>
-              ))}
-            </tr>
           </tbody>
         </table>
       </div>
