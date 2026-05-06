@@ -1,10 +1,11 @@
-import { ProjectInputs, DebtTranche } from "@/lib/windModel";
+import { ProjectInputs, DebtTranche, CAPEX_TAXABLE_DEFAULT, CAPEX_TAX_EXCLUDED } from "@/lib/windModel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 interface Props {
   inputs: ProjectInputs;
