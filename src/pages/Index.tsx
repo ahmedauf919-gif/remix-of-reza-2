@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Wind, FileText, RotateCcw } from "lucide-react";
+import { FileText, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -31,11 +31,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-[var(--gradient-hero)] text-primary-foreground">
         <div className="container flex flex-col gap-4 py-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-[var(--shadow-glow)]">
-              <Wind className="h-6 w-6 text-primary-foreground" />
-            </div>
-          </div>
+          <div />
           <div className="flex gap-2">
             <Button variant="secondary" onClick={reset} className="gap-2"><RotateCcw className="h-4 w-4"/>Reset</Button>
             <Button onClick={exportMemo} className="gap-2 bg-primary hover:bg-primary/90"><FileText className="h-4 w-4"/>Export Investment Memo</Button>
