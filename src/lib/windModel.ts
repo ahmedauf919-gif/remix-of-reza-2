@@ -3,13 +3,15 @@
 // Inputs schema mirrors the Excel "Inputs" tab — all granular assumptions are exposed,
 // then aggregated inside runModel to feed the simulation.
 
-export type SizingMethod = "annuity" | "sculpted";
+export type SizingMethod = "annuity" | "sculpted" | "llcr-sculpted" | "manual" | "bullet" | "mortgage";
+export type BaseRateRef = "SOFR" | "LIBOR" | "CBE" | "Fixed";
 export type YieldCase = "P50" | "P75" | "P90";
 
 export interface DebtTranche {
   name: string;
   enabled: boolean;
   baseRate: number;        // e.g. SOFR
+  baseRateRef?: BaseRateRef; // selector — which macro base rate this tranche references
   hedgedPct: number;       // % of notional hedged
   hedgedRate: number;      // hedged fixed rate
   underlyingRate: number;  // floating spread post-hedge
@@ -177,7 +179,8 @@ export interface ProjectInputs {
   creditorMonths: number;
 
   // ── Debt sizing — overall ────────────────────────────────────────────
-  sizingMode: "fixed-gearing" | "dscr-sculpted";
+  sizingMode: "fixed-gearing" | "dscr-sculpted" | "llcr-sculpted" | "manual" | "bullet" | "mortgage";
+  baseRateRef?: BaseRateRef; // overall base-rate reference
   gearing: number;                // fixed-gearing target
   targetDSCR: number;             // overall sculpting target
   debtTenorYears: number;
