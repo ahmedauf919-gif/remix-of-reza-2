@@ -7,18 +7,32 @@ const tooltipStyle = {
 };
 
 export const CashflowChart = ({ m }: { m: ModelOutputs }) => {
-  const data = m.rows.map(r => ({
-    year: r.year,
-    Revenue: +r.revenue.toFixed(0),
-    Opex: -+r.opex.toFixed(0),
-    DebtService: -+r.debtService.toFixed(0),
-    Tax: -+r.tax.toFixed(0),
-    CFFI: +r.cffi.toFixed(0),
+  // Construction-period rows (negative capex draws, no revenue/opex)
+  const consData = m.constructionYears.map((y, i) => ({
+    year: y,
+    Revenue: 0,
+    Opex: 0,
+    Tax: 0,
+    DebtService: 0,
+    Capex: -+(m.constructionDraws[i] || 0).toFixed(0),
+    CFFI: -+(m.equityDraws[i] || 0).toFixed(0),
   }));
+  const opsData = m.rows
+    .filter(r => !m.constructionYears.includes(r.year))
+    .map(r => ({
+      year: r.year,
+      Revenue: +r.revenue.toFixed(0),
+      Opex: -+r.opex.toFixed(0),
+      DebtService: -+r.debtService.toFixed(0),
+      Tax: -+r.tax.toFixed(0),
+      Capex: 0,
+      CFFI: +r.cffi.toFixed(0),
+    }));
+  const data = [...consData, ...opsData];
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
-      <h3 className="font-semibold mb-3">Annual cashflow waterfall</h3>
-      <ResponsiveContainer width="100%" height={280}>
+      <h3 className="font-semibold mb-3">Annual cashflow waterfall (construction + operations)</h3>
+      <ResponsiveContainer width="100%" height={320}>
         <BarChart data={data} stackOffset="sign">
           <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
           <XAxis dataKey="year" tick={{ fontSize: 11 }}/>
@@ -26,11 +40,12 @@ export const CashflowChart = ({ m }: { m: ModelOutputs }) => {
           <Tooltip {...tooltipStyle} formatter={(v: number) => fmt(v) + "k"}/>
           <Legend wrapperStyle={{ fontSize: 12 }}/>
           <ReferenceLine y={0} stroke="hsl(var(--border))"/>
+          <Bar dataKey="Capex" stackId="a" fill="hsl(var(--destructive))" opacity={0.6}/>
           <Bar dataKey="Revenue" stackId="a" fill="hsl(var(--primary))"/>
           <Bar dataKey="Opex" stackId="a" fill="hsl(var(--accent))"/>
           <Bar dataKey="Tax" stackId="a" fill="hsl(var(--destructive))" opacity={0.7}/>
           <Bar dataKey="DebtService" stackId="a" fill="hsl(var(--muted-foreground))"/>
-          <Line type="monotone" dataKey="CFFI" stroke="hsl(var(--success, var(--primary)))" strokeWidth={2} dot={false}/>
+          <Line type="monotone" dataKey="CFFI" stroke="hsl(var(--success))" strokeWidth={2} dot={false}/>
         </BarChart>
       </ResponsiveContainer>
     </div>
