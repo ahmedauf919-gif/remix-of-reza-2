@@ -1,7 +1,207 @@
 import { ModelOutputs, fmt, fmtPct } from "@/lib/windModel";
-import { CheckCircle2, AlertTriangle, Info, TrendingUp, Shield, Zap } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Info, TrendingUp, Shield, Zap, ThumbsUp, ThumbsDown, Minus } from "lucide-react";
 
 type Rec = { level: "good" | "warn" | "info"; title: string; body: string };
+
+type ScoreItem = {
+  metric: string;
+  value: string;
+  benchmark: string;
+  verdict: "strong" | "ok" | "weak";
+  weight: number; // 0-1
+  rationale: string;
+};
+
+function buildShareholderScore(m: ModelOutputs): { items: ScoreItem[]; score: number; verdict: "Invest" | "Conditional" | "Pass"; headline: string } {
+  const I = m.inputs;
+  const items: ScoreItem[] = [];
+
+  // 1) Equity IRR vs Cost of Equity (spread)
+  const irr = Number.isFinite(m.commonEquityIRR) ? m.commonEquityIRR : -1;
+  const spread = irr - m.costOfEquity;
+  items.push({
+    metric: "Equity IRR vs Cost of Equity",
+    value: `${fmtPct(irr)} vs ${fmtPct(m.costOfEquity)} (spread ${fmtPct(spread)})`,
+    benchmark: "≥ +300 bps strong, 0–300 bps ok, <0 weak",
+    verdict: spread >= 0.03 ? "strong" : spread >= 0 ? "ok" : "weak",
+    weight: 0.25,
+    rationale: "Primary shareholder hurdle — does the project clear the risk-adjusted equity cost?",
+  });
+
+  // 2) Absolute Equity IRR
+  items.push({
+    metric: "Equity IRR (absolute)",
+    value: fmtPct(irr),
+    benchmark: "≥ 12% strong, 8–12% ok, <8% weak (USD renewables)",
+    verdict: irr >= 0.12 ? "strong" : irr >= 0.08 ? "ok" : "weak",
+    weight: 0.15,
+    rationale: "Sponsor-level absolute return target for merchant/contracted wind.",
+  });
+
+  // 3) Equity payback
+  const payback = m.equityPaybackYears;
+  const paybackOk = Number.isFinite(payback) && payback > 0;
+  items.push({
+    metric: "Equity payback",
+    value: paybackOk ? `${fmt(payback, 1)} yrs` : "n/a",
+    benchmark: "≤ 7y strong, 7–10y ok, >10y weak",
+    verdict: !paybackOk ? "weak" : payback <= 7 ? "strong" : payback <= 10 ? "ok" : "weak",
+    weight: 0.1,
+    rationale: "Time to recover equity cheque — shorter is better for sponsor liquidity.",
+  });
+
+  // 4) Min DSCR vs target (debt safety = equity safety)
+  const dscrCushion = m.minDSCR - I.targetDSCR;
+  items.push({
+    metric: "Min DSCR cushion",
+    value: `${fmt(m.minDSCR)}x (target ${fmt(I.targetDSCR)}x)`,
+    benchmark: "≥ +0.10x strong, 0 to +0.10x ok, <0 weak",
+    verdict: dscrCushion >= 0.1 ? "strong" : dscrCushion >= 0 ? "ok" : "weak",
+    weight: 0.1,
+    rationale: "Headroom over covenant protects equity distributions in stress.",
+  });
+
+  // 5) LCOE vs PPA
+  const ppa = I.tariffUsdPerKWh;
+  const coverage = ppa > 0 ? m.lcoeUsdPerKWh / ppa : 1;
+  items.push({
+    metric: "LCOE / PPA price",
+    value: fmtPct(coverage),
+    benchmark: "≤ 75% strong, 75–90% ok, >90% weak",
+    verdict: coverage <= 0.75 ? "strong" : coverage <= 0.9 ? "ok" : "weak",
+    weight: 0.1,
+    rationale: "Margin cushion against generation/price under-performance.",
+  });
+
+  // 6) Project IRR vs WACC
+  const projSpread = m.projectIRR - m.wacc;
+  items.push({
+    metric: "Project IRR vs WACC",
+    value: `${fmtPct(m.projectIRR)} vs ${fmtPct(m.wacc)}`,
+    benchmark: "≥ +200 bps strong, 0–200 bps ok, <0 weak",
+    verdict: projSpread >= 0.02 ? "strong" : projSpread >= 0 ? "ok" : "weak",
+    weight: 0.1,
+    rationale: "Unlevered economics — does the asset itself create value?",
+  });
+
+  // 7) Equity multiple (MOIC)
+  const moic = m.equityMOIC;
+  const moicOk = Number.isFinite(moic) && moic > 0;
+  items.push({
+    metric: "Equity multiple (MOIC)",
+    value: moicOk ? `${fmt(moic, 2)}x` : "n/a",
+    benchmark: "≥ 2.5x strong, 1.7–2.5x ok, <1.7x weak",
+    verdict: !moicOk ? "weak" : moic >= 2.5 ? "strong" : moic >= 1.7 ? "ok" : "weak",
+    weight: 0.1,
+    rationale: "Total cash-on-cash return to common equity over the life of the project.",
+  });
+
+  // 8) Gearing (capital efficiency)
+  const g = m.effectiveGearing;
+  items.push({
+    metric: "Effective gearing",
+    value: fmtPct(g),
+    benchmark: "70–80% optimal, 60–70% or 80–85% ok, <60% or >85% weak",
+    verdict: g >= 0.7 && g <= 0.8 ? "strong" : g >= 0.6 && g <= 0.85 ? "ok" : "weak",
+    weight: 0.05,
+    rationale: "Right-sized leverage maximises equity return without breaching lender appetite.",
+  });
+
+  // 9) Tenor vs PPA tail
+  const tail = I.tariffFixedYears - I.debtTenorYears;
+  items.push({
+    metric: "PPA tail vs debt",
+    value: `${fmt(tail, 1)} yrs`,
+    benchmark: "≥ 2y strong, 0–2y ok, <0 weak",
+    verdict: tail >= 2 ? "strong" : tail >= 0 ? "ok" : "weak",
+    weight: 0.05,
+    rationale: "Tail protects shareholders from merchant exposure during debt life.",
+  });
+
+  // Score 0-100
+  const map = { strong: 1, ok: 0.6, weak: 0.15 } as const;
+  const num = items.reduce((s, it) => s + it.weight * map[it.verdict], 0);
+  const den = items.reduce((s, it) => s + it.weight, 0);
+  const score = Math.round((num / den) * 100);
+
+  let verdict: "Invest" | "Conditional" | "Pass";
+  let headline: string;
+  if (score >= 75) {
+    verdict = "Invest";
+    headline = "Strong shareholder case — metrics clear hurdles with cushion. Proceed to documentation.";
+  } else if (score >= 55) {
+    verdict = "Conditional";
+    headline = "Workable but not compelling — close the gaps below before committing equity.";
+  } else {
+    verdict = "Pass";
+    headline = "Project does not meet shareholder thresholds at base case. Restructure or walk away.";
+  }
+  return { items, score, verdict, headline };
+}
+
+const ScoreBadge = ({ v }: { v: ScoreItem["verdict"] }) => {
+  const cls = v === "strong" ? "bg-success/15 text-success border-success/30"
+    : v === "ok" ? "bg-primary/10 text-primary border-primary/30"
+    : "bg-destructive/10 text-destructive border-destructive/30";
+  const label = v === "strong" ? "Strong" : v === "ok" ? "Acceptable" : "Weak";
+  return <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${cls}`}>{label}</span>;
+};
+
+const ShareholderVerdict = ({ m }: { m: ModelOutputs }) => {
+  const { items, score, verdict, headline } = buildShareholderScore(m);
+  const ringColor = verdict === "Invest" ? "text-success" : verdict === "Conditional" ? "text-primary" : "text-destructive";
+  const Icon = verdict === "Invest" ? ThumbsUp : verdict === "Conditional" ? Minus : ThumbsDown;
+  return (
+    <div className="rounded-xl border border-border bg-[var(--gradient-card)] p-5 shadow-[var(--shadow-soft)] space-y-5">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className={`rounded-xl bg-secondary p-2.5 ${ringColor}`}><Icon className="h-6 w-6"/></div>
+          <div>
+            <h2 className="text-lg font-semibold">Shareholder verdict</h2>
+            <p className="text-sm text-muted-foreground max-w-2xl">{headline}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground uppercase tracking-wide">Score</div>
+            <div className={`text-3xl font-bold font-mono ${ringColor}`}>{score}<span className="text-base text-muted-foreground">/100</span></div>
+          </div>
+          <div className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
+            verdict === "Invest" ? "border-success/40 bg-success/10 text-success"
+              : verdict === "Conditional" ? "border-primary/40 bg-primary/10 text-primary"
+              : "border-destructive/40 bg-destructive/10 text-destructive"
+          }`}>{verdict}</div>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-xs uppercase text-muted-foreground border-b border-border">
+            <tr className="text-left">
+              <th className="py-2 pr-3 font-medium">Metric</th>
+              <th className="py-2 pr-3 font-medium">Value</th>
+              <th className="py-2 pr-3 font-medium">Benchmark</th>
+              <th className="py-2 pr-3 font-medium">Verdict</th>
+              <th className="py-2 font-medium">Why it matters</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((it, i) => (
+              <tr key={i} className="border-b border-border/50 last:border-0">
+                <td className="py-2 pr-3 font-medium">{it.metric}</td>
+                <td className="py-2 pr-3 font-mono">{it.value}</td>
+                <td className="py-2 pr-3 text-muted-foreground text-xs">{it.benchmark}</td>
+                <td className="py-2 pr-3"><ScoreBadge v={it.verdict}/></td>
+                <td className="py-2 text-muted-foreground text-xs">{it.rationale}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-muted-foreground">Score is a weighted blend of return, safety and capital-efficiency metrics. It is a base-case indicator — always confirm with lender stress cases (P90, capex +10%, opex +10%, rates +200 bps).</p>
+    </div>
+  );
+};
 
 function buildRecs(m: ModelOutputs): Rec[] {
   const I = m.inputs;
