@@ -1012,9 +1012,17 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     }
     fc = computeFC(debt);
     sim = simulate(I, agg, debt, fc.idc, fc.fees, dsraInit);
-    // Auto DSRA = look-forward debt service of first operations year.
+    // Auto DSRA initial funding = look-forward of debt service starting from
+    // year 1 of operations (i.e. the reserve required at COD).
     if (I.manualDSRASwitch === 1 || I.dsraSwitch !== 1) break;
-    const newDsra = sim.rows[0]?.dsraTarget ?? 0;
+    const M = Math.max(0, Math.round(I.dsraTargetMonths));
+    const yrs = M / 12;
+    let newDsra = 0; let rem = yrs;
+    for (let k = 0; k < sim.rows.length && rem > 1e-9; k++) {
+      const take = Math.min(1, rem);
+      newDsra += sim.rows[k].debtService * take;
+      rem -= take;
+    }
     if (Math.abs(newDsra - dsraInit) < 1) { dsraInit = newDsra; break; }
     dsraInit = newDsra;
   }
