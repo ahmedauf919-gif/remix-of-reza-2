@@ -1471,28 +1471,44 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     commonCF.push(-(draw * commonAmt / totalEq));
   }
   let prefBal = prefAmt;
+  let prefArrears = 0;       // accrued-but-unpaid pref coupon (compounds at coupon rate)
   let shBal = shLoanAmt;
+  let shArrears = 0;         // accrued-but-unpaid SH loan interest
   const prefAmortYears = Math.max(1, I.operationsYears);
   const shAmortYears = Math.max(1, I.operationsYears);
   sim.rows.forEach((r, idx) => {
     let avail = r.cffi;
-    // (DSRA release already in r.cffi via dsraMovement)
-    // Pref coupon + straight-line repayment
-    const prefCoupon = prefBal * I.prefEquityCoupon;
-    const prefPrincipal = Math.min(prefBal, prefAmt / prefAmortYears);
-    const prefPay = Math.min(avail, prefCoupon + prefPrincipal);
+    // Pref equity: cumulative coupon. Unpaid coupon accrues to arrears and is paid before any
+    // common-equity distribution. Arrears compound at the coupon rate (industry standard).
+    const prefCouponDue = prefBal * I.prefEquityCoupon + prefArrears * I.prefEquityCoupon;
+    const prefPrincipalDue = Math.min(prefBal, prefAmt / prefAmortYears);
+    const prefDue = prefArrears + prefCouponDue + prefPrincipalDue;
+    const prefPay = Math.min(Math.max(0, avail), prefDue);
     avail -= prefPay;
-    prefBal = Math.max(0, prefBal - prefPrincipal);
+    // Apply payment: arrears first, then current coupon, then principal.
+    let pay = prefPay;
+    const arrearsPay = Math.min(prefArrears, pay); pay -= arrearsPay; prefArrears -= arrearsPay;
+    const currCouponPay = Math.min(prefCouponDue, pay); pay -= currCouponPay;
+    const principalPay = Math.min(prefPrincipalDue, pay); pay -= principalPay;
+    prefArrears += (prefCouponDue - currCouponPay);
+    prefBal = Math.max(0, prefBal - principalPay);
     prefCF.push(prefPay);
-    // SH loan interest + principal
-    const shInt = shBal * I.shLoanRate;
-    const shPrincipal = I.shLoanFullyRepaid === 1 && idx === sim.rows.length - 1
+    // SH loan: same arrears treatment.
+    const shCouponDue = shBal * I.shLoanRate + shArrears * I.shLoanRate;
+    const shPrincipalDue = I.shLoanFullyRepaid === 1 && idx === sim.rows.length - 1
       ? shBal : Math.min(shBal, shLoanAmt / shAmortYears);
-    const shPay = Math.min(Math.max(0, avail), shInt + shPrincipal);
+    const shDue = shArrears + shCouponDue + shPrincipalDue;
+    const shPay = Math.min(Math.max(0, avail), shDue);
     avail -= shPay;
-    shBal = Math.max(0, shBal - shPrincipal);
+    let spay = shPay;
+    const shArrPay = Math.min(shArrears, spay); spay -= shArrPay; shArrears -= shArrPay;
+    const shCurr = Math.min(shCouponDue, spay); spay -= shCurr;
+    const shPrin = Math.min(shPrincipalDue, spay); spay -= shPrin;
+    shArrears += (shCouponDue - shCurr);
+    shBal = Math.max(0, shBal - shPrin);
     shCF.push(shPay);
-    // Remainder to common
+    // Stash arrears on the row for BS/transparency
+    sim.rows[idx].prefAccrued = prefArrears + shArrears;
     commonCF.push(Math.max(0, avail));
   });
 
