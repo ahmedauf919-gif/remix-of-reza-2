@@ -750,18 +750,14 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
                 <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={TIMING}/></AccordionContent>
               </AccordionItem>
               <AccordionItem value="schedule">
-                <AccordionTrigger>Construction drawdown schedule (monthly %)</AccordionTrigger>
+                <AccordionTrigger>Global construction drawdown profile (monthly %)</AccordionTrigger>
                 <AccordionContent>
                   <CapexScheduleEditor inputs={inputs} onChange={onChange}/>
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="capex">
-                <AccordionTrigger>Capital expenditure</AccordionTrigger>
-                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={CAPEX}/></AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="comp">
-                <AccordionTrigger>Compensation payments</AccordionTrigger>
-                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={COMP_PAYMENTS}/></AccordionContent>
+                <AccordionTrigger>Capital expenditure & per-item monthly allocation</AccordionTrigger>
+                <AccordionContent><CapexWithScheduleEditor inputs={inputs} onChange={onChange}/></AccordionContent>
               </AccordionItem>
               <AccordionItem value="mm">
                 <AccordionTrigger>Major maintenance (real)</AccordionTrigger>
