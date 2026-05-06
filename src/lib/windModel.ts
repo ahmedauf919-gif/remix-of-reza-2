@@ -357,8 +357,9 @@ export interface ProjectInputs {
   // ── Cost of Capital (Damodaran-based WACC) ───────────────────────────
   riskFreeRate: number;            // decimal e.g. 0.045
   equityBeta: number;              // levered beta
-  useErpOverride: 0 | 1;           // when 1, use erpOverride instead of Damodaran country lookup
-  erpOverride: number;             // decimal ERP to use when override is on (0 disables CRP)
+  matureMarketERP: number;         // mature-market ERP (e.g. 0.046 for US/global mature)
+  useErpOverride: 0 | 1;           // when 1, override Country Risk Premium (CRP)
+  erpOverride: number;             // CRP override value (decimal); 0 disables CRP
   useWaccForLcoe: 0 | 1;           // when 1, LCOE uses computed WACC instead of lcoeDiscountFactor
 
   // FX
