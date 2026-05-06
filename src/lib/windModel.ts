@@ -723,10 +723,19 @@ function npv(rate: number, cashflows: number[]): number {
   return cashflows.reduce((s, cf, t) => s + cf / Math.pow(1 + rate, t), 0);
 }
 
-function trancheAllIn(t: DebtTranche): number {
-  // hedged*hedgedRate + (1-hedged)*(base+underlyingMargin?) + risk margin
-  // The Excel uses: All-in = hedged*hedgedRate + (1-hedged)*underlyingRate + riskMargin (approx)
-  return t.hedgedPct * t.hedgedRate + (1 - t.hedgedPct) * (t.baseRate + (t.underlyingRate - t.baseRate)) + t.riskMargin;
+function trancheAllIn(t: DebtTranche, I?: ProjectInputs): number {
+  // Resolve effective base rate from the selected reference (SOFR/LIBOR/CBE/Fixed).
+  // "Fixed" means the tranche's hard-coded baseRate is used as-is.
+  let base = t.baseRate;
+  if (I && t.baseRateRef) {
+    if (t.baseRateRef === "SOFR") base = I.baseRate;
+    else if (t.baseRateRef === "LIBOR") base = I.baseRateLIBOR;
+    else if (t.baseRateRef === "CBE") base = I.baseRateCBE;
+    // Fixed → keep tranche-defined baseRate
+  }
+  // All-in = hedged% × hedgedRate + unhedged% × (base + underlying spread) + risk margin
+  const unhedgedRate = base + Math.max(0, t.underlyingRate - t.baseRate); // spread over original base
+  return t.hedgedPct * t.hedgedRate + (1 - t.hedgedPct) * unhedgedRate + t.riskMargin;
 }
 
 /** Aggregate breakdowns into the values used by the simulation. */
@@ -747,7 +756,7 @@ function aggregate(I: ProjectInputs) {
 
   // Tranches
   const t1 = I.debt1, t2 = I.debt2, t3 = I.debt3;
-  const r1 = trancheAllIn(t1), r2 = trancheAllIn(t2), r3 = trancheAllIn(t3);
+  const r1 = trancheAllIn(t1, I), r2 = trancheAllIn(t2, I), r3 = trancheAllIn(t3, I);
   // Weights from sharePct of enabled tranches
   const ws = [
     t1.enabled ? Math.max(0, t1.sharePct) : 0,
@@ -788,9 +797,26 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   const grace = I.graceYears;
   const amortYears = Math.max(1, I.debtTenorYears - grace);
   const r = agg.interestRate;
+  // Repayment profile per sizingMode (annuity is the default)
   const annuity = r > 0
     ? debtAmount * (r * Math.pow(1 + r, amortYears)) / (Math.pow(1 + r, amortYears) - 1)
     : debtAmount / amortYears;
+  // Pre-build a per-year scheduled principal vector (operations years 1..N)
+  const N0 = I.operationsYears;
+  const principalSched: number[] = Array(N0 + 1).fill(0); // 1-indexed
+  if (I.sizingMode === "manual") {
+    // Equal straight-line over amortisation period (placeholder for user-supplied schedule)
+    const slice = debtAmount / amortYears;
+    for (let y = grace + 1; y <= Math.min(N0, grace + amortYears); y++) principalSched[y] = slice;
+  } else if (I.sizingMode === "bullet") {
+    // All principal at end of tenor (or end of operations if shorter)
+    const yEnd = Math.min(N0, grace + amortYears);
+    principalSched[yEnd] = debtAmount;
+  } else if (I.sizingMode === "mortgage" || I.sizingMode === "fixed-gearing") {
+    // Equal P+I (annuity); principal = annuity - interest each year (computed in loop)
+  } else if (I.sizingMode === "llcr-sculpted" || I.sizingMode === "dscr-sculpted") {
+    // Sculpting handled at outer solver level; per-year principal still annuity-shaped here
+  }
 
   // First pass — compute debt service per year without DSRA movements.
   const draft: AnnualRow[] = [];
@@ -812,7 +838,10 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const totalRev = revenue + carbonRevenue;
 
     const baseOpex = (I.oAndM + I.assetMgmt + I.spvCost + I.insurance + I.csrContribution + I.eetcCost) * escal;
-    const realEstate = I.epcCost * 0.5 * I.realEstateTaxRate * I.realEstateTaxableAmount; // estimate per template note
+    // Real-estate tax: rental value % of EPC × taxable proportion × rate (matches Excel)
+    const rentalValue = I.epcCost * (I.rentalValuePct || 0.5);
+    const realEstate = rentalValue * I.realEstateTaxableAmount * I.realEstateTaxRate
+      * (1 - (I.exemptedProportion || 0));
     // Additional fixed opex items from inputs tab (real, escalated by CPI)
     const otherFixedOpex = (I.bondExpenses + I.lease + I.auxiliaryPower + I.opexContingency
       + I.usufructEGP * I.fxEGP + I.migaPremium) * escal;
@@ -850,7 +879,12 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     let principal = 0;
     let debtService = interest;
     if (y > grace && debt > 1e-6) {
-      principal = Math.max(0, Math.min(debt, annuity - interest));
+      if (I.sizingMode === "manual" || I.sizingMode === "bullet") {
+        principal = Math.max(0, Math.min(debt, principalSched[y] || 0));
+      } else {
+        // annuity / mortgage / sculpted fall back to level annuity
+        principal = Math.max(0, Math.min(debt, annuity - interest));
+      }
       debtService = interest + principal;
     }
     debt -= principal;
@@ -987,9 +1021,17 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     }
     fc = computeFC(debt);
     sim = simulate(I, agg, debt, fc.idc, fc.fees, dsraInit);
-    // Auto DSRA = look-forward debt service of first operations year.
+    // Auto DSRA initial funding = look-forward of debt service starting from
+    // year 1 of operations (i.e. the reserve required at COD).
     if (I.manualDSRASwitch === 1 || I.dsraSwitch !== 1) break;
-    const newDsra = sim.rows[0]?.dsraTarget ?? 0;
+    const M = Math.max(0, Math.round(I.dsraTargetMonths));
+    const yrs = M / 12;
+    let newDsra = 0; let rem = yrs;
+    for (let k = 0; k < sim.rows.length && rem > 1e-9; k++) {
+      const take = Math.min(1, rem);
+      newDsra += sim.rows[k].debtService * take;
+      rem -= take;
+    }
     if (Math.abs(newDsra - dsraInit) < 1) { dsraInit = newDsra; break; }
     dsraInit = newDsra;
   }
@@ -1021,14 +1063,17 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
 
   const projCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) projCF.push(-constructionDraws[i]);
-  sim.rows.forEach(r => projCF.push(r.ebitda - r.tax + r.workingCapitalChange));
+  // Project CF = CFADS net of DSRA movements (so terminal release is captured
+  // exactly once, and reserve build-up reduces project cash).
+  sim.rows.forEach(r => projCF.push(r.cfads - r.dsraMovement));
   const projectIRR = irr(projCF, 0.08);
   const npvProject = npv(I.discountRateProject, projCF);
 
   const eqCF: number[] = [];
   for (let i = 0; i < consYearCount; i++) eqCF.push(-equityDraws[i]);
   sim.rows.forEach(r => eqCF.push(r.cffi));
-  if (eqCF.length > 0) eqCF[eqCF.length - 1] += dsraInit;
+  // DSRA release is already captured in the final-year cffi via the negative
+  // movement (target falls to 0). Do not double-count it here.
   const equityIRR = irr(eqCF, 0.12);
   const npvEquity = npv(I.discountRateEquity, eqCF);
 
@@ -1056,7 +1101,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const shAmortYears = Math.max(1, I.operationsYears);
   sim.rows.forEach((r, idx) => {
     let avail = r.cffi;
-    if (idx === sim.rows.length - 1) avail += dsraInit; // DSRA release at end
+    // (DSRA release already in r.cffi via dsraMovement)
     // Pref coupon + straight-line repayment
     const prefCoupon = prefBal * I.prefEquityCoupon;
     const prefPrincipal = Math.min(prefBal, prefAmt / prefAmortYears);
