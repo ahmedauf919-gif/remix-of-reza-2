@@ -238,6 +238,129 @@ const CAPEX: Field[] = [
   { key: "delayCostsPerMonth", label: "Construction delay costs", unit: "USD '000 p.m." },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Combined Capex + monthly drawdown editor — every capex line gets its own monthly % allocation
+// ─────────────────────────────────────────────────────────────────────────────
+const CAPEX_ITEMS: { key: keyof ProjectInputs; label: string }[] = [
+  { key: "preConstructionCosts", label: "Pre-construction costs" },
+  { key: "epcCost", label: "EPC costs" },
+  { key: "developmentPremiums", label: "Development premiums" },
+  { key: "developmentExpenses", label: "Development expenses" },
+  { key: "land", label: "Land" },
+  { key: "esMeasures", label: "E&S implementation" },
+  { key: "lendersTechAdvisors", label: "Lenders technical advisors" },
+  { key: "legalExpenses", label: "Legal expenses" },
+  { key: "administrativeCosts", label: "Administrative costs" },
+  { key: "financialAudit", label: "Financial audit" },
+  { key: "insuranceConstruction", label: "Insurance during construction" },
+  { key: "contingency", label: "Contingency" },
+  { key: "substation", label: "Substation" },
+  { key: "loanRepayment", label: "Loan repayment (capex)" },
+  { key: "taxesCapex", label: "Taxes (capex)" },
+  { key: "compEsmp", label: "Compensation — ESMP" },
+  { key: "compCsr", label: "Compensation — CSR" },
+  { key: "capexSpare15", label: "Spare 15" },
+  { key: "capexSpare16", label: "Spare 16" },
+  { key: "capexSpare17", label: "Spare 17" },
+  { key: "capexSpare18", label: "Spare 18" },
+  { key: "capexSpare19", label: "Spare 19" },
+  { key: "capexSpare20", label: "Spare 20" },
+];
+
+const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
+  const M = Math.max(1, Math.min(36, Math.round(inputs.constructionMonths)));
+  const itemScheds = inputs.capexItemSchedulesPct ?? {};
+  const monthsHeader = Array.from({ length: M }, (_, m) => ({ m, year: Math.floor(m / 12) + 1, mInYear: (m % 12) + 1 }));
+
+  const getSched = (k: string): number[] => {
+    const s = (itemScheds[k] ?? []).slice(0, M);
+    while (s.length < M) s.push(0);
+    return s;
+  };
+  const setSchedCell = (k: string, mIdx: number, vPct: number) => {
+    const cur = getSched(k);
+    cur[mIdx] = isNaN(vPct) ? 0 : vPct;
+    onChange({ ...inputs, capexItemSchedulesPct: { ...itemScheds, [k]: cur } });
+  };
+  const distributeEvenly = (k: string) => {
+    onChange({ ...inputs, capexItemSchedulesPct: { ...itemScheds, [k]: Array.from({ length: M }, () => 100 / M) } });
+  };
+  const clearItem = (k: string) => {
+    onChange({ ...inputs, capexItemSchedulesPct: { ...itemScheds, [k]: Array.from({ length: M }, () => 0) } });
+  };
+  const applyToAll = (sourceKey: string) => {
+    const src = getSched(sourceKey);
+    const next = { ...itemScheds };
+    for (const it of CAPEX_ITEMS) next[it.key as string] = src.slice();
+    onChange({ ...inputs, capexItemSchedulesPct: next });
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Allocate each capex line across construction months. Cells are % of that line item (should sum to 100%).
+        Items left at 0% fall back to the global drawdown profile above. The blended profile drives IDC and commitment fees.
+      </p>
+      <div className="overflow-x-auto rounded-lg border border-border/60">
+        <table className="w-full text-xs">
+          <thead className="bg-secondary/40 sticky top-0">
+            <tr>
+              <th className="text-left p-2 min-w-[180px]">Capex item</th>
+              <th className="text-right p-2 min-w-[110px]">Amount (USD '000)</th>
+              {monthsHeader.map(h => (
+                <th key={h.m} className="text-right p-1 font-mono text-[10px] min-w-[52px]">
+                  Y{h.year}M{h.mInYear}
+                </th>
+              ))}
+              <th className="text-right p-2 min-w-[60px]">Σ%</th>
+              <th className="p-2 min-w-[120px]"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {CAPEX_ITEMS.map(it => {
+              const sched = getSched(it.key as string);
+              const sum = sched.reduce((a, b) => a + b, 0);
+              const amount = inputs[it.key] as unknown as number;
+              return (
+                <tr key={String(it.key)} className="border-t border-border/40 hover:bg-secondary/20">
+                  <td className="p-2 font-medium">{it.label}</td>
+                  <td className="p-1">
+                    <Input type="number" step={1} className="h-8 font-mono text-xs text-right"
+                      value={String(amount ?? 0)}
+                      onChange={(e) => onChange({ ...inputs, [it.key]: parseFloat(e.target.value) || 0 })} />
+                  </td>
+                  {monthsHeader.map(h => (
+                    <td key={h.m} className="p-0.5">
+                      <Input type="number" step={0.1} className="h-8 font-mono text-[11px] text-right px-1"
+                        value={Number(sched[h.m] ?? 0).toFixed(2)}
+                        onChange={(e) => setSchedCell(it.key as string, h.m, parseFloat(e.target.value))} />
+                    </td>
+                  ))}
+                  <td className={`p-2 text-right font-mono ${Math.abs(sum - 100) < 0.01 || sum === 0 ? "text-muted-foreground" : "text-destructive"}`}>
+                    {sum.toFixed(1)}
+                  </td>
+                  <td className="p-1">
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => distributeEvenly(it.key as string)}>Even</Button>
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => clearItem(it.key as string)}>Clear</Button>
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => applyToAll(it.key as string)}>Copy→all</Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <NumberField obj={inputs} k={"delayCostsPerMonth" as keyof ProjectInputs}
+          f={{ label: "Construction delay costs", unit: "USD '000 p.m." }}
+          onSet={(v) => onChange({ ...inputs, delayCostsPerMonth: v })} />
+      </div>
+    </div>
+  );
+};
+
 const COMP_PAYMENTS: Field[] = [
   { key: "compEsmp", label: "ESMP", unit: "USD '000" },
   { key: "compCsr", label: "CSR", unit: "USD '000" },
