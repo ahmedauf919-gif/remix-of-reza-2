@@ -26,15 +26,25 @@ Deno.serve(async (req) => {
       `${idx + 1}. id="${i.id}" — ${i.label}${i.country ? ` (${i.country})` : ""}`
     ).join("\n");
 
-    const prompt = `You are a financial data assistant. For each interest-rate item below, provide the most recent publicly published value from the official central bank or major financial publication (Reuters, Bloomberg, IMF, country central bank).
+    const prompt = `You are a financial data assistant. For each interest-rate item below, provide the MOST RECENT officially published value from the relevant central bank.
 
-Return STRICT JSON only, matching this schema:
+Authoritative source priority (in order):
+- Egypt: Central Bank of Egypt (CBE) Monetary Policy Committee (MPC) press release — overnight deposit, overnight lending, main operation, discount rate.
+- Eurozone: ECB key interest rates page.
+- UK: Bank of England MPC.
+- Switzerland: SNB policy rate.
+- All others: the country's official central bank publication.
+- Only fall back to Reuters/Bloomberg/IMF if the central bank value is unavailable.
+
+Return STRICT JSON only:
 { "rates": [ { "id": string, "value": number, "date": "YYYY-MM-DD", "source": string } ] }
 
-- value is in percent (e.g., 27.25 for 27.25%).
-- date is the as-of date of the published value.
-- source is the publishing institution name and URL if known.
-- If you genuinely do not know a current value, omit that id from the array — do not guess.
+Rules:
+- value is in percent (e.g., 20.50 for 20.50%).
+- date is the as-of date of the published value (the MPC decision date for policy rates).
+- source must be the institution name + the URL of the page where the value is published.
+- Do not guess. If you do not have high confidence in the current value, omit that id.
+- Match the rate type to the item label (e.g., "Egypt Lending Rate" = CBE overnight LENDING rate, not deposit).
 
 Items:
 ${list}`;
@@ -46,7 +56,7 @@ ${list}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: "You return only valid JSON. No prose." },
           { role: "user", content: prompt },
