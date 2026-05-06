@@ -793,6 +793,10 @@ export interface AnnualRow {
   dsraTarget: number;
   dsraMovement: number;
   dsraBalance: number;
+  decommReserve: number;        // restricted-cash sinking fund (asset)
+  decommProvision: number;      // matching liability (provision)
+  refiProceeds: number;         // cash drawn from re-financing surplus (>0) or zero
+  prefAccrued: number;          // unpaid pref-equity coupon carried forward
   llcr: number;
   plcr: number;
   balanceCheck: number;
