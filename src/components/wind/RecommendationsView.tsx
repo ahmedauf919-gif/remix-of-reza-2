@@ -81,6 +81,36 @@ function buildRecs(m: ModelOutputs): Rec[] {
   out.push({ level: "info", title: `WACC ${fmtPct(m.wacc)} (Ke ${fmtPct(m.costOfEquity)} / Kd ${fmtPct(m.blendedRate)} after-tax)`,
     body: `LCOE is discounted at ${fmtPct(m.lcoeDiscountRateUsed)}. WACC is computed from current capital structure, country ERP and risk-free rate — review riskFreeRate and beta on the Inputs tab.` });
 
+  // Top LCOE drivers — cite the 3 biggest contributors
+  const topDrivers = [...m.lcoeContributions].sort((a, b) => b.pct - a.pct).slice(0, 3);
+  if (topDrivers.length) {
+    const list = topDrivers.map(d => `${d.label} (${fmtPct(d.pct)} of LCOE, ${fmt(d.usdPerMWh, 2)} $/MWh)`).join("; ");
+    out.push({ level: "info", title: "Top 3 LCOE drivers", body: `Focus negotiation/optimisation on: ${list}.` });
+  }
+
+  // PPA-price coverage — how much of PPA is consumed by costs
+  const ppaUsdMWh = I.tariffUsdPerKWh * 1000;
+  const lcoeUsdMWh = m.lcoeUsdPerKWh * 1000;
+  if (ppaUsdMWh > 0) {
+    const coverage = lcoeUsdMWh / ppaUsdMWh;
+    if (coverage > 0.95) {
+      out.push({ level: "warn", title: `LCOE consumes ${fmtPct(coverage)} of the PPA price`,
+        body: "Margin is razor-thin (<5%). Even small under-performance will breach DSCR. Aim for LCOE ≤ 85% of PPA at base case." });
+    } else if (coverage < 0.6) {
+      out.push({ level: "info", title: `Strong PPA margin — LCOE is only ${fmtPct(coverage)} of PPA`,
+        body: "Comfortable head-room. If lender appetite allows, consider trading some margin for higher gearing or a longer tenor to lift equity IRR." });
+    }
+  }
+
+  // Tax engine — make sure auto-tax is reasonable vs hard capex
+  if ((I.taxesCapexAuto ?? 1) === 1) {
+    const hardCapex = I.epcCost + I.developmentExpenses + I.developmentPremiums + I.substation + I.contingency;
+    if (hardCapex > 0 && I.taxesCapex / hardCapex > 0.18) {
+      out.push({ level: "warn", title: `Auto-computed taxes (capex) = ${fmtPct(I.taxesCapex / hardCapex)} of hard capex`,
+        body: "VAT + customs feels high vs hard capex — confirm onshore/offshore split and that VAT is recoverable post-COD if so." });
+    }
+  }
+
   // General PF best practices
   out.push({ level: "info", title: "Run lender stress cases before close",
       body: "Standard set: P90 yield, capex overrun +10%, opex +10%, delay 6 months, base rate +200bps, FX -20% (if non-USD revenue). Min DSCR should stay ≥ 1.10x in each stress." });
