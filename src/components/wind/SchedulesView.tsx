@@ -81,6 +81,20 @@ export const OutputsView = ({ m }: { m: ModelOutputs }) => {
         { label: "CFFI", values: m.rows.map(r => r.cffi), bold: true },
       ],
     },
+    {
+      title: "Coverage ratios",
+      rows: [
+        { label: "DSCR (in period)", values: m.rows.map(r => r.dscr), pct: true },
+        { label: "LLCR (loan-life)", values: m.rows.map(r => r.llcr), pct: true },
+        { label: "PLCR (project-life)", values: m.rows.map(r => r.plcr), pct: true },
+      ],
+    },
+    {
+      title: "Integrity",
+      rows: [
+        { label: "Balance check (Assets − L+E)", values: m.rows.map(r => r.balanceCheck) },
+      ],
+    },
   ];
   return <ScheduleTable title="Outputs — annual cashflow waterfall" years={years} sections={sections} />;
 };
