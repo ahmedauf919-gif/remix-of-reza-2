@@ -955,7 +955,7 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
             <Accordion type="multiple" defaultValue={["fixed", "var"]}>
               <AccordionItem value="fixed">
                 <AccordionTrigger>Fixed operating costs</AccordionTrigger>
-                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={OPEX}/></AccordionContent>
+                <AccordionContent><OpexEditor inputs={inputs} onChange={onChange}/></AccordionContent>
               </AccordionItem>
               <AccordionItem value="var">
                 <AccordionTrigger>Variable opex & % of revenue</AccordionTrigger>
