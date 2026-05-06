@@ -527,6 +527,10 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
               <SelectContent>
                 <SelectItem value="fixed-gearing">Fixed gearing</SelectItem>
                 <SelectItem value="dscr-sculpted">DSCR-sculpted (max debt)</SelectItem>
+                <SelectItem value="llcr-sculpted">LLCR-sculpted</SelectItem>
+                <SelectItem value="manual">Manual repayment schedule</SelectItem>
+                <SelectItem value="bullet">Bullet / Balloon</SelectItem>
+                <SelectItem value="mortgage">Mortgage-style (equal P+I)</SelectItem>
               </SelectContent>
             </Select>
           </div>
