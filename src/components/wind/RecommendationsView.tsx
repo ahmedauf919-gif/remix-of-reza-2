@@ -344,6 +344,8 @@ export const RecommendationsView = ({ m }: { m: ModelOutputs }) => {
   const recs = buildRecs(m);
   return (
     <div className="space-y-6">
+      <ShareholderVerdict m={m}/>
+
       <div className="rounded-xl border border-border bg-[var(--gradient-card)] p-5 shadow-[var(--shadow-soft)]">
         <div className="flex items-center gap-3">
           <Shield className="h-6 w-6 text-primary"/>
