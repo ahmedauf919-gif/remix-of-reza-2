@@ -698,7 +698,9 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   inflationSelection: "CPI",
 
   riskFreeRate: 0.045,
-  equityBeta: 0.85,
+  equityBeta: 0.92,                 // Damodaran "Green & Renewable Energy" sector levered beta
+  useErpOverride: 1,                // override Damodaran country ERP lookup
+  erpOverride: 0,                   // CRP set to 0 per user request
   useWaccForLcoe: 1,
 
   fxEUR: 1.05,
