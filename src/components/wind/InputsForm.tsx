@@ -315,7 +315,7 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <Switch checked={(inputs.taxesCapexAuto ?? 1) === 1}
           onCheckedChange={(v) => onChange({ ...inputs, taxesCapexAuto: v ? 1 : 0 })} />
-        <span>Auto-compute "Taxes (capex)" from VAT × onshore + Customs × offshore on every taxable line. Loan repayment is excluded.</span>
+        <span>Auto-compute "Taxes (capex)" from Onshore VAT × onshore portion + Offshore VAT × offshore portion on every taxable line. Onshore % + Offshore % must sum to 100. Loan repayment is excluded.</span>
       </div>
       <p className="text-xs text-muted-foreground">
         Per-line basis: <b>USD '000</b> = absolute amount; <b>USD/MW</b> = amount per MW × capacity.
