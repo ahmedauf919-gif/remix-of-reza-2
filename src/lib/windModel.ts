@@ -399,6 +399,7 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   mmDecommissioning: 0,
   mmPmCm: 0,
   mmSpare: 0,
+  mmSchedulePctOfCapex: [],
 
   dsraInitial: 44820,
   dsraTargetMonths: 12,
