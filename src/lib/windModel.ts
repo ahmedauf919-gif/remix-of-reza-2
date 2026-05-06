@@ -1386,11 +1386,12 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     country: I.country,
     riskFreeRate: I.riskFreeRate,
     equityBeta: I.equityBeta,
+    matureMarketERP: I.matureMarketERP,
     gearing: totalUses > 0 ? debt / totalUses : 0,
     costOfDebt: agg.blendedRate,
     taxRate: I.taxRate,
-    useErpOverride: I.useErpOverride,
-    erpOverride: I.erpOverride,
+    useCrpOverride: I.useErpOverride,
+    crpOverride: I.erpOverride,
   });
   const projectDiscountRate = waccCalcEarly.wacc;
   const equityDiscountRate = waccCalcEarly.costOfEquity;
