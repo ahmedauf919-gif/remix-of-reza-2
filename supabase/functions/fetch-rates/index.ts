@@ -13,10 +13,6 @@ const SERIES: { id: string; label: string; category: string; country?: string }[
   { id: "SOFR180DAYAVG", label: "180-Day Avg SOFR", category: "USD Reference" },
   { id: "EFFR", label: "Effective Fed Funds Rate", category: "USD Reference" },
   { id: "DPRIME", label: "US Bank Prime Loan Rate", category: "USD Reference" },
-  // LIBOR (legacy / discontinued but still in FRED)
-  { id: "USD3MTD156N", label: "USD LIBOR 3-Month (legacy)", category: "LIBOR (legacy)" },
-  { id: "USD6MTD156N", label: "USD LIBOR 6-Month (legacy)", category: "LIBOR (legacy)" },
-  { id: "USD12MD156N", label: "USD LIBOR 12-Month (legacy)", category: "LIBOR (legacy)" },
   // US Treasuries
   { id: "DGS1MO", label: "US Treasury 1-Month", category: "US Treasury" },
   { id: "DGS3MO", label: "US Treasury 3-Month", category: "US Treasury" },
