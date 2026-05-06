@@ -1105,7 +1105,12 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
 
   for (let outer = 0; outer < 6; outer++) {
     const baseUses = agg.epcCost + agg.developmentCost + agg.substationContingency + dsraInit;
-    if (I.sizingMode === "fixed-gearing") {
+    const sizingByGearing = I.sizingMode === "fixed-gearing"
+      || I.sizingMode === "annuity"
+      || I.sizingMode === "manual"
+      || I.sizingMode === "bullet"
+      || I.sizingMode === "mortgage";
+    if (sizingByGearing) {
       debt = I.gearing < 1 ? baseUses * I.gearing / (1 - I.gearing) : baseUses;
       for (iter = 0; iter < 50; iter++) {
         const fcc = computeFC(debt);
@@ -1114,7 +1119,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
         if (Math.abs(nd - debt) < 0.01) { converged = true; break; }
         debt = nd;
       }
-    } else {
+    } else { // dscr-sculpted | llcr-sculpted → bisect on debt to hit min DSCR
       let lo = 0, hi = baseUses * 5;
       for (iter = 0; iter < 60; iter++) {
         const mid = (lo + hi) / 2;
