@@ -1039,7 +1039,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const ebitdaTax = (!taxYearsActive(year) || ebit <= 0) ? 0 : ebit * I.taxRate;
     const newReceivables = totalRev * (I.daysReceivable / 365);
     // Payables on cash opex only (exclude real-estate tax & decommissioning sinking fund)
-    const cashOpexForDPO = baseOpex + otherFixedOpex + majorMaintenance + revPctOpex + levy;
+    const cashOpexForDPO = baseOpex + otherFixedOpex + majorMaintenance + revPctOpex + levy + opexVat;
     const newPayables = cashOpexForDPO * (I.daysPayable / 365);
     const wcChange = -((newReceivables - recv) - (newPayables - pay));
     recv = newReceivables; pay = newPayables;
