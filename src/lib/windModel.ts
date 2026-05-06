@@ -1053,19 +1053,28 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   const principalByY: number[] = Array(N + 1).fill(0);
   const interestByY: number[] = Array(N + 1).fill(0);
   const dsByY: number[] = Array(N + 1).fill(0);
+  const refiProceedsByY: number[] = Array(N + 1).fill(0);
   const sizePass = (taxByY: number[]) => {
     let dbt = debtAmount;
-    // Recompute annuity payment for current rate; if refi, splice tenor.
     const annuityPmtFor = (bal: number, rate: number, n: number) =>
       rate > 0 ? bal * (rate * Math.pow(1 + rate, n)) / (Math.pow(1 + rate, n) - 1) : bal / Math.max(1, n);
     let curAnnuity = annuityPmtFor(debtAmount, rBase, amortYears);
     for (let y = 1; y <= N; y++) {
       const rate = rateForY(y);
-      // If refi year: rebalance to refinanceAmount (treat shortfall as principal payment), reset annuity for remaining tenor.
-      if (refiOn && y === refiOpsYear && I.refinanceAmount > 0 && dbt > I.refinanceAmount) {
-        const refiPay = dbt - I.refinanceAmount;
-        principalByY[y] = (principalByY[y] || 0) + refiPay;
-        dbt = I.refinanceAmount;
+      // Refinance: industry-standard treatment.
+      //  • If refinanceAmount > current balance → cash-out refi: balance steps UP to refinanceAmount,
+      //    surplus (refinanceAmount − balance) is paid out as refi proceeds (cash to project).
+      //  • If refinanceAmount < current balance → partial paydown from new tranche: difference is recorded
+      //    as principal in that year (paid by the new tranche, modelled as a single instrument here).
+      if (refiOn && y === refiOpsYear && I.refinanceAmount > 0) {
+        if (I.refinanceAmount > dbt) {
+          refiProceedsByY[y] += (I.refinanceAmount - dbt);
+          dbt = I.refinanceAmount;
+        } else if (dbt > I.refinanceAmount) {
+          const refiPay = dbt - I.refinanceAmount;
+          principalByY[y] = (principalByY[y] || 0) + refiPay;
+          dbt = I.refinanceAmount;
+        }
         const remTenor = Math.max(1, I.debtTenorYears - (y - 1));
         curAnnuity = annuityPmtFor(dbt, rate, remTenor);
       }
