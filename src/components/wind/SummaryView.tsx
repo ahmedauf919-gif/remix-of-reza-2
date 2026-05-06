@@ -1,6 +1,6 @@
 import { ModelOutputs, fmt, fmtPct } from "@/lib/windModel";
 import { KpiCard } from "@/components/dashboard/KpiCard";
-import { Banknote, TrendingUp, Activity, Calendar, Gauge, Zap } from "lucide-react";
+import { Banknote, TrendingUp, Activity, Calendar, Gauge, Zap, Shield, Layers, CheckCircle2, AlertTriangle } from "lucide-react";
 
 export const SummaryView = ({ m }: { m: ModelOutputs }) => {
   const I = m.inputs;
@@ -33,6 +33,15 @@ export const SummaryView = ({ m }: { m: ModelOutputs }) => {
         <KpiCard label="Project IRR" value={fmtPct(m.projectIRR)} hint="Pre-financing" icon={<TrendingUp className="h-5 w-5"/>} accent="primary"/>
         <KpiCard label="Common Equity IRR" value={fmtPct(m.commonEquityIRR)} hint={`Blended ${fmtPct(m.blendedEquityIRR)}`} icon={<TrendingUp className="h-5 w-5"/>} accent="success"/>
         <KpiCard label="LCOE" value={`${fmt(m.lcoeUsdPerKWh * 100, 2)}¢/kWh`} hint="Levelized" icon={<Zap className="h-5 w-5"/>} accent="accent"/>
+      </section>
+
+      <section className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <KpiCard label="Min LLCR" value={fmt(m.minLLCR)} hint={`Avg ${fmt(m.avgLLCR)}`} icon={<Shield className="h-5 w-5"/>} accent="primary"/>
+        <KpiCard label="Min PLCR" value={fmt(m.minPLCR)} hint="Project life" icon={<Shield className="h-5 w-5"/>} accent="accent"/>
+        <KpiCard label="Loan life" value={`${m.loanLifeYears} yrs`} hint={`Tenor ${m.inputs.debtTenorYears}`} icon={<Calendar className="h-5 w-5"/>} accent="success"/>
+        <KpiCard label="Blended cost of debt" value={fmtPct(m.blendedRate)} hint={`${m.inputs.sizingMode}`} icon={<Layers className="h-5 w-5"/>} accent="primary"/>
+        <KpiCard label="DSCR covenant" value={m.debtServiceCoverageOk ? "Pass" : "Breach"} hint={`Target ${fmt(m.inputs.targetDSCR)}`} icon={m.debtServiceCoverageOk ? <CheckCircle2 className="h-5 w-5"/> : <AlertTriangle className="h-5 w-5"/>} accent={m.debtServiceCoverageOk ? "success" : "accent"}/>
+        <KpiCard label="BS check (max abs)" value={fmt(m.maxBalanceCheck)} hint="USD '000" icon={<Activity className="h-5 w-5"/>} accent={m.maxBalanceCheck < 1 ? "success" : "accent"}/>
       </section>
 
       <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
