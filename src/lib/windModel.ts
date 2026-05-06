@@ -793,6 +793,10 @@ export interface AnnualRow {
   dsraTarget: number;
   dsraMovement: number;
   dsraBalance: number;
+  decommReserve: number;        // restricted-cash sinking fund (asset)
+  decommProvision: number;      // matching liability (provision)
+  refiProceeds: number;         // cash drawn from re-financing surplus (>0) or zero
+  prefAccrued: number;          // unpaid pref-equity coupon carried forward
   llcr: number;
   plcr: number;
   balanceCheck: number;
@@ -1049,19 +1053,28 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   const principalByY: number[] = Array(N + 1).fill(0);
   const interestByY: number[] = Array(N + 1).fill(0);
   const dsByY: number[] = Array(N + 1).fill(0);
+  const refiProceedsByY: number[] = Array(N + 1).fill(0);
   const sizePass = (taxByY: number[]) => {
     let dbt = debtAmount;
-    // Recompute annuity payment for current rate; if refi, splice tenor.
     const annuityPmtFor = (bal: number, rate: number, n: number) =>
       rate > 0 ? bal * (rate * Math.pow(1 + rate, n)) / (Math.pow(1 + rate, n) - 1) : bal / Math.max(1, n);
     let curAnnuity = annuityPmtFor(debtAmount, rBase, amortYears);
     for (let y = 1; y <= N; y++) {
       const rate = rateForY(y);
-      // If refi year: rebalance to refinanceAmount (treat shortfall as principal payment), reset annuity for remaining tenor.
-      if (refiOn && y === refiOpsYear && I.refinanceAmount > 0 && dbt > I.refinanceAmount) {
-        const refiPay = dbt - I.refinanceAmount;
-        principalByY[y] = (principalByY[y] || 0) + refiPay;
-        dbt = I.refinanceAmount;
+      // Refinance: industry-standard treatment.
+      //  • If refinanceAmount > current balance → cash-out refi: balance steps UP to refinanceAmount,
+      //    surplus (refinanceAmount − balance) is paid out as refi proceeds (cash to project).
+      //  • If refinanceAmount < current balance → partial paydown from new tranche: difference is recorded
+      //    as principal in that year (paid by the new tranche, modelled as a single instrument here).
+      if (refiOn && y === refiOpsYear && I.refinanceAmount > 0) {
+        if (I.refinanceAmount > dbt) {
+          refiProceedsByY[y] += (I.refinanceAmount - dbt);
+          dbt = I.refinanceAmount;
+        } else if (dbt > I.refinanceAmount) {
+          const refiPay = dbt - I.refinanceAmount;
+          principalByY[y] = (principalByY[y] || 0) + refiPay;
+          dbt = I.refinanceAmount;
+        }
         const remTenor = Math.max(1, I.debtTenorYears - (y - 1));
         curAnnuity = annuityPmtFor(dbt, rate, remTenor);
       }
@@ -1103,7 +1116,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
       const ebt = pre[y - 1].ebit - interestByY[y];
       realisedTax[y] = (!taxYearsActive(pre[y - 1].year) || ebt <= 0) ? 0 : ebt * I.taxRate;
     }
-    principalByY.fill(0); interestByY.fill(0); dsByY.fill(0);
+    principalByY.fill(0); interestByY.fill(0); dsByY.fill(0); refiProceedsByY.fill(0);
     sizePass(realisedTax);
   }
 
@@ -1115,8 +1128,10 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const openingDebt = debt;
     const interest = interestByY[y];
     const principal = principalByY[y];
+    const refiProceeds = refiProceedsByY[y];
     const debtService = dsByY[y];
-    debt = Math.max(0, debt - principal);
+    // Apply refi step-up first (cash-out), then principal repayment.
+    debt = Math.max(0, debt + refiProceeds - principal);
     const ebt = p.ebit - interest;
     const taxOnEbt = (!taxYearsActive(p.year) || ebt <= 0) ? 0 : ebt * I.taxRate;
     const nokusOn = I.nokusRate > 0 && p.year >= I.nokusStartYear && p.year <= I.nokusEndYear;
@@ -1140,6 +1155,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
       openingDebt, closingDebt: debt, dscr,
       ppe, cash: 0, receivables: p.newReceivables, payables: p.newPayables, equity,
       dsraTarget: 0, dsraMovement: 0, dsraBalance: 0,
+      decommReserve: 0, decommProvision: 0, refiProceeds, prefAccrued: 0,
       llcr: 0, plcr: 0, balanceCheck: 0,
     });
   }
@@ -1173,16 +1189,31 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   let dsraPrev = dsraInitial;
   let cashAcc = 0;
   let retainedEarnings = equityAmount; // equity book = paid-in + retained
+  let decommReserve = 0;               // restricted-cash sinking fund (asset side)
+  let decommProvision = 0;             // matching liability accrued through opex
   rows.length = 0;
   for (let y = 0; y < draft.length; y++) {
     const target = I.dsraSwitch === 1 ? lookForward(y + 1) : 0;
     const movement = target - dsraPrev;
     const row = draft[y];
-    const cffi = row.cfads - row.debtService - movement;
-    // Distributions: payout ratio applied; restricted to retained earnings if flagged; respect min cash balance.
+    // Decommissioning: opex line is a non-cash accrual that builds a provision; cash equal to it is
+    // segregated into a restricted reserve so the BS keeps balancing. Released at end of life.
+    const decommContribution = row.opexDecommissioning;
+    decommReserve += decommContribution;
+    decommProvision += decommContribution;
+    const isLastYear = y === draft.length - 1;
+    if (isLastYear) {
+      // Spend the reserve on actual decommissioning at end of project life.
+      decommReserve = 0;
+      decommProvision = 0;
+    }
+    // CFFI: cash from operations after debt service & DSRA, plus any refi cash-out, less the cash
+    // we've ring-fenced for decommissioning (kept inside the project, not distributable).
+    const cffi = row.cfads - row.debtService - movement + row.refiProceeds - decommContribution;
+    // Distributions
     let distributable = Math.max(0, cffi) * (I.payoutRatio ?? 1);
     if (I.divRestrictedToRetainedEarnings === 1) {
-      const re = retainedEarnings - equityAmount + row.netIncome; // accumulated NI before this year's div
+      const re = retainedEarnings - equityAmount + row.netIncome;
       distributable = Math.min(distributable, Math.max(0, re));
     }
     const minCash = (I.minCashBalance || 0) + (I.minCashBalanceMultiple || 0) * row.debtService;
@@ -1193,12 +1224,16 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const llcrDen = row.openingDebt;
     const llcr = llcrDen > 1e-3 ? (pvFromIdx(y, loanLifeEnd) + dsraPrev) / llcrDen : 0;
     const plcr = llcrDen > 1e-3 ? (pvFromIdx(y, draft.length) + dsraPrev) / llcrDen : 0;
-    // Balance-sheet check: Assets (PPE + Cash + DSRA + Receivables) = Liab+Equity (Debt + Payables + Equity book)
-    const assets = row.ppe + cashAcc + row.receivables + target;
-    const liabEq = row.closingDebt + row.payables + retainedEarnings;
+    // Balance check (full): Assets = Liab + Equity
+    //   Assets = PPE + Cash + DSRA + Decomm reserve + Receivables
+    //   L+E    = Debt + Payables + Decomm provision + Retained equity
+    const assets = row.ppe + cashAcc + row.receivables + target + decommReserve;
+    const liabEq = row.closingDebt + row.payables + decommProvision + retainedEarnings;
     const balanceCheck = assets - liabEq;
     rows.push({ ...row, cffi, dividends: distributable, cash: cashAcc, equity: retainedEarnings,
-      dsraTarget: target, dsraMovement: movement, dsraBalance: target, llcr, plcr, balanceCheck });
+      dsraTarget: target, dsraMovement: movement, dsraBalance: target,
+      decommReserve, decommProvision,
+      llcr, plcr, balanceCheck });
     dsraPrev = target;
   }
 
@@ -1436,28 +1471,44 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     commonCF.push(-(draw * commonAmt / totalEq));
   }
   let prefBal = prefAmt;
+  let prefArrears = 0;       // accrued-but-unpaid pref coupon (compounds at coupon rate)
   let shBal = shLoanAmt;
+  let shArrears = 0;         // accrued-but-unpaid SH loan interest
   const prefAmortYears = Math.max(1, I.operationsYears);
   const shAmortYears = Math.max(1, I.operationsYears);
   sim.rows.forEach((r, idx) => {
     let avail = r.cffi;
-    // (DSRA release already in r.cffi via dsraMovement)
-    // Pref coupon + straight-line repayment
-    const prefCoupon = prefBal * I.prefEquityCoupon;
-    const prefPrincipal = Math.min(prefBal, prefAmt / prefAmortYears);
-    const prefPay = Math.min(avail, prefCoupon + prefPrincipal);
+    // Pref equity: cumulative coupon. Unpaid coupon accrues to arrears and is paid before any
+    // common-equity distribution. Arrears compound at the coupon rate (industry standard).
+    const prefCouponDue = prefBal * I.prefEquityCoupon + prefArrears * I.prefEquityCoupon;
+    const prefPrincipalDue = Math.min(prefBal, prefAmt / prefAmortYears);
+    const prefDue = prefArrears + prefCouponDue + prefPrincipalDue;
+    const prefPay = Math.min(Math.max(0, avail), prefDue);
     avail -= prefPay;
-    prefBal = Math.max(0, prefBal - prefPrincipal);
+    // Apply payment: arrears first, then current coupon, then principal.
+    let pay = prefPay;
+    const arrearsPay = Math.min(prefArrears, pay); pay -= arrearsPay; prefArrears -= arrearsPay;
+    const currCouponPay = Math.min(prefCouponDue, pay); pay -= currCouponPay;
+    const principalPay = Math.min(prefPrincipalDue, pay); pay -= principalPay;
+    prefArrears += (prefCouponDue - currCouponPay);
+    prefBal = Math.max(0, prefBal - principalPay);
     prefCF.push(prefPay);
-    // SH loan interest + principal
-    const shInt = shBal * I.shLoanRate;
-    const shPrincipal = I.shLoanFullyRepaid === 1 && idx === sim.rows.length - 1
+    // SH loan: same arrears treatment.
+    const shCouponDue = shBal * I.shLoanRate + shArrears * I.shLoanRate;
+    const shPrincipalDue = I.shLoanFullyRepaid === 1 && idx === sim.rows.length - 1
       ? shBal : Math.min(shBal, shLoanAmt / shAmortYears);
-    const shPay = Math.min(Math.max(0, avail), shInt + shPrincipal);
+    const shDue = shArrears + shCouponDue + shPrincipalDue;
+    const shPay = Math.min(Math.max(0, avail), shDue);
     avail -= shPay;
-    shBal = Math.max(0, shBal - shPrincipal);
+    let spay = shPay;
+    const shArrPay = Math.min(shArrears, spay); spay -= shArrPay; shArrears -= shArrPay;
+    const shCurr = Math.min(shCouponDue, spay); spay -= shCurr;
+    const shPrin = Math.min(shPrincipalDue, spay); spay -= shPrin;
+    shArrears += (shCouponDue - shCurr);
+    shBal = Math.max(0, shBal - shPrin);
     shCF.push(shPay);
-    // Remainder to common
+    // Stash arrears on the row for BS/transparency
+    sim.rows[idx].prefAccrued = prefArrears + shArrears;
     commonCF.push(Math.max(0, avail));
   });
 
