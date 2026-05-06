@@ -14,13 +14,34 @@ export function getCountryERP(country: string): number {
   return row?.erp != null ? row.erp / 100 : 0;
 }
 
-/** Compute WACC (decimal) from project inputs and current capital structure. */
-export function computeWACC(opts: { country: string; riskFreeRate: number; equityBeta: number; gearing: number; costOfDebt: number; taxRate: number; useErpOverride?: 0 | 1; erpOverride?: number }): { wacc: number; costOfEquity: number; afterTaxKd: number; erp: number } {
-  const erp = opts.useErpOverride ? (opts.erpOverride ?? 0) : getCountryERP(opts.country);
-  const costOfEquity = opts.riskFreeRate + opts.equityBeta * erp;
+/** Lookup Country Risk Premium (decimal) from Damodaran dataset. Returns 0 if not found. */
+export function getCountryRiskPremium(country: string): number {
+  if (!country) return 0;
+  const row = DAMODARAN_ERP.find(r => r.country.toLowerCase() === country.toLowerCase());
+  return row?.countryRiskPremium != null ? row.countryRiskPremium / 100 : 0;
+}
+
+/** Compute WACC (decimal) using Damodaran convention:
+ *  Cost of Equity = Rf + β × Mature-Market ERP + Country Risk Premium (CRP)
+ *  CRP can be overridden (e.g. set to 0) without losing the mature-market premium.
+ */
+export function computeWACC(opts: {
+  country: string; riskFreeRate: number; equityBeta: number; gearing: number;
+  costOfDebt: number; taxRate: number;
+  matureMarketERP: number;             // e.g. 0.046 for US
+  useCrpOverride?: 0 | 1; crpOverride?: number;
+  // Backwards-compat (legacy field name still supported)
+  useErpOverride?: 0 | 1; erpOverride?: number;
+}): { wacc: number; costOfEquity: number; afterTaxKd: number; erp: number; crp: number } {
+  const merp = opts.matureMarketERP ?? 0;
+  // Resolve CRP: prefer new override, else legacy override (which used to mean total-ERP override → treat as CRP override now), else Damodaran lookup.
+  const useOverride = (opts.useCrpOverride ?? opts.useErpOverride) ? 1 : 0;
+  const overrideVal = opts.crpOverride ?? opts.erpOverride ?? 0;
+  const crp = useOverride ? overrideVal : getCountryRiskPremium(opts.country);
+  const costOfEquity = opts.riskFreeRate + opts.equityBeta * merp + crp;
   const afterTaxKd = opts.costOfDebt * (1 - opts.taxRate);
   const wacc = (1 - opts.gearing) * costOfEquity + opts.gearing * afterTaxKd;
-  return { wacc, costOfEquity, afterTaxKd, erp };
+  return { wacc, costOfEquity, afterTaxKd, erp: merp + crp, crp };
 }
 
 export type SizingMethod = "annuity" | "sculpted" | "llcr-sculpted" | "manual" | "bullet" | "mortgage";
