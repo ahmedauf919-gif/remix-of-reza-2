@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { FileText, RotateCcw, Check, UploadCloud } from "lucide-react";
+import { useMemo, useDeferredValue, lazy, Suspense } from "react";
+import { FileText, RotateCcw, Check, UploadCloud, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -7,16 +7,31 @@ import { DEFAULT_INPUTS, runModel } from "@/lib/windModel";
 import { generateInvestmentMemo } from "@/lib/investmentMemo";
 import { InputsForm } from "@/components/wind/InputsForm";
 import { SummaryView } from "@/components/wind/SummaryView";
-import { OutputsView, StatementsView } from "@/components/wind/SchedulesView";
-import { CashflowChart, DSCRChart, DebtBalanceChart } from "@/components/wind/Charts";
-import { LcoeWaterfallChart } from "@/components/wind/LcoeWaterfallChart";
-import { SensitivityView } from "@/components/wind/SensitivityView";
-import { RecommendationsView } from "@/components/wind/RecommendationsView";
 import { useSharedScenario } from "@/hooks/useSharedScenario";
+
+// Lazy-load heavy tabs so first paint + Inputs typing stay snappy
+const OutputsView = lazy(() => import("@/components/wind/SchedulesView").then(m => ({ default: m.OutputsView })));
+const StatementsView = lazy(() => import("@/components/wind/SchedulesView").then(m => ({ default: m.StatementsView })));
+const CashflowChart = lazy(() => import("@/components/wind/Charts").then(m => ({ default: m.CashflowChart })));
+const DSCRChart = lazy(() => import("@/components/wind/Charts").then(m => ({ default: m.DSCRChart })));
+const DebtBalanceChart = lazy(() => import("@/components/wind/Charts").then(m => ({ default: m.DebtBalanceChart })));
+const LcoeWaterfallChart = lazy(() => import("@/components/wind/LcoeWaterfallChart").then(m => ({ default: m.LcoeWaterfallChart })));
+const SensitivityView = lazy(() => import("@/components/wind/SensitivityView").then(m => ({ default: m.SensitivityView })));
+const RecommendationsView = lazy(() => import("@/components/wind/RecommendationsView").then(m => ({ default: m.RecommendationsView })));
+
+const TabFallback = () => (
+  <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+    <Loader2 className="h-4 w-4 mr-2 animate-spin"/> Loading…
+  </div>
+);
 
 const Index = () => {
   const { inputs, setInputs, loaded, saving } = useSharedScenario();
-  const model = useMemo(() => runModel(inputs), [inputs]);
+  // Defer the heavy model recompute so input typing stays smooth.
+  // React will run the model on the latest inputs once the user pauses.
+  const deferredInputs = useDeferredValue(inputs);
+  const model = useMemo(() => runModel(deferredInputs), [deferredInputs]);
+  const isStale = inputs !== deferredInputs;
 
   const exportMemo = async () => {
     try {
