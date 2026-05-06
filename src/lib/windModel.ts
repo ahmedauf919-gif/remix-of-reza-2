@@ -1333,7 +1333,15 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const totalCFADS = sim.rows.reduce((s, r) => s + r.cfads, 0);
 
   let dCost = 0, dMWh = 0;
-  const dr = I.lcoeDiscountFactor || I.discountRateProject;
+  const waccCalc = computeWACC({
+    country: I.country,
+    riskFreeRate: I.riskFreeRate,
+    equityBeta: I.equityBeta,
+    gearing: totalUses > 0 ? debt / totalUses : 0,
+    costOfDebt: agg.blendedRate,
+    taxRate: I.taxRate,
+  });
+  const dr = (I.useWaccForLcoe ? waccCalc.wacc : (I.lcoeDiscountFactor || I.discountRateProject));
   for (let i = 0; i < consYearCount; i++) dCost += constructionDraws[i] * 1000 / Math.pow(1 + dr, i);
   sim.rows.forEach((r, i) => {
     dCost += (r.opex + r.tax) * 1000 / Math.pow(1 + dr, consYearCount + i);
