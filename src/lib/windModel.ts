@@ -313,6 +313,11 @@ export interface ProjectInputs {
   modelInflationOn: 0 | 1;
   inflationSelection: "CPI" | "Zero-inflation" | "CPI US Dollar" | "CPI Blend US-EGP";
 
+  // ── Cost of Capital (Damodaran-based WACC) ───────────────────────────
+  riskFreeRate: number;            // decimal e.g. 0.045
+  equityBeta: number;              // levered beta
+  useWaccForLcoe: 0 | 1;           // when 1, LCOE uses computed WACC instead of lcoeDiscountFactor
+
   // FX
   fxEUR: number;
   fxEGP: number;
