@@ -27,11 +27,15 @@ const ScheduleTable = ({ title, years, sections }: { title: string; years: numbe
                 <td colSpan={2 + years.length} className="px-3 py-1.5 font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">{sec.title}</td>
               </tr>
               {sec.rows.map((r, ri) => {
+                const nonZero = r.values.filter(v => Math.abs(v) > 1e-9);
+                const avg = nonZero.length ? nonZero.reduce((a, b) => a + b, 0) / nonZero.length : 0;
                 const total = r.total ?? r.values.reduce((a, b) => a + b, 0);
                 return (
                   <tr key={`r-${si}-${ri}`} className={`border-t border-border/40 hover:bg-secondary/30 ${r.bold ? "font-semibold bg-muted/30" : ""}`}>
                     <td className={`sticky left-0 bg-card px-3 py-1.5 ${r.indent ? "pl-6 text-muted-foreground" : ""}`}>{r.label}</td>
-                    <td className="px-2 py-1.5 text-right font-mono tabular-nums">{r.pct ? fmtPct(total / r.values.length) : fmt(total)}</td>
+                    <td className="px-2 py-1.5 text-right font-mono tabular-nums">
+                      {r.pct ? (avg > 0 ? `${fmt(avg, 2)}x avg` : "-") : fmt(total)}
+                    </td>
                     {r.values.map((v, vi) => (
                       <td key={vi} className="px-2 py-1.5 text-right font-mono tabular-nums">
                         {r.pct ? (v > 0 ? fmt(v, 2) + "x" : "-") : fmt(v)}
