@@ -52,10 +52,31 @@ export const OutputsView = ({ m }: { m: ModelOutputs }) => {
   const years = m.rows.map(r => r.year);
   const sections: Section[] = [
     {
+      title: "Revenue build-up",
+      rows: [
+        { label: "Energy generated (MWh)", values: m.rows.map(r => r.mwh) },
+        { label: "Effective tariff (USD/kWh)", values: m.rows.map(r => r.effectiveTariff * 1000), indent: true },
+        { label: "Energy revenue", values: m.rows.map(r => r.revenue), indent: true },
+        { label: "Carbon / CDM revenue", values: m.rows.map(r => r.carbonRevenue), indent: true },
+        { label: "Total revenue", values: m.rows.map(r => r.revenue + r.carbonRevenue), bold: true },
+      ],
+    },
+    {
+      title: "Operating expenditure breakdown",
+      rows: [
+        { label: "Base O&M / Asset Mgmt / SPV / Insurance", values: m.rows.map(r => -r.opexBase), indent: true },
+        { label: "Real-estate tax", values: m.rows.map(r => -r.opexRealEstate), indent: true },
+        { label: "Other fixed (lease, aux, contingency, MIGA)", values: m.rows.map(r => -r.opexOtherFixed), indent: true },
+        { label: "Major maintenance", values: m.rows.map(r => -r.opexMajorMaintenance), indent: true },
+        { label: "% of revenue items", values: m.rows.map(r => -r.opexPctRevenue), indent: true },
+        { label: "Additional levy", values: m.rows.map(r => -r.opexLevy), indent: true },
+        { label: "Decommissioning", values: m.rows.map(r => -r.opexDecommissioning), indent: true },
+        { label: "Total operating expenditure", values: m.rows.map(r => -r.opex), bold: true },
+      ],
+    },
+    {
       title: "Operating cashflow",
       rows: [
-        { label: "Revenue", values: m.rows.map(r => r.revenue) },
-        { label: "Operating expenditure", values: m.rows.map(r => -r.opex) },
         { label: "EBITDA", values: m.rows.map(r => r.ebitda), bold: true },
         { label: "Tax", values: m.rows.map(r => -r.tax) },
         { label: "Working capital adjustments", values: m.rows.map(r => r.workingCapitalChange) },
@@ -96,8 +117,81 @@ export const OutputsView = ({ m }: { m: ModelOutputs }) => {
       ],
     },
   ];
-  return <ScheduleTable title="Outputs — annual cashflow waterfall" years={years} sections={sections} />;
+  return (
+    <div className="space-y-6">
+      <ScheduleTable title="Outputs — annual cashflow waterfall" years={years} sections={sections} />
+      <ProjectIRRTable m={m} />
+      <EquityIRRTable m={m} />
+    </div>
+  );
 };
+
+const IRRRundownTable = ({ title, headers, rows, footerLabel, irr }: {
+  title: string;
+  headers: string[];
+  rows: { year: number; values: number[] }[];
+  footerLabel: string;
+  irr: number;
+}) => {
+  const totals = headers.map((_, ci) => rows.reduce((s, r) => s + (r.values[ci] || 0), 0));
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)]">
+      <div className="flex items-center justify-between border-b border-border bg-secondary/40 px-5 py-3">
+        <h3 className="font-semibold">{title}</h3>
+        <div className="text-sm">
+          <span className="text-muted-foreground mr-2">{footerLabel}:</span>
+          <span className="font-mono font-semibold">{fmtPct(irr)}</span>
+        </div>
+      </div>
+      <div className="max-h-[420px] overflow-auto">
+        <table className="w-full text-xs">
+          <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
+            <tr>
+              <th className="px-3 py-2 text-left">Year</th>
+              {headers.map(h => <th key={h} className="px-2 py-2 text-right font-mono text-muted-foreground">{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, ri) => (
+              <tr key={ri} className="border-t border-border/40 hover:bg-secondary/30">
+                <td className="px-3 py-1.5 font-mono">{r.year}</td>
+                {r.values.map((v, vi) => (
+                  <td key={vi} className={`px-2 py-1.5 text-right font-mono tabular-nums ${vi === r.values.length - 1 ? "font-semibold" : ""}`}>{fmt(v)}</td>
+                ))}
+              </tr>
+            ))}
+            <tr className="border-t-2 border-border bg-muted/30 font-semibold">
+              <td className="px-3 py-2">Total</td>
+              {totals.map((t, ti) => (
+                <td key={ti} className="px-2 py-2 text-right font-mono tabular-nums">{fmt(t)}</td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const ProjectIRRTable = ({ m }: { m: ModelOutputs }) => (
+  <IRRRundownTable
+    title="Project IRR — rundown"
+    headers={["Capex (draws)", "CFADS", "DSRA movement", "Net cashflow"]}
+    rows={m.projectIRRSeries.map(r => ({ year: r.year, values: [r.capex, r.cfads, r.dsraMovement, r.net] }))}
+    footerLabel="Project IRR"
+    irr={m.projectIRR}
+  />
+);
+
+const EquityIRRTable = ({ m }: { m: ModelOutputs }) => (
+  <IRRRundownTable
+    title="Equity IRR — rundown"
+    headers={["Equity draws", "CFFI (distributions)", "Net cashflow"]}
+    rows={m.equityIRRSeries.map(r => ({ year: r.year, values: [r.equityDraw, r.cffi, r.net] }))}
+    footerLabel="Blended Equity IRR"
+    irr={m.equityIRR}
+  />
+);
 
 export const IncomeStatementView = ({ m }: { m: ModelOutputs }) => {
   const years = m.rows.map(r => r.year);

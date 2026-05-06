@@ -631,7 +631,16 @@ export interface AnnualRow {
   mwh: number;
   revenue: number;
   carbonRevenue: number;
+  tariffEsc: number;
+  effectiveTariff: number;
   opex: number;
+  opexBase: number;
+  opexRealEstate: number;
+  opexOtherFixed: number;
+  opexMajorMaintenance: number;
+  opexPctRevenue: number;
+  opexDecommissioning: number;
+  opexLevy: number;
   ebitda: number;
   depreciation: number;
   ebit: number;
@@ -709,6 +718,9 @@ export interface ModelOutputs {
   maxBalanceCheck: number;
   loanLifeYears: number;
   debtServiceCoverageOk: boolean;
+  // IRR rundowns (year-by-year cashflows)
+  projectIRRSeries: { year: number; capex: number; cfads: number; dsraMovement: number; net: number }[];
+  equityIRRSeries: { year: number; equityDraw: number; cffi: number; net: number }[];
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
@@ -816,7 +828,10 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   // ── PASS A: economics independent of debt service (revenue/opex/EBITDA/CFADS-pre-tax-shield)
   type Pre = {
     year: number; y: number; mwh: number; revenue: number; carbonRevenue: number; totalRev: number;
-    opex: number; ebitda: number; depreciation: number; ebit: number; ebitdaTax: number;
+    opex: number; opexBase: number; opexRealEstate: number; opexOtherFixed: number;
+    opexMajorMaintenance: number; opexPctRevenue: number; opexDecommissioning: number; opexLevy: number;
+    tariffEsc: number; effectiveTariff: number;
+    ebitda: number; depreciation: number; ebit: number; ebitdaTax: number;
     cfadsPreShield: number; wcChange: number; newReceivables: number; newPayables: number;
   };
   const pre: Pre[] = [];
@@ -842,7 +857,8 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const majorMaintenance = (I.mmWindSpareParts + I.mmSubstationSpareParts + I.mmPmCm + I.mmSpare) * escal;
     const revPctOpex = totalRev * (I.pctRevConvLocalEUR + I.pctRevUsufructLease + I.pctRevInsuranceOps);
     const decommissioning = (y === N) ? I.mmDecommissioning * escal : 0;
-    const opex = baseOpex + realEstate + I.additionalLevy * totalRev + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning;
+    const levy = I.additionalLevy * totalRev;
+    const opex = baseOpex + realEstate + levy + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning;
     const ebitda = totalRev - opex;
     const depreciation = y <= I.depreciationYears ? annualDeprec : 0;
     const ebit = ebitda - depreciation;
@@ -852,7 +868,11 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const wcChange = -((newReceivables - recv) - (newPayables - pay));
     recv = newReceivables; pay = newPayables;
     const cfadsPreShield = ebitda - ebitdaTax + wcChange;
-    pre.push({ year, y, mwh, revenue, carbonRevenue, totalRev, opex, ebitda, depreciation, ebit, ebitdaTax, cfadsPreShield, wcChange, newReceivables, newPayables });
+    pre.push({ year, y, mwh, revenue, carbonRevenue, totalRev,
+      opex, opexBase: baseOpex, opexRealEstate: realEstate, opexOtherFixed: otherFixedOpex,
+      opexMajorMaintenance: majorMaintenance, opexPctRevenue: revPctOpex, opexDecommissioning: decommissioning, opexLevy: levy,
+      tariffEsc, effectiveTariff: I.tariffUsdPerKWh * tariffEsc,
+      ebitda, depreciation, ebit, ebitdaTax, cfadsPreShield, wcChange, newReceivables, newPayables });
   }
 
   // ── PASS B: size principal year-by-year per sizingMode
@@ -918,7 +938,11 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     equity += netIncome;
     draft.push({
       year: p.year, mwh: p.mwh, revenue: p.revenue, carbonRevenue: p.carbonRevenue,
-      opex: p.opex, ebitda: p.ebitda, depreciation: p.depreciation, ebit: p.ebit,
+      opex: p.opex, opexBase: p.opexBase, opexRealEstate: p.opexRealEstate, opexOtherFixed: p.opexOtherFixed,
+      opexMajorMaintenance: p.opexMajorMaintenance, opexPctRevenue: p.opexPctRevenue,
+      opexDecommissioning: p.opexDecommissioning, opexLevy: p.opexLevy,
+      tariffEsc: p.tariffEsc, effectiveTariff: p.effectiveTariff,
+      ebitda: p.ebitda, depreciation: p.depreciation, ebit: p.ebit,
       interest, ebt, tax: totalTax, netIncome,
       workingCapitalChange: p.wcChange, cfads, debtService, principal, cffi: 0,
       openingDebt, closingDebt: debt, dscr,
@@ -1183,6 +1207,20 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   sim.rows.forEach((r, i) => { if (r.debtService > 1e-3) loanLifeYears = i + 1; });
   const debtServiceCoverageOk = minDSCR >= I.targetDSCR - 0.005;
 
+  // Build IRR rundown series (year-aligned starting at first construction year)
+  const projectIRRSeries: { year: number; capex: number; cfads: number; dsraMovement: number; net: number }[] = [];
+  for (let i = 0; i < consYearCount; i++) {
+    projectIRRSeries.push({ year: constructionYears[i], capex: -constructionDraws[i], cfads: 0, dsraMovement: 0, net: -constructionDraws[i] });
+  }
+  sim.rows.forEach(r => projectIRRSeries.push({
+    year: r.year, capex: 0, cfads: r.cfads, dsraMovement: -r.dsraMovement, net: r.cfads - r.dsraMovement,
+  }));
+  const equityIRRSeries: { year: number; equityDraw: number; cffi: number; net: number }[] = [];
+  for (let i = 0; i < consYearCount; i++) {
+    equityIRRSeries.push({ year: constructionYears[i], equityDraw: -equityDraws[i], cffi: 0, net: -equityDraws[i] });
+  }
+  sim.rows.forEach(r => equityIRRSeries.push({ year: r.year, equityDraw: 0, cffi: r.cffi, net: r.cffi }));
+
   return {
     inputs: I,
     totalUses,
@@ -1210,6 +1248,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     prefEquityAmount: prefAmt,
     shLoanAmount: shLoanAmt,
     minLLCR, avgLLCR, minPLCR, maxBalanceCheck, loanLifeYears, debtServiceCoverageOk,
+    projectIRRSeries, equityIRRSeries,
   };
 }
 
