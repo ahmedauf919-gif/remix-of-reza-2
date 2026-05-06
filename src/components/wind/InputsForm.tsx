@@ -158,6 +158,56 @@ const TIMING: Field[] = [
   { key: "delayMonths", label: "Delay duration", unit: "months" },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Major maintenance schedule editor — % of hard capex per operations year
+// ─────────────────────────────────────────────────────────────────────────────
+const MajorMaintenanceScheduleEditor = ({ inputs, onChange }: Props) => {
+  const N = Math.max(1, Math.floor(Number(inputs.operationsYears) || 0));
+  const sched: number[] = (() => {
+    const s = (inputs.mmSchedulePctOfCapex ?? []).slice(0, N);
+    while (s.length < N) s.push(0);
+    return s;
+  })();
+  const opsStart = inputs.constructionStart + Math.ceil((inputs.constructionMonths + inputs.preOpsMonths) / 12);
+  const setYear = (idx: number, vPct: number) => {
+    const next = sched.slice();
+    next[idx] = isNaN(vPct) ? 0 : vPct / 100;
+    onChange({ ...inputs, mmSchedulePctOfCapex: next });
+  };
+  const clearAll = () => onChange({ ...inputs, mmSchedulePctOfCapex: Array.from({ length: N }, () => 0) });
+  const total = sched.reduce((a, b) => a + b, 0) * 100;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold">Scheduled major maintenance — % of hard capex per year</div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Allocate one-off / cyclical major maintenance as a % of hard capex (EPC + development + substation/contingency).
+            Applied in addition to the flat annual amounts above and escalated by CPI.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="text-xs text-muted-foreground font-mono">Cumulative: {total.toFixed(2)}%</div>
+          <Button variant="outline" size="sm" onClick={clearAll}>Clear</Button>
+        </div>
+      </div>
+      <div className="rounded-lg border border-border/60 bg-secondary/20 p-3">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10">
+          {sched.map((v, idx) => (
+            <div key={idx}>
+              <Label className="text-[10px] text-muted-foreground">Y{idx + 1} — {opsStart + idx}</Label>
+              <Input type="number" step={0.1} className="h-8 font-mono text-xs px-2"
+                value={(Number(v) * 100).toFixed(2)}
+                onChange={(e) => setYear(idx, parseFloat(e.target.value))} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CAPEX: Field[] = [
   { key: "preConstructionCosts", label: "Pre-construction costs", unit: "USD '000" },
   { key: "epcCost", label: "EPC costs", unit: "USD '000" },
@@ -587,7 +637,12 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
               </AccordionItem>
               <AccordionItem value="mm">
                 <AccordionTrigger>Major maintenance (real)</AccordionTrigger>
-                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={MAJOR_MAINT}/></AccordionContent>
+                <AccordionContent>
+                  <FieldsGrid inputs={inputs} onChange={onChange} fields={MAJOR_MAINT}/>
+                  <div className="mt-6">
+                    <MajorMaintenanceScheduleEditor inputs={inputs} onChange={onChange} />
+                  </div>
+                </AccordionContent>
               </AccordionItem>
               <AccordionItem value="reserves">
                 <AccordionTrigger>Reserves & DSRA</AccordionTrigger>

@@ -73,6 +73,8 @@ export interface ProjectInputs {
   mmDecommissioning: number;
   mmPmCm: number;
   mmSpare: number;
+  // Major maintenance schedule — % of hard capex per operations year (length = operationsYears)
+  mmSchedulePctOfCapex?: number[];
 
   // ── Reserves ─────────────────────────────────────────────────────────
   dsraInitial: number;            // USD '000
@@ -397,6 +399,7 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   mmDecommissioning: 0,
   mmPmCm: 0,
   mmSpare: 0,
+  mmSchedulePctOfCapex: [],
 
   dsraInitial: 44820,
   dsraTargetMonths: 12,
@@ -874,7 +877,10 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const realEstate = rentalValue * I.realEstateTaxableAmount * I.realEstateTaxRate * (1 - (I.exemptedProportion || 0)) * escal;
     const otherFixedOpex = (I.bondExpenses + I.lease + I.auxiliaryPower + I.opexContingency
       + I.usufructEGP * I.fxEGP + I.migaPremium) * escal;
-    const majorMaintenance = (I.mmWindSpareParts + I.mmSubstationSpareParts + I.mmPmCm + I.mmSpare) * escal;
+    const mmFlat = (I.mmWindSpareParts + I.mmSubstationSpareParts + I.mmPmCm + I.mmSpare) * escal;
+    const mmSchedPct = (I.mmSchedulePctOfCapex && I.mmSchedulePctOfCapex[y - 1]) || 0;
+    const mmScheduled = hardCapex * mmSchedPct * escal;
+    const majorMaintenance = mmFlat + mmScheduled;
     const revPctOpex = totalRev * (I.pctRevConvLocalEUR + I.pctRevUsufructLease + I.pctRevInsuranceOps);
     const decommissioning = decommissioningAnnual * escal;
     const levy = I.additionalLevy * totalRev;
