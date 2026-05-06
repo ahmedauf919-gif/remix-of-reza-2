@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { FileText, RotateCcw, CloudCheck, CloudUpload } from "lucide-react";
+import { FileText, RotateCcw, Check, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -41,7 +41,7 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-xs opacity-90">
-              {saving ? <CloudUpload className="h-4 w-4 animate-pulse"/> : <CloudCheck className="h-4 w-4"/>}
+              {saving ? <UploadCloud className="h-4 w-4 animate-pulse"/> : <Check className="h-4 w-4"/>}
               {!loaded ? "Loading…" : saving ? "Saving…" : "All changes saved"}
             </div>
             <Button variant="secondary" onClick={reset} className="gap-2"><RotateCcw className="h-4 w-4"/>Reset</Button>
