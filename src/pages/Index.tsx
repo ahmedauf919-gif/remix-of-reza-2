@@ -9,6 +9,7 @@ import { InputsForm } from "@/components/wind/InputsForm";
 import { SummaryView } from "@/components/wind/SummaryView";
 import { OutputsView, IncomeStatementView, BalanceSheetView } from "@/components/wind/SchedulesView";
 import { CashflowChart, DSCRChart, DebtBalanceChart } from "@/components/wind/Charts";
+import { CostOfCapitalView } from "@/components/wind/CostOfCapitalView";
 
 const Index = () => {
   const [inputs, setInputs] = useState<ProjectInputs>(DEFAULT_INPUTS);
@@ -48,6 +49,7 @@ const Index = () => {
             <TabsTrigger value="ifs">Income statement</TabsTrigger>
             <TabsTrigger value="afs">Balance sheet</TabsTrigger>
             <TabsTrigger value="charts">Charts</TabsTrigger>
+            <TabsTrigger value="wacc">Cost of Capital</TabsTrigger>
           </TabsList>
 
           <TabsContent value="summary" className="m-0 pt-6 space-y-6">
@@ -80,6 +82,10 @@ const Index = () => {
               <DSCRChart m={model}/>
               <DebtBalanceChart m={model}/>
             </div>
+          </TabsContent>
+
+          <TabsContent value="wacc" className="m-0 pt-6">
+            <CostOfCapitalView m={model}/>
           </TabsContent>
         </Tabs>
 

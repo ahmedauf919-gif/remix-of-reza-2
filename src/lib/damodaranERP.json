@@ -1,0 +1,1782 @@
+[
+ {
+  "country": "Abu Dhabi",
+  "rating": "Aa2",
+  "adjDefaultSpread": 0.42,
+  "countryRiskPremium": 0.64,
+  "erp": 4.87,
+  "corpTax": 9.0,
+  "sovCDS": 0.46,
+  "cdsErp": 4.93
+ },
+ {
+  "country": "Albania",
+  "rating": "Ba3",
+  "adjDefaultSpread": 3.06,
+  "countryRiskPremium": 4.66,
+  "erp": 8.89,
+  "corpTax": 15.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Algeria",
+  "rating": "NR",
+  "adjDefaultSpread": 3.83,
+  "countryRiskPremium": 5.83,
+  "erp": 10.06,
+  "corpTax": 10.07,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Andorra  (Principality of)",
+  "rating": "Baa1",
+  "adjDefaultSpread": 1.36,
+  "countryRiskPremium": 2.07,
+  "erp": 6.3,
+  "corpTax": 10.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Angola",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 25.0,
+  "sovCDS": 6.1,
+  "cdsErp": 13.5
+ },
+ {
+  "country": "Argentina",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 35.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Armenia",
+  "rating": "Ba3",
+  "adjDefaultSpread": 3.06,
+  "countryRiskPremium": 4.66,
+  "erp": 8.89,
+  "corpTax": 18.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Aruba",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 22.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Australia",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 30.0,
+  "sovCDS": 0.05,
+  "cdsErp": 4.31
+ },
+ {
+  "country": "Austria",
+  "rating": "Aa1",
+  "adjDefaultSpread": 0.23,
+  "countryRiskPremium": 0.36,
+  "erp": 4.59,
+  "corpTax": 23.0,
+  "sovCDS": 0.14,
+  "cdsErp": 4.44
+ },
+ {
+  "country": "Azerbaijan",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 20.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Bahamas",
+  "rating": "B1",
+  "adjDefaultSpread": 3.83,
+  "countryRiskPremium": 5.83,
+  "erp": 10.06,
+  "corpTax": 0.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Bahrain",
+  "rating": "B2",
+  "adjDefaultSpread": 4.67,
+  "countryRiskPremium": 7.12,
+  "erp": 11.35,
+  "corpTax": 0.0,
+  "sovCDS": 2.33,
+  "cdsErp": 7.77
+ },
+ {
+  "country": "Bangladesh",
+  "rating": "B2",
+  "adjDefaultSpread": 4.67,
+  "countryRiskPremium": 7.12,
+  "erp": 11.35,
+  "corpTax": 27.5,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Barbados",
+  "rating": "B2",
+  "adjDefaultSpread": 4.67,
+  "countryRiskPremium": 7.12,
+  "erp": 11.35,
+  "corpTax": 9.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Belarus",
+  "rating": "C",
+  "adjDefaultSpread": 17.5,
+  "countryRiskPremium": 26.66,
+  "erp": 30.89,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Belgium",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 25.0,
+  "sovCDS": 0.26,
+  "cdsErp": 4.63
+ },
+ {
+  "country": "Belize",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 0.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Benin",
+  "rating": "B1",
+  "adjDefaultSpread": 3.83,
+  "countryRiskPremium": 5.83,
+  "erp": 10.06,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Bermuda",
+  "rating": "A2",
+  "adjDefaultSpread": 0.72,
+  "countryRiskPremium": 1.1,
+  "erp": 5.33,
+  "corpTax": 0.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Bolivia",
+  "rating": "Ca",
+  "adjDefaultSpread": 10.2,
+  "countryRiskPremium": 15.54,
+  "erp": 19.77,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Bosnia and  Herzegovina",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 10.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Botswana",
+  "rating": "Baa1",
+  "adjDefaultSpread": 1.36,
+  "countryRiskPremium": 2.07,
+  "erp": 6.3,
+  "corpTax": 22.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Brazil",
+  "rating": "Ba1",
+  "adjDefaultSpread": 2.13,
+  "countryRiskPremium": 3.24,
+  "erp": 7.47,
+  "corpTax": 34.0,
+  "sovCDS": 2.21,
+  "cdsErp": 7.59
+ },
+ {
+  "country": "Brunei",
+  "rating": "NR",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 5.02,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Bulgaria",
+  "rating": "Baa1",
+  "adjDefaultSpread": 1.36,
+  "countryRiskPremium": 2.07,
+  "erp": 6.3,
+  "corpTax": 10.0,
+  "sovCDS": 0.63,
+  "cdsErp": 5.19
+ },
+ {
+  "country": "Burkina Faso",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 27.5,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Cambodia",
+  "rating": "B2",
+  "adjDefaultSpread": 4.67,
+  "countryRiskPremium": 7.12,
+  "erp": 11.35,
+  "corpTax": 20.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Cameroon",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 33.0,
+  "sovCDS": 6.73,
+  "cdsErp": 14.46
+ },
+ {
+  "country": "Canada",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 26.14,
+  "sovCDS": 0.19,
+  "cdsErp": 4.52
+ },
+ {
+  "country": "Cape Verde",
+  "rating": "B2",
+  "adjDefaultSpread": 4.67,
+  "countryRiskPremium": 7.12,
+  "erp": 11.35,
+  "corpTax": 26.86,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Cayman Islands",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 0.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Chile",
+  "rating": "A2",
+  "adjDefaultSpread": 0.72,
+  "countryRiskPremium": 1.1,
+  "erp": 5.33,
+  "corpTax": 27.0,
+  "sovCDS": 0.73,
+  "cdsErp": 5.34
+ },
+ {
+  "country": "China",
+  "rating": "A1",
+  "adjDefaultSpread": 0.6,
+  "countryRiskPremium": 0.91,
+  "erp": 5.14,
+  "corpTax": 25.0,
+  "sovCDS": 0.5,
+  "cdsErp": 4.99
+ },
+ {
+  "country": "Colombia",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 35.0,
+  "sovCDS": 3.2,
+  "cdsErp": 9.09
+ },
+ {
+  "country": "Congo  (Democratic Republic of)",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Congo  (Republic of)",
+  "rating": "Caa2",
+  "adjDefaultSpread": 7.65,
+  "countryRiskPremium": 11.66,
+  "erp": 15.89,
+  "corpTax": 26.86,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Cook Islands",
+  "rating": "B1",
+  "adjDefaultSpread": 3.83,
+  "countryRiskPremium": 5.83,
+  "erp": 10.06,
+  "corpTax": 20.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Costa Rica",
+  "rating": "Ba2",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 30.0,
+  "sovCDS": 1.61,
+  "cdsErp": 6.68
+ },
+ {
+  "country": "C\u00f4te d'Ivoire",
+  "rating": "Ba2",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Croatia",
+  "rating": "A3",
+  "adjDefaultSpread": 1.02,
+  "countryRiskPremium": 1.55,
+  "erp": 5.78,
+  "corpTax": 18.0,
+  "sovCDS": 0.88,
+  "cdsErp": 5.57
+ },
+ {
+  "country": "Cuba",
+  "rating": "Ca",
+  "adjDefaultSpread": 10.2,
+  "countryRiskPremium": 15.54,
+  "erp": 19.77,
+  "corpTax": 35.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Curacao",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 22.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Cyprus",
+  "rating": "A3",
+  "adjDefaultSpread": 1.02,
+  "countryRiskPremium": 1.55,
+  "erp": 5.78,
+  "corpTax": 12.5,
+  "sovCDS": 0.61,
+  "cdsErp": 5.16
+ },
+ {
+  "country": "Czech Republic",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 21.0,
+  "sovCDS": 0.34,
+  "cdsErp": 4.75
+ },
+ {
+  "country": "Denmark",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 22.0,
+  "sovCDS": 0.04,
+  "cdsErp": 4.29
+ },
+ {
+  "country": "Dominican  Republic",
+  "rating": "Ba2",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 27.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Ecuador",
+  "rating": "Caa3",
+  "adjDefaultSpread": 8.5,
+  "countryRiskPremium": 12.95,
+  "erp": 17.18,
+  "corpTax": 25.0,
+  "sovCDS": 5.53,
+  "cdsErp": 12.64
+ },
+ {
+  "country": "Egypt",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 22.5,
+  "sovCDS": 3.41,
+  "cdsErp": 9.41
+ },
+ {
+  "country": "El Salvador",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 30.0,
+  "sovCDS": 3.26,
+  "cdsErp": 9.19
+ },
+ {
+  "country": "Estonia",
+  "rating": "A1",
+  "adjDefaultSpread": 0.6,
+  "countryRiskPremium": 0.91,
+  "erp": 5.14,
+  "corpTax": 20.0,
+  "sovCDS": 0.86,
+  "cdsErp": 5.54
+ },
+ {
+  "country": "Ethiopia",
+  "rating": "Caa2",
+  "adjDefaultSpread": 7.65,
+  "countryRiskPremium": 11.66,
+  "erp": 15.89,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Fiji",
+  "rating": "B1",
+  "adjDefaultSpread": 3.83,
+  "countryRiskPremium": 5.83,
+  "erp": 10.06,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Finland",
+  "rating": "Aa1",
+  "adjDefaultSpread": 0.23,
+  "countryRiskPremium": 0.36,
+  "erp": 4.59,
+  "corpTax": 20.0,
+  "sovCDS": 0.12,
+  "cdsErp": 4.41
+ },
+ {
+  "country": "France",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 25.83,
+  "sovCDS": 0.5,
+  "cdsErp": 4.99
+ },
+ {
+  "country": "Gabon",
+  "rating": "Caa2",
+  "adjDefaultSpread": 7.65,
+  "countryRiskPremium": 11.66,
+  "erp": 15.89,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Gambia",
+  "rating": "NR",
+  "adjDefaultSpread": 4.67,
+  "countryRiskPremium": 7.12,
+  "erp": 11.35,
+  "corpTax": 11.36,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Georgia",
+  "rating": "Ba2",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 15.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Germany",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 29.93,
+  "sovCDS": 0.07,
+  "cdsErp": 4.34
+ },
+ {
+  "country": "Ghana",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Greece",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 22.0,
+  "sovCDS": 0.61,
+  "cdsErp": 5.16
+ },
+ {
+  "country": "Guatemala",
+  "rating": "Ba1",
+  "adjDefaultSpread": 2.13,
+  "countryRiskPremium": 3.24,
+  "erp": 7.47,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Guernsey  (States of)",
+  "rating": "A1",
+  "adjDefaultSpread": 0.6,
+  "countryRiskPremium": 0.91,
+  "erp": 5.14,
+  "corpTax": 0.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Guinea",
+  "rating": "NR",
+  "adjDefaultSpread": 7.65,
+  "countryRiskPremium": 11.66,
+  "erp": 15.89,
+  "corpTax": 15.9,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Guinea-Bissau",
+  "rating": "NR",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 13.95,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Guyana",
+  "rating": "NR",
+  "adjDefaultSpread": 1.36,
+  "countryRiskPremium": 2.07,
+  "erp": 6.3,
+  "corpTax": 6.31,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Haiti",
+  "rating": "NR",
+  "adjDefaultSpread": 8.5,
+  "countryRiskPremium": 12.95,
+  "erp": 17.18,
+  "corpTax": 17.19,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Honduras",
+  "rating": "B1",
+  "adjDefaultSpread": 3.83,
+  "countryRiskPremium": 5.83,
+  "erp": 10.06,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Hong Kong",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 16.5,
+  "sovCDS": 0.3,
+  "cdsErp": 4.69
+ },
+ {
+  "country": "Hungary",
+  "rating": "Baa2",
+  "adjDefaultSpread": 1.62,
+  "countryRiskPremium": 2.46,
+  "erp": 6.69,
+  "corpTax": 9.0,
+  "sovCDS": 1.46,
+  "cdsErp": 6.45
+ },
+ {
+  "country": "Iceland",
+  "rating": "A1",
+  "adjDefaultSpread": 0.6,
+  "countryRiskPremium": 0.91,
+  "erp": 5.14,
+  "corpTax": 21.0,
+  "sovCDS": 0.31,
+  "cdsErp": 4.7
+ },
+ {
+  "country": "India",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 30.0,
+  "sovCDS": 0.66,
+  "cdsErp": 5.23
+ },
+ {
+  "country": "Indonesia",
+  "rating": "Baa2",
+  "adjDefaultSpread": 1.62,
+  "countryRiskPremium": 2.46,
+  "erp": 6.69,
+  "corpTax": 22.0,
+  "sovCDS": 1.05,
+  "cdsErp": 5.83
+ },
+ {
+  "country": "Iran",
+  "rating": "NR",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 13.95,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Iraq",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 15.0,
+  "sovCDS": 2.75,
+  "cdsErp": 8.41
+ },
+ {
+  "country": "Ireland",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 12.5,
+  "sovCDS": 0.2,
+  "cdsErp": 4.53
+ },
+ {
+  "country": "Isle of Man",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 0.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Israel",
+  "rating": "Baa1",
+  "adjDefaultSpread": 1.36,
+  "countryRiskPremium": 2.07,
+  "erp": 6.3,
+  "corpTax": 23.0,
+  "sovCDS": 0.99,
+  "cdsErp": 5.73
+ },
+ {
+  "country": "Italy",
+  "rating": "Baa2",
+  "adjDefaultSpread": 1.62,
+  "countryRiskPremium": 2.46,
+  "erp": 6.69,
+  "corpTax": 27.81,
+  "sovCDS": 0.47,
+  "cdsErp": 4.94
+ },
+ {
+  "country": "Jamaica",
+  "rating": "Ba3",
+  "adjDefaultSpread": 3.06,
+  "countryRiskPremium": 4.66,
+  "erp": 8.89,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Japan",
+  "rating": "A1",
+  "adjDefaultSpread": 0.6,
+  "countryRiskPremium": 0.91,
+  "erp": 5.14,
+  "corpTax": 29.74,
+  "sovCDS": 0.3,
+  "cdsErp": 4.69
+ },
+ {
+  "country": "Jersey (States  of)",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 0.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Jordan",
+  "rating": "Ba3",
+  "adjDefaultSpread": 3.06,
+  "countryRiskPremium": 4.66,
+  "erp": 8.89,
+  "corpTax": 20.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Kazakhstan",
+  "rating": "Baa1",
+  "adjDefaultSpread": 1.36,
+  "countryRiskPremium": 2.07,
+  "erp": 6.3,
+  "corpTax": 20.0,
+  "sovCDS": 1.17,
+  "cdsErp": 6.01
+ },
+ {
+  "country": "Kenya",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 30.0,
+  "sovCDS": 4.37,
+  "cdsErp": 10.87
+ },
+ {
+  "country": "Korea",
+  "rating": "Aa2",
+  "adjDefaultSpread": 0.42,
+  "countryRiskPremium": 0.64,
+  "erp": 4.87,
+  "corpTax": 26.4,
+  "sovCDS": 0.2,
+  "cdsErp": 4.53
+ },
+ {
+  "country": "Korea, D.P.R.",
+  "rating": "NR",
+  "adjDefaultSpread": 10.2,
+  "countryRiskPremium": 15.54,
+  "erp": 19.77,
+  "corpTax": 19.78,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Kuwait",
+  "rating": "A1",
+  "adjDefaultSpread": 0.6,
+  "countryRiskPremium": 0.91,
+  "erp": 5.14,
+  "corpTax": 15.0,
+  "sovCDS": 0.73,
+  "cdsErp": 5.34
+ },
+ {
+  "country": "Kyrgyzstan",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 10.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Laos",
+  "rating": "Caa2",
+  "adjDefaultSpread": 7.65,
+  "countryRiskPremium": 11.66,
+  "erp": 15.89,
+  "corpTax": 20.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Latvia",
+  "rating": "A3",
+  "adjDefaultSpread": 1.02,
+  "countryRiskPremium": 1.55,
+  "erp": 5.78,
+  "corpTax": 20.0,
+  "sovCDS": 0.68,
+  "cdsErp": 5.26
+ },
+ {
+  "country": "Lebanon",
+  "rating": "C",
+  "adjDefaultSpread": 17.5,
+  "countryRiskPremium": 26.66,
+  "erp": 30.89,
+  "corpTax": 17.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Liberia",
+  "rating": "NR",
+  "adjDefaultSpread": 7.65,
+  "countryRiskPremium": 11.66,
+  "erp": 15.89,
+  "corpTax": 15.9,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Libya",
+  "rating": "NR",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 8.14,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Liechtenstein",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 12.5,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Lithuania",
+  "rating": "A2",
+  "adjDefaultSpread": 0.72,
+  "countryRiskPremium": 1.1,
+  "erp": 5.33,
+  "corpTax": 15.0,
+  "sovCDS": 0.68,
+  "cdsErp": 5.26
+ },
+ {
+  "country": "Luxembourg",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 24.94,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Macao",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Macedonia",
+  "rating": "Ba3",
+  "adjDefaultSpread": 3.06,
+  "countryRiskPremium": 4.66,
+  "erp": 8.89,
+  "corpTax": 10.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Madagascar",
+  "rating": "NR",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 12.65,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Malawi",
+  "rating": "NR",
+  "adjDefaultSpread": 8.5,
+  "countryRiskPremium": 12.95,
+  "erp": 17.18,
+  "corpTax": 17.19,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Malaysia",
+  "rating": "A3",
+  "adjDefaultSpread": 1.02,
+  "countryRiskPremium": 1.55,
+  "erp": 5.78,
+  "corpTax": 24.0,
+  "sovCDS": 0.53,
+  "cdsErp": 5.04
+ },
+ {
+  "country": "Maldives",
+  "rating": "Caa2",
+  "adjDefaultSpread": 7.65,
+  "countryRiskPremium": 11.66,
+  "erp": 15.89,
+  "corpTax": 15.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Mali",
+  "rating": "Caa2",
+  "adjDefaultSpread": 7.65,
+  "countryRiskPremium": 11.66,
+  "erp": 15.89,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Malta",
+  "rating": "A2",
+  "adjDefaultSpread": 0.72,
+  "countryRiskPremium": 1.1,
+  "erp": 5.33,
+  "corpTax": 35.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Mauritius",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 15.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Mexico",
+  "rating": "Baa2",
+  "adjDefaultSpread": 1.62,
+  "countryRiskPremium": 2.46,
+  "erp": 6.69,
+  "corpTax": 30.0,
+  "sovCDS": 1.52,
+  "cdsErp": 6.54
+ },
+ {
+  "country": "Moldova",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 12.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Mongolia",
+  "rating": "B1",
+  "adjDefaultSpread": 3.83,
+  "countryRiskPremium": 5.83,
+  "erp": 10.06,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Montenegro",
+  "rating": "B1",
+  "adjDefaultSpread": 3.83,
+  "countryRiskPremium": 5.83,
+  "erp": 10.06,
+  "corpTax": 15.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Montserrat",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Morocco",
+  "rating": "Ba1",
+  "adjDefaultSpread": 2.13,
+  "countryRiskPremium": 3.24,
+  "erp": 7.47,
+  "corpTax": 33.0,
+  "sovCDS": 1.16,
+  "cdsErp": 5.99
+ },
+ {
+  "country": "Mozambique",
+  "rating": "Caa3",
+  "adjDefaultSpread": 8.5,
+  "countryRiskPremium": 12.95,
+  "erp": 17.18,
+  "corpTax": 32.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Myanmar",
+  "rating": "NR",
+  "adjDefaultSpread": 10.2,
+  "countryRiskPremium": 15.54,
+  "erp": 19.77,
+  "corpTax": 19.78,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Namibia",
+  "rating": "B1",
+  "adjDefaultSpread": 3.83,
+  "countryRiskPremium": 5.83,
+  "erp": 10.06,
+  "corpTax": 32.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Nepal",
+  "rating": "Ba3",
+  "adjDefaultSpread": 3.06,
+  "countryRiskPremium": 4.66,
+  "erp": 8.89,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Netherlands",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 25.8,
+  "sovCDS": 0.06,
+  "cdsErp": 4.32
+ },
+ {
+  "country": "New Zealand",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 28.0,
+  "sovCDS": 0.09,
+  "cdsErp": 4.37
+ },
+ {
+  "country": "Nicaragua",
+  "rating": "B2",
+  "adjDefaultSpread": 4.67,
+  "countryRiskPremium": 7.12,
+  "erp": 11.35,
+  "corpTax": 30.0,
+  "sovCDS": 5.15,
+  "cdsErp": 12.06
+ },
+ {
+  "country": "Niger",
+  "rating": "Caa3",
+  "adjDefaultSpread": 8.5,
+  "countryRiskPremium": 12.95,
+  "erp": 17.18,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Nigeria",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 30.0,
+  "sovCDS": 3.77,
+  "cdsErp": 9.96
+ },
+ {
+  "country": "Norway",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 22.0,
+  "sovCDS": 0.04,
+  "cdsErp": 4.29
+ },
+ {
+  "country": "Oman",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 15.0,
+  "sovCDS": 1.16,
+  "cdsErp": 5.99
+ },
+ {
+  "country": "Pakistan",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 29.0,
+  "sovCDS": 5.09,
+  "cdsErp": 11.97
+ },
+ {
+  "country": "Panama",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 25.0,
+  "sovCDS": 2.08,
+  "cdsErp": 7.39
+ },
+ {
+  "country": "Papua New  Guinea",
+  "rating": "B2",
+  "adjDefaultSpread": 4.67,
+  "countryRiskPremium": 7.12,
+  "erp": 11.35,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Paraguay",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 10.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Peru",
+  "rating": "Baa1",
+  "adjDefaultSpread": 1.36,
+  "countryRiskPremium": 2.07,
+  "erp": 6.3,
+  "corpTax": 29.5,
+  "sovCDS": 1.12,
+  "cdsErp": 5.93
+ },
+ {
+  "country": "Philippines",
+  "rating": "Baa2",
+  "adjDefaultSpread": 1.62,
+  "countryRiskPremium": 2.46,
+  "erp": 6.69,
+  "corpTax": 25.0,
+  "sovCDS": 0.88,
+  "cdsErp": 5.57
+ },
+ {
+  "country": "Poland",
+  "rating": "A2",
+  "adjDefaultSpread": 0.72,
+  "countryRiskPremium": 1.1,
+  "erp": 5.33,
+  "corpTax": 19.0,
+  "sovCDS": 0.86,
+  "cdsErp": 5.54
+ },
+ {
+  "country": "Portugal",
+  "rating": "A3",
+  "adjDefaultSpread": 1.02,
+  "countryRiskPremium": 1.55,
+  "erp": 5.78,
+  "corpTax": 31.5,
+  "sovCDS": 0.31,
+  "cdsErp": 4.7
+ },
+ {
+  "country": "Qatar",
+  "rating": "Aa2",
+  "adjDefaultSpread": 0.42,
+  "countryRiskPremium": 0.64,
+  "erp": 4.87,
+  "corpTax": 10.0,
+  "sovCDS": 0.47,
+  "cdsErp": 4.94
+ },
+ {
+  "country": "Ras Al Khaimah  (Emirate of)",
+  "rating": "A3",
+  "adjDefaultSpread": 1.02,
+  "countryRiskPremium": 1.55,
+  "erp": 5.78,
+  "corpTax": 18.94,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Romania",
+  "rating": "Baa3",
+  "adjDefaultSpread": 1.87,
+  "countryRiskPremium": 2.85,
+  "erp": 7.08,
+  "corpTax": 16.0,
+  "sovCDS": 1.97,
+  "cdsErp": 7.22
+ },
+ {
+  "country": "Russia",
+  "rating": "NR",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 8.14,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Rwanda",
+  "rating": "B2",
+  "adjDefaultSpread": 4.67,
+  "countryRiskPremium": 7.12,
+  "erp": 11.35,
+  "corpTax": 28.0,
+  "sovCDS": 3.89,
+  "cdsErp": 10.14
+ },
+ {
+  "country": "Saudi Arabia",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 20.0,
+  "sovCDS": 0.98,
+  "cdsErp": 5.72
+ },
+ {
+  "country": "Senegal",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 30.0,
+  "sovCDS": 9.79,
+  "cdsErp": 19.11
+ },
+ {
+  "country": "Serbia",
+  "rating": "Ba2",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 15.0,
+  "sovCDS": 1.82,
+  "cdsErp": 7.0
+ },
+ {
+  "country": "Sharjah",
+  "rating": "Ba1",
+  "adjDefaultSpread": 2.13,
+  "countryRiskPremium": 3.24,
+  "erp": 7.47,
+  "corpTax": 18.94,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Sierra Leone",
+  "rating": "NR",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 12.65,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Singapore",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 17.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Slovakia",
+  "rating": "A3",
+  "adjDefaultSpread": 1.02,
+  "countryRiskPremium": 1.55,
+  "erp": 5.78,
+  "corpTax": 21.0,
+  "sovCDS": 0.43,
+  "cdsErp": 4.88
+ },
+ {
+  "country": "Slovenia",
+  "rating": "A3",
+  "adjDefaultSpread": 1.02,
+  "countryRiskPremium": 1.55,
+  "erp": 5.78,
+  "corpTax": 22.0,
+  "sovCDS": 0.53,
+  "cdsErp": 5.04
+ },
+ {
+  "country": "Solomon  Islands",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Somalia",
+  "rating": "NR",
+  "adjDefaultSpread": 8.5,
+  "countryRiskPremium": 12.95,
+  "erp": 17.18,
+  "corpTax": 17.19,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "South Africa",
+  "rating": "Ba2",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 27.0,
+  "sovCDS": 2.26,
+  "cdsErp": 7.67
+ },
+ {
+  "country": "Spain",
+  "rating": "A3",
+  "adjDefaultSpread": 1.02,
+  "countryRiskPremium": 1.55,
+  "erp": 5.78,
+  "corpTax": 25.0,
+  "sovCDS": 0.31,
+  "cdsErp": 4.7
+ },
+ {
+  "country": "Sri Lanka",
+  "rating": "Ca",
+  "adjDefaultSpread": 10.2,
+  "countryRiskPremium": 15.54,
+  "erp": 19.77,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "St. Maarten",
+  "rating": "Ba2",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 20.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "St. Vincent  & the Grenadines",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 28.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Sudan",
+  "rating": "NR",
+  "adjDefaultSpread": 17.5,
+  "countryRiskPremium": 26.66,
+  "erp": 30.89,
+  "corpTax": 30.9,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Suriname",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 36.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Swaziland",
+  "rating": "B2",
+  "adjDefaultSpread": 4.67,
+  "countryRiskPremium": 7.12,
+  "erp": 11.35,
+  "corpTax": 25.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Sweden",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 20.6,
+  "sovCDS": 0.06,
+  "cdsErp": 4.32
+ },
+ {
+  "country": "Switzerland",
+  "rating": "Aaa",
+  "adjDefaultSpread": 0.0,
+  "countryRiskPremium": 0.0,
+  "erp": 4.23,
+  "corpTax": 19.61,
+  "sovCDS": 0.0,
+  "cdsErp": 4.23
+ },
+ {
+  "country": "Syria",
+  "rating": "NR",
+  "adjDefaultSpread": 10.2,
+  "countryRiskPremium": 15.54,
+  "erp": 19.77,
+  "corpTax": 19.78,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Taiwan",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 20.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Tajikistan",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 18.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Tanzania",
+  "rating": "B1",
+  "adjDefaultSpread": 3.83,
+  "countryRiskPremium": 5.83,
+  "erp": 10.06,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Thailand",
+  "rating": "Baa1",
+  "adjDefaultSpread": 1.36,
+  "countryRiskPremium": 2.07,
+  "erp": 6.3,
+  "corpTax": 20.0,
+  "sovCDS": 0.52,
+  "cdsErp": 5.02
+ },
+ {
+  "country": "Togo",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 27.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Trinidad and  Tobago",
+  "rating": "Ba2",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Tunisia",
+  "rating": "Caa1",
+  "adjDefaultSpread": 6.37,
+  "countryRiskPremium": 9.71,
+  "erp": 13.94,
+  "corpTax": 15.0,
+  "sovCDS": 6.87,
+  "cdsErp": 14.67
+ },
+ {
+  "country": "Turkey (updated February 2026)",
+  "rating": "Ba3",
+  "adjDefaultSpread": 3.06,
+  "countryRiskPremium": 4.66,
+  "erp": 8.89,
+  "corpTax": 25.0,
+  "sovCDS": 2.85,
+  "cdsErp": 8.56
+ },
+ {
+  "country": "Turks and  Caicos Islands",
+  "rating": "Baa1",
+  "adjDefaultSpread": 1.36,
+  "countryRiskPremium": 2.07,
+  "erp": 6.3,
+  "corpTax": 0.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Uganda",
+  "rating": "B3",
+  "adjDefaultSpread": 5.52,
+  "countryRiskPremium": 8.41,
+  "erp": 12.64,
+  "corpTax": 30.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Ukraine",
+  "rating": "Ca",
+  "adjDefaultSpread": 10.2,
+  "countryRiskPremium": 15.54,
+  "erp": 19.77,
+  "corpTax": 18.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "United Arab  Emirates",
+  "rating": "Aa2",
+  "adjDefaultSpread": 0.42,
+  "countryRiskPremium": 0.64,
+  "erp": 4.87,
+  "corpTax": 9.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "United Kingdom",
+  "rating": "Aa3",
+  "adjDefaultSpread": 0.51,
+  "countryRiskPremium": 0.78,
+  "erp": 5.01,
+  "corpTax": 25.0,
+  "sovCDS": 0.23,
+  "cdsErp": 4.58
+ },
+ {
+  "country": "United States",
+  "rating": "Aa1",
+  "adjDefaultSpread": 0.23,
+  "countryRiskPremium": 0.23,
+  "erp": 4.46,
+  "corpTax": 25.0,
+  "sovCDS": 0.3,
+  "cdsErp": 4.69
+ },
+ {
+  "country": "Uruguay",
+  "rating": "Baa1",
+  "adjDefaultSpread": 1.36,
+  "countryRiskPremium": 2.07,
+  "erp": 6.3,
+  "corpTax": 25.0,
+  "sovCDS": 0.63,
+  "cdsErp": 5.19
+ },
+ {
+  "country": "Uzbekistan",
+  "rating": "Ba3",
+  "adjDefaultSpread": 3.06,
+  "countryRiskPremium": 4.66,
+  "erp": 8.89,
+  "corpTax": 15.0,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Venezuela",
+  "rating": "C",
+  "adjDefaultSpread": 17.5,
+  "countryRiskPremium": 26.66,
+  "erp": 30.89,
+  "corpTax": 34.0,
+  "sovCDS": 9.15,
+  "cdsErp": 18.14
+ },
+ {
+  "country": "Vietnam",
+  "rating": "Ba2",
+  "adjDefaultSpread": 2.56,
+  "countryRiskPremium": 3.9,
+  "erp": 8.13,
+  "corpTax": 20.0,
+  "sovCDS": 1.37,
+  "cdsErp": 6.31
+ },
+ {
+  "country": "Yemen,  Republic",
+  "rating": "NR",
+  "adjDefaultSpread": 10.2,
+  "countryRiskPremium": 15.54,
+  "erp": 19.77,
+  "corpTax": 19.78,
+  "sovCDS": null,
+  "cdsErp": null
+ },
+ {
+  "country": "Zambia",
+  "rating": "Caa2",
+  "adjDefaultSpread": 7.65,
+  "countryRiskPremium": 11.66,
+  "erp": 15.89,
+  "corpTax": 30.0,
+  "sovCDS": 3.94,
+  "cdsErp": 10.22
+ },
+ {
+  "country": "Zimbabwe",
+  "rating": "NR",
+  "adjDefaultSpread": 7.65,
+  "countryRiskPremium": 11.66,
+  "erp": 15.89,
+  "corpTax": 15.9,
+  "sovCDS": null,
+  "cdsErp": null
+ }
+]
