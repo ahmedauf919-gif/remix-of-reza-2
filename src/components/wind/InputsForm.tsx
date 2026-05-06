@@ -297,6 +297,11 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
 
   return (
     <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <NumberField obj={inputs} k={"constructionMonths" as keyof ProjectInputs}
+          f={{ label: "Construction period", unit: "months" }}
+          onSet={(v) => onChange({ ...inputs, constructionMonths: Math.max(1, Math.min(36, Math.round(v))) })} />
+      </div>
       <p className="text-xs text-muted-foreground">
         Allocate each capex line across construction months. Cells are % of that line item (should sum to 100%).
         Items left at 0% fall back to the global drawdown profile above. The blended profile drives IDC and commitment fees.
