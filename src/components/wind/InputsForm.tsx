@@ -309,7 +309,7 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
           f={{ label: "VAT rate (onshore supply)", pct: true, step: 0.001 }}
           onSet={(v) => onChange({ ...inputs, vatRate: v })} />
         <NumberField obj={inputs} k={"customsDutyRate" as keyof ProjectInputs}
-          f={{ label: "Customs duty (offshore supply)", pct: true, step: 0.001 }}
+          f={{ label: "VAT rate (offshore supply)", pct: true, step: 0.001 }}
           onSet={(v) => onChange({ ...inputs, customsDutyRate: v })} />
       </div>
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
