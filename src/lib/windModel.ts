@@ -15,8 +15,8 @@ export function getCountryERP(country: string): number {
 }
 
 /** Compute WACC (decimal) from project inputs and current capital structure. */
-export function computeWACC(opts: { country: string; riskFreeRate: number; equityBeta: number; gearing: number; costOfDebt: number; taxRate: number }): { wacc: number; costOfEquity: number; afterTaxKd: number; erp: number } {
-  const erp = getCountryERP(opts.country);
+export function computeWACC(opts: { country: string; riskFreeRate: number; equityBeta: number; gearing: number; costOfDebt: number; taxRate: number; useErpOverride?: 0 | 1; erpOverride?: number }): { wacc: number; costOfEquity: number; afterTaxKd: number; erp: number } {
+  const erp = opts.useErpOverride ? (opts.erpOverride ?? 0) : getCountryERP(opts.country);
   const costOfEquity = opts.riskFreeRate + opts.equityBeta * erp;
   const afterTaxKd = opts.costOfDebt * (1 - opts.taxRate);
   const wacc = (1 - opts.gearing) * costOfEquity + opts.gearing * afterTaxKd;
