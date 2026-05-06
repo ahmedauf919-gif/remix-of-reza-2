@@ -525,6 +525,7 @@ const OPEX: Field[] = [
   { key: "auxiliaryPower", label: "Auxiliary power", unit: "USD '000 p.a." },
   { key: "opexContingency", label: "Opex contingency", unit: "USD '000 p.a." },
   { key: "usufructEGP", label: "User's share usufruct (EGP)", unit: "EGP '000 p.a." },
+  { key: "opexVat", label: "VAT on opex (manual)", unit: "USD '000 p.a." },
   { key: "cpi", label: "Opex escalation (CPI)", pct: true, step: 0.001 },
   { key: "daysReceivable", label: "Debtor days", unit: "days" },
   { key: "daysPayable", label: "Creditor days", unit: "days" },
