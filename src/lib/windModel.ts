@@ -877,7 +877,10 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const realEstate = rentalValue * I.realEstateTaxableAmount * I.realEstateTaxRate * (1 - (I.exemptedProportion || 0)) * escal;
     const otherFixedOpex = (I.bondExpenses + I.lease + I.auxiliaryPower + I.opexContingency
       + I.usufructEGP * I.fxEGP + I.migaPremium) * escal;
-    const majorMaintenance = (I.mmWindSpareParts + I.mmSubstationSpareParts + I.mmPmCm + I.mmSpare) * escal;
+    const mmFlat = (I.mmWindSpareParts + I.mmSubstationSpareParts + I.mmPmCm + I.mmSpare) * escal;
+    const mmSchedPct = (I.mmSchedulePctOfCapex && I.mmSchedulePctOfCapex[y - 1]) || 0;
+    const mmScheduled = hardCapex * mmSchedPct * escal;
+    const majorMaintenance = mmFlat + mmScheduled;
     const revPctOpex = totalRev * (I.pctRevConvLocalEUR + I.pctRevUsufructLease + I.pctRevInsuranceOps);
     const decommissioning = decommissioningAnnual * escal;
     const levy = I.additionalLevy * totalRev;
