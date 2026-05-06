@@ -587,7 +587,12 @@ export const InputsForm = ({ inputs, onChange }: Props) => {
               </AccordionItem>
               <AccordionItem value="mm">
                 <AccordionTrigger>Major maintenance (real)</AccordionTrigger>
-                <AccordionContent><FieldsGrid inputs={inputs} onChange={onChange} fields={MAJOR_MAINT}/></AccordionContent>
+                <AccordionContent>
+                  <FieldsGrid inputs={inputs} onChange={onChange} fields={MAJOR_MAINT}/>
+                  <div className="mt-6">
+                    <MajorMaintenanceScheduleEditor inputs={inputs} onChange={onChange} />
+                  </div>
+                </AccordionContent>
               </AccordionItem>
               <AccordionItem value="reserves">
                 <AccordionTrigger>Reserves & DSRA</AccordionTrigger>
