@@ -1465,12 +1465,52 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const dCost = pvCapex + pvBaseOpex + pvRealEstate + pvOtherFixed + pvMajorMaint + pvPctRev + pvLevy + pvDecomm + pvTax;
   const lcoeUsdPerKWh = dMWh > 0 ? dCost / (dMWh * 1000) : 0;
 
+  // ── Item-level LCOE breakdown ──
+  // CAPEX: split pvCapex by each line's share of resolved totals (IDC/fees included pro-rata).
+  const capexLineLabels: Record<string, string> = {
+    epcCost: "EPC", developmentExpenses: "Development expenses", developmentPremiums: "Development premiums",
+    preConstructionCosts: "Pre-construction", land: "Land", esMeasures: "E&S measures",
+    lendersTechAdvisors: "Lenders' tech advisors", legalExpenses: "Legal", administrativeCosts: "Admin",
+    financialAudit: "Financial audit", insuranceConstruction: "Insurance (construction)",
+    contingency: "Contingency", substation: "Substation", taxesCapex: "Taxes (capex)",
+    loanRepayment: "Loan repayment (capex)",
+    compEsmp: "Comp — ESMP", compCsr: "Comp — CSR",
+    capexSpare15: "Capex spare 15", capexSpare16: "Capex spare 16", capexSpare17: "Capex spare 17",
+    capexSpare18: "Capex spare 18", capexSpare19: "Capex spare 19", capexSpare20: "Capex spare 20",
+  };
+  const totalCapexItems = Object.values(capexItems).reduce((a, b) => a + b, 0);
+  const capexBuckets = Object.entries(capexItems)
+    .filter(([, amt]) => amt > 0)
+    .map(([k, amt]) => ({
+      label: `Capex · ${capexLineLabels[k] ?? k}`,
+      pv: totalCapexItems > 0 ? pvCapex * (amt / totalCapexItems) : 0,
+    }));
+  const idcShare = pvCapex - capexBuckets.reduce((s, b) => s + b.pv, 0);
+  if (Math.abs(idcShare) > 1) capexBuckets.push({ label: "Capex · IDC + financing fees", pv: idcShare });
+
+  // OPEX (fixed Base & Other): split by each line's share of total opexBase + opexOtherFixed
+  const baseOpexLines: Array<[string, number, string]> = [
+    ["O&M", I.oAndM, "opexBase"], ["Asset management", I.assetMgmt, "opexBase"],
+    ["SPV cost", I.spvCost, "opexBase"], ["Insurance (ops)", I.insurance, "opexBase"],
+    ["CSR contribution", I.csrContribution, "opexBase"], ["EETC cost", I.eetcCost, "opexBase"],
+  ];
+  const otherOpexLines: Array<[string, number, string]> = [
+    ["Bond expenses", I.bondExpenses, "opexOther"], ["Lease", I.lease, "opexOther"],
+    ["Auxiliary power", I.auxiliaryPower, "opexOther"], ["Opex contingency", I.opexContingency, "opexOther"],
+    ["Usufruct (EGP)", I.usufructEGP * I.fxEGP, "opexOther"], ["MIGA premium", I.migaPremium, "opexOther"],
+  ];
+  const sumBase = baseOpexLines.reduce((s, [, v]) => s + v, 0) || 1;
+  const sumOther = otherOpexLines.reduce((s, [, v]) => s + v, 0) || 1;
+  const opexItemBuckets = [
+    ...baseOpexLines.filter(([, v]) => v > 0).map(([label, v]) => ({ label: `Opex · ${label}`, pv: pvBaseOpex * (v / sumBase) })),
+    ...otherOpexLines.filter(([, v]) => v > 0).map(([label, v]) => ({ label: `Opex · ${label}`, pv: pvOtherFixed * (v / sumOther) })),
+  ];
+
   const buckets: { label: string; pv: number }[] = [
-    { label: "Capex (incl. IDC & fees)", pv: pvCapex },
-    { label: "Base O&M / Asset Mgmt / SPV / Insurance", pv: pvBaseOpex },
+    ...capexBuckets,
+    ...opexItemBuckets,
     { label: "Major maintenance", pv: pvMajorMaint },
     { label: "Real-estate tax", pv: pvRealEstate },
-    { label: "Other fixed opex", pv: pvOtherFixed },
     { label: "% of revenue items", pv: pvPctRev },
     { label: "Additional levy", pv: pvLevy },
     { label: "Decommissioning", pv: pvDecomm },
@@ -1478,6 +1518,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   ];
   const lcoeContributions = buckets.map(b => ({
     label: b.label,
+    pv: b.pv,
     pct: dCost > 0 ? b.pv / dCost : 0,
     usdPerMWh: dMWh > 0 ? b.pv / dMWh : 0,
   })).filter(b => b.pct > 0.0001).sort((a, b) => b.pct - a.pct);
