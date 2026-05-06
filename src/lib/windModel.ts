@@ -723,10 +723,19 @@ function npv(rate: number, cashflows: number[]): number {
   return cashflows.reduce((s, cf, t) => s + cf / Math.pow(1 + rate, t), 0);
 }
 
-function trancheAllIn(t: DebtTranche): number {
-  // hedged*hedgedRate + (1-hedged)*(base+underlyingMargin?) + risk margin
-  // The Excel uses: All-in = hedged*hedgedRate + (1-hedged)*underlyingRate + riskMargin (approx)
-  return t.hedgedPct * t.hedgedRate + (1 - t.hedgedPct) * (t.baseRate + (t.underlyingRate - t.baseRate)) + t.riskMargin;
+function trancheAllIn(t: DebtTranche, I?: ProjectInputs): number {
+  // Resolve effective base rate from the selected reference (SOFR/LIBOR/CBE/Fixed).
+  // "Fixed" means the tranche's hard-coded baseRate is used as-is.
+  let base = t.baseRate;
+  if (I && t.baseRateRef) {
+    if (t.baseRateRef === "SOFR") base = I.baseRate;
+    else if (t.baseRateRef === "LIBOR") base = I.baseRateLIBOR;
+    else if (t.baseRateRef === "CBE") base = I.baseRateCBE;
+    // Fixed → keep tranche-defined baseRate
+  }
+  // All-in = hedged% × hedgedRate + unhedged% × (base + underlying spread) + risk margin
+  const unhedgedRate = base + Math.max(0, t.underlyingRate - t.baseRate); // spread over original base
+  return t.hedgedPct * t.hedgedRate + (1 - t.hedgedPct) * unhedgedRate + t.riskMargin;
 }
 
 /** Aggregate breakdowns into the values used by the simulation. */
@@ -747,7 +756,7 @@ function aggregate(I: ProjectInputs) {
 
   // Tranches
   const t1 = I.debt1, t2 = I.debt2, t3 = I.debt3;
-  const r1 = trancheAllIn(t1), r2 = trancheAllIn(t2), r3 = trancheAllIn(t3);
+  const r1 = trancheAllIn(t1, I), r2 = trancheAllIn(t2, I), r3 = trancheAllIn(t3, I);
   // Weights from sharePct of enabled tranches
   const ws = [
     t1.enabled ? Math.max(0, t1.sharePct) : 0,
