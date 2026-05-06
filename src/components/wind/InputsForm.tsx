@@ -239,7 +239,7 @@ const COMP_PAYMENTS: Field[] = [
 ];
 
 const MAJOR_MAINT: Field[] = [
-  { key: "mmWindSpareParts", label: "Wind spare parts", unit: "USD '000 p.a." },
+  { key: "mmWindSpareParts", label: "Renewable farm spare parts", unit: "USD '000 p.a." },
   { key: "mmSubstationSpareParts", label: "Substation spare parts", unit: "USD '000 p.a." },
   { key: "mmDecommissioning", label: "Decommissioning", unit: "USD '000 p.a." },
   { key: "mmPmCm", label: "PM & CM", unit: "USD '000 p.a." },
