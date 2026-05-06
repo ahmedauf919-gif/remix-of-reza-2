@@ -1144,6 +1144,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
       openingDebt, closingDebt: debt, dscr,
       ppe, cash: 0, receivables: p.newReceivables, payables: p.newPayables, equity,
       dsraTarget: 0, dsraMovement: 0, dsraBalance: 0,
+      decommReserve: 0, decommProvision: 0, refiProceeds: 0, prefAccrued: 0,
       llcr: 0, plcr: 0, balanceCheck: 0,
     });
   }
