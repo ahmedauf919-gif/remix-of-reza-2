@@ -9,9 +9,6 @@ import { InputsForm } from "@/components/wind/InputsForm";
 import { SummaryView } from "@/components/wind/SummaryView";
 import { OutputsView, IncomeStatementView, BalanceSheetView } from "@/components/wind/SchedulesView";
 import { CashflowChart, DSCRChart, DebtBalanceChart } from "@/components/wind/Charts";
-import { CostOfCapitalView } from "@/components/wind/CostOfCapitalView";
-import { ReferenceRatesView } from "@/components/wind/ReferenceRatesView";
-import { FxRatesView } from "@/components/wind/FxRatesView";
 
 const Index = () => {
   const [inputs, setInputs] = useState<ProjectInputs>(DEFAULT_INPUTS);
@@ -51,9 +48,6 @@ const Index = () => {
             <TabsTrigger value="ifs">Income statement</TabsTrigger>
             <TabsTrigger value="afs">Balance sheet</TabsTrigger>
             <TabsTrigger value="charts">Charts</TabsTrigger>
-            <TabsTrigger value="wacc">Cost of Capital</TabsTrigger>
-            <TabsTrigger value="rates">Reference Rates</TabsTrigger>
-            <TabsTrigger value="fx">FX Rates</TabsTrigger>
           </TabsList>
 
           <TabsContent value="summary" className="m-0 pt-6 space-y-6">
@@ -86,18 +80,6 @@ const Index = () => {
               <DSCRChart m={model}/>
               <DebtBalanceChart m={model}/>
             </div>
-          </TabsContent>
-
-          <TabsContent value="wacc" className="m-0 pt-6">
-            <CostOfCapitalView m={model} onChange={(patch) => setInputs({ ...inputs, ...patch })}/>
-          </TabsContent>
-
-          <TabsContent value="rates" className="m-0 pt-6">
-            <ReferenceRatesView />
-          </TabsContent>
-
-          <TabsContent value="fx" className="m-0 pt-6">
-            <FxRatesView />
           </TabsContent>
         </Tabs>
 
