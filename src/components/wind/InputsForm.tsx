@@ -522,7 +522,64 @@ const OPEX: Field[] = [
   { key: "creditorMonths", label: "Creditors", unit: "months" },
 ];
 
-const VAR_OPEX: Field[] = [
+const OPEX_PER_MW_KEYS = ["oAndM","assetMgmt","spvCost","insurance","csrContribution","eetcCost","bondExpenses","lease","auxiliaryPower","opexContingency","usufructEGP"] as const;
+const OpexEditor = ({ inputs, onChange }: Props) => {
+  const setBasis = (k: string, v: 0 | 1) =>
+    onChange({ ...inputs, opexBasisPerMW: { ...(inputs.opexBasisPerMW ?? {}), [k]: v } });
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Per-line basis: <b>USD '000 p.a.</b> = absolute, or <b>USD '000/MW p.a.</b> = per MW × capacity ({inputs.capacityMWp} MW).
+      </p>
+      <div className="overflow-x-auto rounded-lg border border-border/60">
+        <table className="w-full text-xs">
+          <thead className="bg-secondary/40">
+            <tr>
+              <th className="text-left p-2 min-w-[170px]">Opex item</th>
+              <th className="p-2 min-w-[140px]">Basis</th>
+              <th className="text-right p-2 min-w-[120px]">Amount</th>
+              <th className="text-right p-2 min-w-[140px]">Resolved (USD '000 p.a.)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {OPEX.filter(f => (OPEX_PER_MW_KEYS as readonly string[]).includes(f.key as string)).map(f => {
+              const k = f.key as string;
+              const amt = inputs[f.key] as unknown as number;
+              const perMW = (inputs.opexBasisPerMW?.[k] ?? 0) === 1;
+              const resolved = perMW ? (amt || 0) * (inputs.capacityMWp || 0) : (amt || 0);
+              return (
+                <tr key={k} className="border-t border-border/40 hover:bg-secondary/20">
+                  <td className="p-2 font-medium">{f.label}</td>
+                  <td className="p-1">
+                    <Select value={perMW ? "perMW" : "abs"} onValueChange={(v) => setBasis(k, v === "perMW" ? 1 : 0)}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="abs">USD '000 p.a.</SelectItem>
+                        <SelectItem value="perMW">USD '000 / MW p.a.</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="p-1">
+                    <Input type="number" step={0.1} className="h-8 font-mono text-xs text-right"
+                      value={String(amt ?? 0)}
+                      onChange={(e) => onChange({ ...inputs, [k]: parseFloat(e.target.value) || 0 })} />
+                  </td>
+                  <td className="p-2 text-right font-mono text-muted-foreground">{resolved.toLocaleString(undefined, { maximumFractionDigits: 1 })}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {OPEX.filter(f => !(OPEX_PER_MW_KEYS as readonly string[]).includes(f.key as string)).map(f => (
+          <NumberField key={String(f.key)} obj={inputs} k={f.key} f={f}
+            onSet={(v) => onChange({ ...inputs, [f.key]: v })} />
+        ))}
+      </div>
+    </div>
+  );
+};
   { key: "varOpexSpare1", label: "Variable opex spare 1", unit: "USD/MWh", step: 0.01 },
   { key: "varOpexSpare2", label: "Variable opex spare 2", unit: "USD/MWh", step: 0.01 },
   { key: "varOpexSpare3", label: "Variable opex spare 3", unit: "USD/MWh", step: 0.01 },
