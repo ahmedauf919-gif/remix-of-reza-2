@@ -2,6 +2,26 @@
 // Closed-form IDC where possible; fixed-point iteration for DSCR-sculpted debt sizing.
 // Inputs schema mirrors the Excel "Inputs" tab — all granular assumptions are exposed,
 // then aggregated inside runModel to feed the simulation.
+import damodaranERPData from "./damodaranERP.json";
+
+type DamodaranRow = { country: string; rating: string; adjDefaultSpread: number | null; countryRiskPremium: number | null; erp: number | null; corpTax: number | null; sovCDS: number | null; cdsErp: number | null };
+const DAMODARAN_ERP = damodaranERPData as DamodaranRow[];
+
+/** Lookup country ERP (decimal) from Damodaran dataset. Returns 0 if not found. */
+export function getCountryERP(country: string): number {
+  if (!country) return 0;
+  const row = DAMODARAN_ERP.find(r => r.country.toLowerCase() === country.toLowerCase());
+  return row?.erp != null ? row.erp / 100 : 0;
+}
+
+/** Compute WACC (decimal) from project inputs and current capital structure. */
+export function computeWACC(opts: { country: string; riskFreeRate: number; equityBeta: number; gearing: number; costOfDebt: number; taxRate: number }): { wacc: number; costOfEquity: number; afterTaxKd: number; erp: number } {
+  const erp = getCountryERP(opts.country);
+  const costOfEquity = opts.riskFreeRate + opts.equityBeta * erp;
+  const afterTaxKd = opts.costOfDebt * (1 - opts.taxRate);
+  const wacc = (1 - opts.gearing) * costOfEquity + opts.gearing * afterTaxKd;
+  return { wacc, costOfEquity, afterTaxKd, erp };
+}
 
 export type SizingMethod = "annuity" | "sculpted" | "llcr-sculpted" | "manual" | "bullet" | "mortgage";
 export type BaseRateRef = "SOFR" | "LIBOR" | "CBE" | "Fixed";
