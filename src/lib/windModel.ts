@@ -655,6 +655,9 @@ export interface AnnualRow {
   dsraTarget: number;
   dsraMovement: number;
   dsraBalance: number;
+  llcr: number;
+  plcr: number;
+  balanceCheck: number;
 }
 
 export interface ModelOutputs {
