@@ -8,46 +8,47 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 215 35% 12%;
+    /* TAQA Arabia brand palette: navy #005298, gold #FFC10E, green #009045, deep navy #002060 */
+    --background: 210 30% 98%;
+    --foreground: 217 70% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 35% 12%;
+    --card-foreground: 217 70% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 35% 12%;
+    --popover-foreground: 217 70% 14%;
 
-    --primary: 28 95% 52%;
+    --primary: 209 100% 30%;            /* TAQA navy #005298 */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 38 100% 60%;
+    --primary-glow: 209 100% 42%;
 
     --secondary: 210 30% 94%;
-    --secondary-foreground: 215 35% 18%;
+    --secondary-foreground: 217 70% 18%;
 
-    --muted: 210 30% 95%;
-    --muted-foreground: 215 16% 45%;
+    --muted: 210 25% 95%;
+    --muted-foreground: 215 16% 40%;
 
-    --accent: 200 90% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 45 99% 53%;               /* TAQA gold #FFC10E */
+    --accent-foreground: 217 70% 14%;
 
-    --success: 142 70% 40%;
-    --warning: 38 95% 50%;
+    --success: 142 100% 28%;            /* TAQA green #009045 */
+    --warning: 45 99% 53%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 100%;
 
     --border: 214 25% 88%;
     --input: 214 25% 88%;
-    --ring: 28 95% 52%;
+    --ring: 209 100% 30%;
 
     --radius: 0.75rem;
 
-    --gradient-primary: linear-gradient(135deg, hsl(28 95% 52%), hsl(38 100% 60%));
-    --gradient-hero: linear-gradient(135deg, hsl(215 50% 18%) 0%, hsl(200 70% 25%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(209 100% 30%), hsl(209 100% 42%));
+    --gradient-hero: linear-gradient(135deg, hsl(217 100% 19%) 0%, hsl(209 100% 30%) 60%, hsl(45 99% 53%) 140%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 30% 98%));
-    --shadow-soft: 0 1px 3px hsl(215 35% 12% / 0.06), 0 1px 2px hsl(215 35% 12% / 0.04);
-    --shadow-elevated: 0 10px 30px -10px hsl(215 35% 12% / 0.15);
-    --shadow-glow: 0 0 40px hsl(28 95% 52% / 0.25);
+    --shadow-soft: 0 1px 3px hsl(217 70% 14% / 0.06), 0 1px 2px hsl(217 70% 14% / 0.04);
+    --shadow-elevated: 0 10px 30px -10px hsl(217 70% 14% / 0.18);
+    --shadow-glow: 0 0 40px hsl(209 100% 30% / 0.25);
 
     --sidebar-background: 0 0% 98%;
 
