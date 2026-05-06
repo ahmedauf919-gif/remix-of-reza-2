@@ -569,7 +569,7 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   csrTaxDeductible: 0,
   nokusRate: 0,
   nokusStartYear: 2029,
-  nokusEndYear: 2017,
+  nokusEndYear: 2054,
   nokusThresholdRate: 0,
   taxCalcMonths: 12,
   taxAdvanceMonths: 3,
