@@ -1172,6 +1172,17 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   });
   const lcoeUsdPerKWh = dMWh > 0 ? dCost / (dMWh * 1000) : 0;
 
+  // Coverage ratios + balance check rollup
+  const llcrs = sim.rows.filter(r => r.llcr > 0).map(r => r.llcr);
+  const plcrs = sim.rows.filter(r => r.plcr > 0).map(r => r.plcr);
+  const minLLCR = llcrs.length ? Math.min(...llcrs) : 0;
+  const avgLLCR = llcrs.length ? llcrs.reduce((a,b)=>a+b,0) / llcrs.length : 0;
+  const minPLCR = plcrs.length ? Math.min(...plcrs) : 0;
+  const maxBalanceCheck = sim.rows.reduce((m, r) => Math.max(m, Math.abs(r.balanceCheck)), 0);
+  let loanLifeYears = 0;
+  sim.rows.forEach((r, i) => { if (r.debtService > 1e-3) loanLifeYears = i + 1; });
+  const debtServiceCoverageOk = minDSCR >= I.targetDSCR - 0.005;
+
   return {
     inputs: I,
     totalUses,
@@ -1198,6 +1209,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     commonEquityAmount: commonAmt,
     prefEquityAmount: prefAmt,
     shLoanAmount: shLoanAmt,
+    minLLCR, avgLLCR, minPLCR, maxBalanceCheck, loanLifeYears, debtServiceCoverageOk,
   };
 }
 
