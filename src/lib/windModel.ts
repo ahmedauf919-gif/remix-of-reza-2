@@ -728,6 +728,10 @@ export interface ModelOutputs {
   npvEquity: number;
   paybackYears: number;
   lcoeUsdPerKWh: number;
+  wacc: number;
+  costOfEquity: number;
+  countryERP: number;
+  lcoeDiscountRateUsed: number;
   totalRevenue: number;
   totalOpex: number;
   totalCFADS: number;
