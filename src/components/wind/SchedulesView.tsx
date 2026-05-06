@@ -16,7 +16,6 @@ const ScheduleTable = ({ title, years, sections }: { title: string; years: numbe
         <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
           <tr>
             <th className="sticky left-0 z-20 bg-muted/80 px-3 py-2 text-left min-w-[200px]">Item</th>
-            <th className="px-2 py-2 text-right font-mono">Total</th>
             {years.map(y => <th key={y} className="px-2 py-2 text-right font-mono text-muted-foreground">{y}</th>)}
           </tr>
         </thead>
@@ -24,18 +23,12 @@ const ScheduleTable = ({ title, years, sections }: { title: string; years: numbe
           {sections.map((sec, si) => (
             <Fragment key={`sec-${si}`}>
               <tr className="bg-secondary/20">
-                <td colSpan={2 + years.length} className="px-3 py-1.5 font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">{sec.title}</td>
+                <td colSpan={1 + years.length} className="px-3 py-1.5 font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">{sec.title}</td>
               </tr>
               {sec.rows.map((r, ri) => {
-                const nonZero = r.values.filter(v => Math.abs(v) > 1e-9);
-                const avg = nonZero.length ? nonZero.reduce((a, b) => a + b, 0) / nonZero.length : 0;
-                const total = r.total ?? r.values.reduce((a, b) => a + b, 0);
                 return (
                   <tr key={`r-${si}-${ri}`} className={`border-t border-border/40 hover:bg-secondary/30 ${r.bold ? "font-semibold bg-muted/30" : ""}`}>
                     <td className={`sticky left-0 bg-card px-3 py-1.5 ${r.indent ? "pl-6 text-muted-foreground" : ""}`}>{r.label}</td>
-                    <td className="px-2 py-1.5 text-right font-mono tabular-nums">
-                      {r.pct ? (avg > 0 ? `${fmt(avg, 2)}x avg` : "-") : fmt(total)}
-                    </td>
                     {r.values.map((v, vi) => (
                       <td key={vi} className="px-2 py-1.5 text-right font-mono tabular-nums">
                         {r.pct ? (v > 0 ? fmt(v, 2) + "x" : "-") : fmt(v)}
@@ -201,16 +194,48 @@ export const IncomeStatementView = ({ m }: { m: ModelOutputs }) => {
   const years = m.rows.map(r => r.year);
   const sections: Section[] = [
     {
-      title: "Income statement",
+      title: "Revenue",
       rows: [
-        { label: "Revenue", values: m.rows.map(r => r.revenue) },
-        { label: "Operating expenditure", values: m.rows.map(r => -r.opex) },
+        { label: "Energy generated (MWh)", values: m.rows.map(r => r.mwh), indent: true },
+        { label: "Effective tariff (USD/kWh)", values: m.rows.map(r => r.effectiveTariff * 1000), indent: true },
+        { label: "Energy revenue", values: m.rows.map(r => r.revenue), indent: true },
+        { label: "Carbon / CDM revenue", values: m.rows.map(r => r.carbonRevenue), indent: true },
+        { label: "Total revenue", values: m.rows.map(r => r.revenue + r.carbonRevenue), bold: true },
+      ],
+    },
+    {
+      title: "Operating expenditure",
+      rows: [
+        { label: "Base O&M / Asset Mgmt / SPV / Insurance", values: m.rows.map(r => -r.opexBase), indent: true },
+        { label: "Real-estate tax", values: m.rows.map(r => -r.opexRealEstate), indent: true },
+        { label: "Other fixed (lease, aux, contingency, MIGA)", values: m.rows.map(r => -r.opexOtherFixed), indent: true },
+        { label: "Major maintenance", values: m.rows.map(r => -r.opexMajorMaintenance), indent: true },
+        { label: "% of revenue items", values: m.rows.map(r => -r.opexPctRevenue), indent: true },
+        { label: "Additional levy", values: m.rows.map(r => -r.opexLevy), indent: true },
+        { label: "Decommissioning", values: m.rows.map(r => -r.opexDecommissioning), indent: true },
+        { label: "Total operating expenditure", values: m.rows.map(r => -r.opex), bold: true },
+      ],
+    },
+    {
+      title: "EBITDA & Depreciation",
+      rows: [
         { label: "EBITDA", values: m.rows.map(r => r.ebitda), bold: true },
-        { label: "Depreciation", values: m.rows.map(r => -r.depreciation) },
+        { label: "Depreciation (PP&E + IDC)", values: m.rows.map(r => -r.depreciation), indent: true },
         { label: "EBIT", values: m.rows.map(r => r.ebit), bold: true },
-        { label: "Interest expense", values: m.rows.map(r => -r.interest) },
+      ],
+    },
+    {
+      title: "Interest expense",
+      rows: [
+        { label: "Opening senior debt balance", values: m.rows.map(r => r.openingDebt), indent: true },
+        { label: "Interest on senior debt", values: m.rows.map(r => -r.interest), indent: true },
         { label: "Profit before tax", values: m.rows.map(r => r.ebt), bold: true },
-        { label: "Tax", values: m.rows.map(r => -r.tax) },
+      ],
+    },
+    {
+      title: "Taxes & Net income",
+      rows: [
+        { label: "Corporate income tax", values: m.rows.map(r => -r.tax), indent: true },
         { label: "Net income", values: m.rows.map(r => r.netIncome), bold: true },
       ],
     },
