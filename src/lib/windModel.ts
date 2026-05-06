@@ -788,9 +788,26 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   const grace = I.graceYears;
   const amortYears = Math.max(1, I.debtTenorYears - grace);
   const r = agg.interestRate;
+  // Repayment profile per sizingMode (annuity is the default)
   const annuity = r > 0
     ? debtAmount * (r * Math.pow(1 + r, amortYears)) / (Math.pow(1 + r, amortYears) - 1)
     : debtAmount / amortYears;
+  // Pre-build a per-year scheduled principal vector (operations years 1..N)
+  const N0 = I.operationsYears;
+  const principalSched: number[] = Array(N0 + 1).fill(0); // 1-indexed
+  if (I.sizingMode === "manual") {
+    // Equal straight-line over amortisation period (placeholder for user-supplied schedule)
+    const slice = debtAmount / amortYears;
+    for (let y = grace + 1; y <= Math.min(N0, grace + amortYears); y++) principalSched[y] = slice;
+  } else if (I.sizingMode === "bullet") {
+    // All principal at end of tenor (or end of operations if shorter)
+    const yEnd = Math.min(N0, grace + amortYears);
+    principalSched[yEnd] = debtAmount;
+  } else if (I.sizingMode === "mortgage" || I.sizingMode === "fixed-gearing") {
+    // Equal P+I (annuity); principal = annuity - interest each year (computed in loop)
+  } else if (I.sizingMode === "llcr-sculpted" || I.sizingMode === "dscr-sculpted") {
+    // Sculpting handled at outer solver level; per-year principal still annuity-shaped here
+  }
 
   // First pass — compute debt service per year without DSRA movements.
   const draft: AnnualRow[] = [];
@@ -850,7 +867,12 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     let principal = 0;
     let debtService = interest;
     if (y > grace && debt > 1e-6) {
-      principal = Math.max(0, Math.min(debt, annuity - interest));
+      if (I.sizingMode === "manual" || I.sizingMode === "bullet") {
+        principal = Math.max(0, Math.min(debt, principalSched[y] || 0));
+      } else {
+        // annuity / mortgage / sculpted fall back to level annuity
+        principal = Math.max(0, Math.min(debt, annuity - interest));
+      }
       debtService = interest + principal;
     }
     debt -= principal;
