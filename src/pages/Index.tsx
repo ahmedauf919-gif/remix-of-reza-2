@@ -36,7 +36,7 @@ const Index = () => {
       <header className="border-b border-border bg-[var(--gradient-hero)] text-primary-foreground">
         <div className="container flex flex-col gap-4 py-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-xl font-bold tracking-tight">REZA Project Finance Model</h1>
+            <h1 className="text-xl font-bold tracking-tight text-black">REZA Project Finance Model</h1>
             <p className="text-xs opacity-80">{inputs.projectName} · {inputs.country}</p>
           </div>
           <div className="flex items-center gap-3">
