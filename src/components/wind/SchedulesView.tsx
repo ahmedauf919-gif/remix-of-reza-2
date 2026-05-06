@@ -3,7 +3,7 @@ import { ModelOutputs, fmt, fmtPct } from "@/lib/windModel";
 
 type Section = {
   title: string;
-  rows: { label: string; values: number[]; total?: number; bold?: boolean; pct?: boolean; indent?: boolean }[];
+  rows: { label: string; values: Array<number | null>; total?: number; bold?: boolean; pct?: boolean; indent?: boolean }[];
 };
 
 const ScheduleTable = ({ title, years, sections }: { title: string; years: number[]; sections: Section[] }) => (
@@ -31,7 +31,7 @@ const ScheduleTable = ({ title, years, sections }: { title: string; years: numbe
                     <td className={`sticky left-0 bg-card px-3 py-1.5 ${r.indent ? "pl-6 text-muted-foreground" : ""}`}>{r.label}</td>
                     {r.values.map((v, vi) => (
                       <td key={vi} className="px-2 py-1.5 text-right font-mono tabular-nums">
-                        {r.pct ? (v > 0 ? fmt(v, 2) + "x" : "-") : fmt(v)}
+                        {v == null ? "-" : r.pct ? (v > 0 ? fmt(v, 2) + "x" : "-") : fmt(v)}
                       </td>
                     ))}
                   </tr>
@@ -88,7 +88,7 @@ export const OutputsView = ({ m }: { m: ModelOutputs }) => {
         { label: "Principal", values: m.rows.map(r => -r.principal), indent: true },
         { label: "Total debt service", values: m.rows.map(r => -r.debtService), bold: true },
         { label: "Closing debt", values: m.rows.map(r => r.closingDebt) },
-        { label: "DSCR", values: m.rows.map(r => r.dscr), pct: true },
+        { label: "DSCR", values: m.rows.map(r => (r.debtService > 1e-3 ? r.dscr : null)), pct: true },
       ],
     },
     {
@@ -102,7 +102,7 @@ export const OutputsView = ({ m }: { m: ModelOutputs }) => {
     {
       title: "Coverage ratios",
       rows: [
-        { label: "DSCR (in period)", values: m.rows.map(r => r.dscr), pct: true },
+        { label: "DSCR (in period)", values: m.rows.map(r => (r.debtService > 1e-3 ? r.dscr : null)), pct: true },
         { label: "LLCR (loan-life)", values: m.rows.map(r => r.llcr), pct: true },
         { label: "PLCR (project-life)", values: m.rows.map(r => r.plcr), pct: true },
       ],
