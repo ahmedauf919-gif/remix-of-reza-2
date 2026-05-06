@@ -2,6 +2,26 @@
 // Closed-form IDC where possible; fixed-point iteration for DSCR-sculpted debt sizing.
 // Inputs schema mirrors the Excel "Inputs" tab — all granular assumptions are exposed,
 // then aggregated inside runModel to feed the simulation.
+import damodaranERPData from "./damodaranERP.json";
+
+type DamodaranRow = { country: string; rating: string; adjDefaultSpread: number | null; countryRiskPremium: number | null; erp: number | null; corpTax: number | null; sovCDS: number | null; cdsErp: number | null };
+const DAMODARAN_ERP = damodaranERPData as DamodaranRow[];
+
+/** Lookup country ERP (decimal) from Damodaran dataset. Returns 0 if not found. */
+export function getCountryERP(country: string): number {
+  if (!country) return 0;
+  const row = DAMODARAN_ERP.find(r => r.country.toLowerCase() === country.toLowerCase());
+  return row?.erp != null ? row.erp / 100 : 0;
+}
+
+/** Compute WACC (decimal) from project inputs and current capital structure. */
+export function computeWACC(opts: { country: string; riskFreeRate: number; equityBeta: number; gearing: number; costOfDebt: number; taxRate: number }): { wacc: number; costOfEquity: number; afterTaxKd: number; erp: number } {
+  const erp = getCountryERP(opts.country);
+  const costOfEquity = opts.riskFreeRate + opts.equityBeta * erp;
+  const afterTaxKd = opts.costOfDebt * (1 - opts.taxRate);
+  const wacc = (1 - opts.gearing) * costOfEquity + opts.gearing * afterTaxKd;
+  return { wacc, costOfEquity, afterTaxKd, erp };
+}
 
 export type SizingMethod = "annuity" | "sculpted" | "llcr-sculpted" | "manual" | "bullet" | "mortgage";
 export type BaseRateRef = "SOFR" | "LIBOR" | "CBE" | "Fixed";
@@ -313,6 +333,11 @@ export interface ProjectInputs {
   modelInflationOn: 0 | 1;
   inflationSelection: "CPI" | "Zero-inflation" | "CPI US Dollar" | "CPI Blend US-EGP";
 
+  // ── Cost of Capital (Damodaran-based WACC) ───────────────────────────
+  riskFreeRate: number;            // decimal e.g. 0.045
+  equityBeta: number;              // levered beta
+  useWaccForLcoe: 0 | 1;           // when 1, LCOE uses computed WACC instead of lcoeDiscountFactor
+
   // FX
   fxEUR: number;
   fxEGP: number;
@@ -613,6 +638,10 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   modelInflationOn: 1,
   inflationSelection: "CPI",
 
+  riskFreeRate: 0.045,
+  equityBeta: 0.85,
+  useWaccForLcoe: 1,
+
   fxEUR: 1.05,
   fxEGP: 0.0205339,
   fxSpare: 0,
@@ -699,6 +728,10 @@ export interface ModelOutputs {
   npvEquity: number;
   paybackYears: number;
   lcoeUsdPerKWh: number;
+  wacc: number;
+  costOfEquity: number;
+  countryERP: number;
+  lcoeDiscountRateUsed: number;
   totalRevenue: number;
   totalOpex: number;
   totalCFADS: number;
@@ -1304,7 +1337,15 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
   const totalCFADS = sim.rows.reduce((s, r) => s + r.cfads, 0);
 
   let dCost = 0, dMWh = 0;
-  const dr = I.lcoeDiscountFactor || I.discountRateProject;
+  const waccCalc = computeWACC({
+    country: I.country,
+    riskFreeRate: I.riskFreeRate,
+    equityBeta: I.equityBeta,
+    gearing: totalUses > 0 ? debt / totalUses : 0,
+    costOfDebt: agg.blendedRate,
+    taxRate: I.taxRate,
+  });
+  const dr = (I.useWaccForLcoe ? waccCalc.wacc : (I.lcoeDiscountFactor || I.discountRateProject));
   for (let i = 0; i < consYearCount; i++) dCost += constructionDraws[i] * 1000 / Math.pow(1 + dr, i);
   sim.rows.forEach((r, i) => {
     dCost += (r.opex + r.tax) * 1000 / Math.pow(1 + dr, consYearCount + i);
@@ -1353,6 +1394,10 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     projectIRR, equityIRR, npvProject, npvEquity,
     paybackYears: payback,
     lcoeUsdPerKWh,
+    wacc: waccCalc.wacc,
+    costOfEquity: waccCalc.costOfEquity,
+    countryERP: waccCalc.erp,
+    lcoeDiscountRateUsed: dr,
     totalRevenue, totalOpex, totalCFADS,
     iterations: iter, converged,
     allInRate1: agg.r1, allInRate2: agg.r2, allInRate3: agg.r3,
