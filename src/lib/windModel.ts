@@ -1189,16 +1189,31 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   let dsraPrev = dsraInitial;
   let cashAcc = 0;
   let retainedEarnings = equityAmount; // equity book = paid-in + retained
+  let decommReserve = 0;               // restricted-cash sinking fund (asset side)
+  let decommProvision = 0;             // matching liability accrued through opex
   rows.length = 0;
   for (let y = 0; y < draft.length; y++) {
     const target = I.dsraSwitch === 1 ? lookForward(y + 1) : 0;
     const movement = target - dsraPrev;
     const row = draft[y];
-    const cffi = row.cfads - row.debtService - movement;
-    // Distributions: payout ratio applied; restricted to retained earnings if flagged; respect min cash balance.
+    // Decommissioning: opex line is a non-cash accrual that builds a provision; cash equal to it is
+    // segregated into a restricted reserve so the BS keeps balancing. Released at end of life.
+    const decommContribution = row.opexDecommissioning;
+    decommReserve += decommContribution;
+    decommProvision += decommContribution;
+    const isLastYear = y === draft.length - 1;
+    if (isLastYear) {
+      // Spend the reserve on actual decommissioning at end of project life.
+      decommReserve = 0;
+      decommProvision = 0;
+    }
+    // CFFI: cash from operations after debt service & DSRA, plus any refi cash-out, less the cash
+    // we've ring-fenced for decommissioning (kept inside the project, not distributable).
+    const cffi = row.cfads - row.debtService - movement + row.refiProceeds - decommContribution;
+    // Distributions
     let distributable = Math.max(0, cffi) * (I.payoutRatio ?? 1);
     if (I.divRestrictedToRetainedEarnings === 1) {
-      const re = retainedEarnings - equityAmount + row.netIncome; // accumulated NI before this year's div
+      const re = retainedEarnings - equityAmount + row.netIncome;
       distributable = Math.min(distributable, Math.max(0, re));
     }
     const minCash = (I.minCashBalance || 0) + (I.minCashBalanceMultiple || 0) * row.debtService;
@@ -1209,12 +1224,16 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const llcrDen = row.openingDebt;
     const llcr = llcrDen > 1e-3 ? (pvFromIdx(y, loanLifeEnd) + dsraPrev) / llcrDen : 0;
     const plcr = llcrDen > 1e-3 ? (pvFromIdx(y, draft.length) + dsraPrev) / llcrDen : 0;
-    // Balance-sheet check: Assets (PPE + Cash + DSRA + Receivables) = Liab+Equity (Debt + Payables + Equity book)
-    const assets = row.ppe + cashAcc + row.receivables + target;
-    const liabEq = row.closingDebt + row.payables + retainedEarnings;
+    // Balance check (full): Assets = Liab + Equity
+    //   Assets = PPE + Cash + DSRA + Decomm reserve + Receivables
+    //   L+E    = Debt + Payables + Decomm provision + Retained equity
+    const assets = row.ppe + cashAcc + row.receivables + target + decommReserve;
+    const liabEq = row.closingDebt + row.payables + decommProvision + retainedEarnings;
     const balanceCheck = assets - liabEq;
     rows.push({ ...row, cffi, dividends: distributable, cash: cashAcc, equity: retainedEarnings,
-      dsraTarget: target, dsraMovement: movement, dsraBalance: target, llcr, plcr, balanceCheck });
+      dsraTarget: target, dsraMovement: movement, dsraBalance: target,
+      decommReserve, decommProvision,
+      llcr, plcr, balanceCheck });
     dsraPrev = target;
   }
 
