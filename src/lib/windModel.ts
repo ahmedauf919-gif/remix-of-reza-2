@@ -14,13 +14,34 @@ export function getCountryERP(country: string): number {
   return row?.erp != null ? row.erp / 100 : 0;
 }
 
-/** Compute WACC (decimal) from project inputs and current capital structure. */
-export function computeWACC(opts: { country: string; riskFreeRate: number; equityBeta: number; gearing: number; costOfDebt: number; taxRate: number; useErpOverride?: 0 | 1; erpOverride?: number }): { wacc: number; costOfEquity: number; afterTaxKd: number; erp: number } {
-  const erp = opts.useErpOverride ? (opts.erpOverride ?? 0) : getCountryERP(opts.country);
-  const costOfEquity = opts.riskFreeRate + opts.equityBeta * erp;
+/** Lookup Country Risk Premium (decimal) from Damodaran dataset. Returns 0 if not found. */
+export function getCountryRiskPremium(country: string): number {
+  if (!country) return 0;
+  const row = DAMODARAN_ERP.find(r => r.country.toLowerCase() === country.toLowerCase());
+  return row?.countryRiskPremium != null ? row.countryRiskPremium / 100 : 0;
+}
+
+/** Compute WACC (decimal) using Damodaran convention:
+ *  Cost of Equity = Rf + β × Mature-Market ERP + Country Risk Premium (CRP)
+ *  CRP can be overridden (e.g. set to 0) without losing the mature-market premium.
+ */
+export function computeWACC(opts: {
+  country: string; riskFreeRate: number; equityBeta: number; gearing: number;
+  costOfDebt: number; taxRate: number;
+  matureMarketERP: number;             // e.g. 0.046 for US
+  useCrpOverride?: 0 | 1; crpOverride?: number;
+  // Backwards-compat (legacy field name still supported)
+  useErpOverride?: 0 | 1; erpOverride?: number;
+}): { wacc: number; costOfEquity: number; afterTaxKd: number; erp: number; crp: number } {
+  const merp = opts.matureMarketERP ?? 0;
+  // Resolve CRP: prefer new override, else legacy override (which used to mean total-ERP override → treat as CRP override now), else Damodaran lookup.
+  const useOverride = (opts.useCrpOverride ?? opts.useErpOverride) ? 1 : 0;
+  const overrideVal = opts.crpOverride ?? opts.erpOverride ?? 0;
+  const crp = useOverride ? overrideVal : getCountryRiskPremium(opts.country);
+  const costOfEquity = opts.riskFreeRate + opts.equityBeta * merp + crp;
   const afterTaxKd = opts.costOfDebt * (1 - opts.taxRate);
   const wacc = (1 - opts.gearing) * costOfEquity + opts.gearing * afterTaxKd;
-  return { wacc, costOfEquity, afterTaxKd, erp };
+  return { wacc, costOfEquity, afterTaxKd, erp: merp + crp, crp };
 }
 
 export type SizingMethod = "annuity" | "sculpted" | "llcr-sculpted" | "manual" | "bullet" | "mortgage";
@@ -336,8 +357,9 @@ export interface ProjectInputs {
   // ── Cost of Capital (Damodaran-based WACC) ───────────────────────────
   riskFreeRate: number;            // decimal e.g. 0.045
   equityBeta: number;              // levered beta
-  useErpOverride: 0 | 1;           // when 1, use erpOverride instead of Damodaran country lookup
-  erpOverride: number;             // decimal ERP to use when override is on (0 disables CRP)
+  matureMarketERP: number;         // mature-market ERP (e.g. 0.046 for US/global mature)
+  useErpOverride: 0 | 1;           // when 1, override Country Risk Premium (CRP)
+  erpOverride: number;             // CRP override value (decimal); 0 disables CRP
   useWaccForLcoe: 0 | 1;           // when 1, LCOE uses computed WACC instead of lcoeDiscountFactor
 
   // FX
@@ -699,8 +721,9 @@ export const DEFAULT_INPUTS: ProjectInputs = {
 
   riskFreeRate: 0.045,
   equityBeta: 0.92,                 // Damodaran "Green & Renewable Energy" sector levered beta
-  useErpOverride: 1,                // override Damodaran country ERP lookup
-  erpOverride: 0,                   // CRP set to 0 per user request
+  matureMarketERP: 0.046,           // Damodaran implied US/global mature ERP (latest)
+  useErpOverride: 1,                // override Country Risk Premium (CRP)
+  erpOverride: 0,                   // CRP set to 0 per user request (Ke = Rf + β × MERP)
   useWaccForLcoe: 1,
 
   fxEUR: 1.05,
@@ -836,21 +859,29 @@ export interface ModelOutputs {
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
+  // Newton-Raphson with bisection fallback for robustness on adversarial cashflows.
+  const f = (r: number) => cashflows.reduce((s, cf, t) => s + cf / Math.pow(1 + r, t), 0);
+  const df = (r: number) => cashflows.reduce((s, cf, t) => s - t * cf / Math.pow(1 + r, t + 1), 0);
   let r = guess;
-  for (let iter = 0; iter < 100; iter++) {
-    let npv = 0, dnpv = 0;
-    for (let t = 0; t < cashflows.length; t++) {
-      const f = Math.pow(1 + r, t);
-      npv += cashflows[t] / f;
-      dnpv += -t * cashflows[t] / (f * (1 + r));
-    }
-    if (Math.abs(dnpv) < 1e-12) break;
-    const next = r - npv / dnpv;
-    if (!isFinite(next)) return NaN;
+  for (let iter = 0; iter < 60; iter++) {
+    const v = f(r), d = df(r);
+    if (Math.abs(d) < 1e-12) break;
+    const next = r - v / d;
+    if (!isFinite(next)) break;
     if (Math.abs(next - r) < 1e-7) return next;
-    r = Math.max(-0.99, next);
+    r = Math.max(-0.999, Math.min(10, next));
   }
-  return r;
+  // Bisection fallback in [-0.99, 10]
+  let lo = -0.99, hi = 10;
+  let flo = f(lo), fhi = f(hi);
+  if (flo * fhi > 0) return r; // no sign change → return last NR estimate
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    const fm = f(mid);
+    if (Math.abs(fm) < 1e-9 || (hi - lo) < 1e-8) return mid;
+    if (flo * fm < 0) { hi = mid; fhi = fm; } else { lo = mid; flo = fm; }
+  }
+  return (lo + hi) / 2;
 }
 function npv(rate: number, cashflows: number[]): number {
   return cashflows.reduce((s, cf, t) => s + cf / Math.pow(1 + rate, t), 0);
@@ -1126,7 +1157,8 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     return sum;
   };
   // LLCR / PLCR: PV of future CFADS over remaining loan life (or project life) / outstanding debt
-  const dr = Math.max(0.001, I.discountRateProjectPostTax || I.discountRateProject || 0.07);
+  // Industry standard: discount at the loan's pre-tax cost of debt (blended rate).
+  const dr = Math.max(0.001, agg.blendedRate || I.discountRateProjectPostTax || I.discountRateProject || 0.07);
   const pvFromIdx = (idx: number, untilIdx: number) => {
     let pv = 0;
     for (let k = idx; k < Math.min(untilIdx, draft.length); k++) {
@@ -1363,11 +1395,12 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     country: I.country,
     riskFreeRate: I.riskFreeRate,
     equityBeta: I.equityBeta,
+    matureMarketERP: I.matureMarketERP,
     gearing: totalUses > 0 ? debt / totalUses : 0,
     costOfDebt: agg.blendedRate,
     taxRate: I.taxRate,
-    useErpOverride: I.useErpOverride,
-    erpOverride: I.erpOverride,
+    useCrpOverride: I.useErpOverride,
+    crpOverride: I.erpOverride,
   });
   const projectDiscountRate = waccCalcEarly.wacc;
   const equityDiscountRate = waccCalcEarly.costOfEquity;
