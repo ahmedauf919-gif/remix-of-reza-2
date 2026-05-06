@@ -39,7 +39,7 @@ function buildShareholderScore(m: ModelOutputs): { items: ScoreItem[]; score: nu
   });
 
   // 3) Equity payback
-  const payback = m.equityPaybackYears;
+  const payback = m.paybackYears;
   const paybackOk = Number.isFinite(payback) && payback > 0;
   items.push({
     metric: "Equity payback",
