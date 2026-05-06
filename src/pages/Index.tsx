@@ -85,7 +85,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="wacc" className="m-0 pt-6">
-            <CostOfCapitalView m={model}/>
+            <CostOfCapitalView m={model} onChange={(patch) => setInputs({ ...inputs, ...patch })}/>
           </TabsContent>
         </Tabs>
 
