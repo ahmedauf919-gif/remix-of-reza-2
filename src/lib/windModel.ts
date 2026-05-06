@@ -334,6 +334,9 @@ export interface ProjectInputs {
   // Percent of total capex spent in each construction month (sum should = 100%).
   // Length must equal constructionMonths (1..36 supported, i.e. up to 3 years).
   capexSchedulePct: number[];
+  // Optional per-capex-item monthly allocation (% per month, length up to constructionMonths).
+  // If a key is missing or its array is empty, the global capexSchedulePct is used for that item.
+  capexItemSchedulesPct?: Partial<Record<string, number[]>>;
 }
 
 export const DEFAULT_DEBT1: DebtTranche = {
