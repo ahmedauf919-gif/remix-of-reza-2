@@ -334,6 +334,9 @@ export interface ProjectInputs {
   // Percent of total capex spent in each construction month (sum should = 100%).
   // Length must equal constructionMonths (1..36 supported, i.e. up to 3 years).
   capexSchedulePct: number[];
+  // Optional per-capex-item monthly allocation (% per month, length up to constructionMonths).
+  // If a key is missing or its array is empty, the global capexSchedulePct is used for that item.
+  capexItemSchedulesPct?: Partial<Record<string, number[]>>;
 }
 
 export const DEFAULT_DEBT1: DebtTranche = {
@@ -1072,12 +1075,56 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
 
   // Normalise monthly draw profile to length = constructionMonths and sum to 1.
   const M = Math.max(1, Math.round(Number(I.constructionMonths) || 0));
-  const rawSched = (I.capexSchedulePct && I.capexSchedulePct.length > 0)
+  const fitToM = (arr: number[] | undefined, fallback: number[]): number[] => {
+    const a = (arr ?? []).slice(0, M);
+    while (a.length < M) a.push(0);
+    const s = a.reduce((x, y) => x + y, 0);
+    return s > 0 ? a.map(v => v / s) : fallback.slice();
+  };
+  const globalRaw = (I.capexSchedulePct && I.capexSchedulePct.length > 0)
     ? I.capexSchedulePct.slice(0, M)
     : Array.from({ length: M }, () => 100 / M);
-  while (rawSched.length < M) rawSched.push(0);
-  const schedSum = rawSched.reduce((a, b) => a + b, 0) || 1;
-  const monthFrac = rawSched.map(p => p / schedSum); // fractions per month, sum = 1
+  while (globalRaw.length < M) globalRaw.push(0);
+  const gSum = globalRaw.reduce((a, b) => a + b, 0) || 1;
+  const globalFrac = globalRaw.map(p => p / gSum);
+
+  // Per-item amounts (USD '000) for every capex line. These drive both totals and the weighted draw profile.
+  const capexItems: Record<string, number> = {
+    preConstructionCosts: I.preConstructionCosts,
+    epcCost: I.epcCost,
+    developmentPremiums: I.developmentPremiums,
+    developmentExpenses: I.developmentExpenses,
+    land: I.land,
+    esMeasures: I.esMeasures,
+    lendersTechAdvisors: I.lendersTechAdvisors,
+    legalExpenses: I.legalExpenses,
+    administrativeCosts: I.administrativeCosts,
+    financialAudit: I.financialAudit,
+    insuranceConstruction: I.insuranceConstruction,
+    contingency: I.contingency,
+    substation: I.substation,
+    loanRepayment: I.loanRepayment,
+    taxesCapex: I.taxesCapex,
+    capexSpare15: I.capexSpare15,
+    capexSpare16: I.capexSpare16,
+    capexSpare17: I.capexSpare17,
+    capexSpare18: I.capexSpare18,
+    capexSpare19: I.capexSpare19,
+    capexSpare20: I.capexSpare20,
+    compEsmp: I.compEsmp,
+    compCsr: I.compCsr,
+  };
+  const totalItems = Object.values(capexItems).reduce((a, b) => a + b, 0) || 1;
+  // Weighted blended monthly fraction across all items (for IDC / commitment fee).
+  const monthFrac: number[] = Array.from({ length: M }, () => 0);
+  for (const [k, amt] of Object.entries(capexItems)) {
+    if (amt <= 0) continue;
+    const itemSched = fitToM(I.capexItemSchedulesPct?.[k], globalFrac);
+    for (let m = 0; m < M; m++) monthFrac[m] += (amt / totalItems) * itemSched[m];
+  }
+  // Re-normalise (defensive against rounding).
+  const mfSum = monthFrac.reduce((a, b) => a + b, 0) || 1;
+  for (let m = 0; m < M; m++) monthFrac[m] = monthFrac[m] / mfSum;
 
   // Cumulative drawn at end of each month (fraction of total capex).
   const cumEnd: number[] = [];
