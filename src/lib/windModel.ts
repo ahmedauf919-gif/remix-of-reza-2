@@ -859,21 +859,29 @@ export interface ModelOutputs {
 }
 
 function irr(cashflows: number[], guess = 0.1): number {
+  // Newton-Raphson with bisection fallback for robustness on adversarial cashflows.
+  const f = (r: number) => cashflows.reduce((s, cf, t) => s + cf / Math.pow(1 + r, t), 0);
+  const df = (r: number) => cashflows.reduce((s, cf, t) => s - t * cf / Math.pow(1 + r, t + 1), 0);
   let r = guess;
-  for (let iter = 0; iter < 100; iter++) {
-    let npv = 0, dnpv = 0;
-    for (let t = 0; t < cashflows.length; t++) {
-      const f = Math.pow(1 + r, t);
-      npv += cashflows[t] / f;
-      dnpv += -t * cashflows[t] / (f * (1 + r));
-    }
-    if (Math.abs(dnpv) < 1e-12) break;
-    const next = r - npv / dnpv;
-    if (!isFinite(next)) return NaN;
+  for (let iter = 0; iter < 60; iter++) {
+    const v = f(r), d = df(r);
+    if (Math.abs(d) < 1e-12) break;
+    const next = r - v / d;
+    if (!isFinite(next)) break;
     if (Math.abs(next - r) < 1e-7) return next;
-    r = Math.max(-0.99, next);
+    r = Math.max(-0.999, Math.min(10, next));
   }
-  return r;
+  // Bisection fallback in [-0.99, 10]
+  let lo = -0.99, hi = 10;
+  let flo = f(lo), fhi = f(hi);
+  if (flo * fhi > 0) return r; // no sign change → return last NR estimate
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    const fm = f(mid);
+    if (Math.abs(fm) < 1e-9 || (hi - lo) < 1e-8) return mid;
+    if (flo * fm < 0) { hi = mid; fhi = fm; } else { lo = mid; flo = fm; }
+  }
+  return (lo + hi) / 2;
 }
 function npv(rate: number, cashflows: number[]): number {
   return cashflows.reduce((s, cf, t) => s + cf / Math.pow(1 + rate, t), 0);
