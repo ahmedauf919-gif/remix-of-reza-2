@@ -653,6 +653,7 @@ export interface AnnualRow {
   debtService: number;
   principal: number;
   cffi: number;
+  dividends: number;
   openingDebt: number;
   closingDebt: number;
   dscr: number;
