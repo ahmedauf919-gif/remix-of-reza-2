@@ -87,18 +87,20 @@ export const WaterCharts = ({ m }: { m: WaterOutputs }) => {
         </Card>
       </div>
 
-      <Card title={`PPA Tariff Composition — ${fmtNum(tariff, 2)} EGP/m³`}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={ppaData} layout="vertical" margin={{ left: 80 }}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
-            <XAxis type="number" tickFormatter={(v) => fmtNum(v, 2)} />
-            <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={120}/>
-            <Tooltip {...tooltipStyle} formatter={(v: number, _n, p: any) => [`${fmtNum(v, 3)} EGP/m³ (${fmtPct(p.payload.pct)})`, "Contribution"]}/>
-            <Bar dataKey="value" label={{ position: "right", formatter: (v: any) => v.label, fontSize: 11 }}>
-              {ppaData.map((_, i) => <Cell key={i} fill={["hsl(var(--primary))","hsl(var(--accent))","hsl(var(--muted-foreground))","hsl(var(--destructive))","hsl(var(--success, 142 70% 45%))","hsl(var(--success, 142 70% 45%))"][i % 6]}/>)}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      <Card title={`PPA Tariff Composition — ${fmtNum(tariff, 2)} EGP/m³ (per-line contribution)`}>
+        <div style={{ height: Math.max(280, compData.length * 28) }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={compData} layout="vertical" margin={{ left: 140, right: 60 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
+              <XAxis type="number" tickFormatter={(v) => fmtNum(v, 2)} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={140}/>
+              <Tooltip {...tooltipStyle} formatter={(v: number, _n, p: any) => [`${fmtNum(v, 3)} EGP/m³ (${fmtPct(p.payload.pct)}) — ${p.payload.group}`, "Contribution"]}/>
+              <Bar dataKey="value" label={{ position: "right", formatter: (v: any) => v.label, fontSize: 11 }}>
+                {compData.map((c, i) => <Cell key={i} fill={groupColor[c.group] || "hsl(var(--primary))"}/>)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </Card>
 
       <Card title="Free Cash Flow to Equity (EGP '000)">
