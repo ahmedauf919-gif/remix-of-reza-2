@@ -495,6 +495,29 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   const grace = Math.max(0, Math.min(tenor - 1, I.debtGraceYears));
   const amortYears = tenor - grace;
   const buildSeniorSchedule = (cfadsForSculpt?: number[]) => {
+    // Pre-compute principal pattern for sculpted mode and rescale to fully amortise
+    let principalsPattern: number[] | null = null;
+    if (I.debtRepaymentMode === "sculpted" && cfadsForSculpt && I.targetDSCR > 0) {
+      // Approximate interest using straight-line balance to size relative shape
+      const slPrincipal = debtAmount / amortYears;
+      let bal = debtAmount;
+      const raw: number[] = [];
+      for (let y = 0; y < tenor; y++) {
+        const rate = debtRateAt(I, y);
+        const interest = bal * rate;
+        let p = 0;
+        if (y >= grace) {
+          const cfads = cfadsForSculpt[y] ?? 0;
+          p = Math.max(0, cfads / I.targetDSCR - interest);
+        }
+        raw.push(p);
+        bal = Math.max(0, bal - (y >= grace ? slPrincipal : 0));
+      }
+      const sumRaw = raw.reduce((s, v) => s + v, 0);
+      const scale = sumRaw > 1e-6 ? debtAmount / sumRaw : 0;
+      principalsPattern = raw.map(v => v * scale);
+    }
+
     let outstanding = debtAmount;
     const rows: { open: number; rate: number; principal: number; interest: number; close: number }[] = [];
     for (let y = 0; y < tenor; y++) {
@@ -507,21 +530,17 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
         if (I.debtRepaymentMode === "equal") {
           principal = debtAmount / amortYears;
         } else if (I.debtRepaymentMode === "annuity") {
-          // annuity recomputed on remaining balance & remaining years using current rate
           const r = rate;
           principal = r > 0
             ? open * r / (1 - Math.pow(1 + r, -remainingYears)) - interest
             : open / remainingYears;
-        } else { // sculpted
-          if (cfadsForSculpt && I.targetDSCR > 0) {
-            const cfads = cfadsForSculpt[y] ?? 0;
-            principal = Math.max(0, cfads / I.targetDSCR - interest);
-          } else {
-            principal = debtAmount / amortYears;
-          }
+        } else if (principalsPattern) {
+          principal = principalsPattern[y];
+        } else {
+          principal = debtAmount / amortYears;
         }
         principal = Math.min(principal, open);
-        if (y === tenor - 1) principal = open; // bullet remainder
+        if (y === tenor - 1) principal = open;
       }
       const close = open - principal;
       outstanding = close;
