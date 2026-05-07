@@ -225,6 +225,19 @@ export const DEFAULT_WATER_INPUTS: WaterInputs = {
   taxRate: 0.225,
   discountRateProject: 0.12,
   discountRateEquity: 0.18,
+  debtRepaymentMode: "equal",
+  debtGraceYears: 0,
+  targetDSCR: 1.30,
+  shareholderLoanPct: 0,
+  shareholderLoanRate: 0.12,
+  shareholderLoanTenorYears: 10,
+  shareholderLoanGraceYears: 2,
+  mmAnnualPctOfCapex: 0,
+  mmSchedulePctOfCapex: [],
+  terminalValueMode: "none",
+  salvageValuePct: 0.10,
+  exitEbitdaMultiple: 5,
+  terminalGrowth: 0.02,
 };
 
 // Migrate legacy scenarios that lack itemized arrays
