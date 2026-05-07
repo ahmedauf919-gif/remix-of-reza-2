@@ -25,17 +25,22 @@ export const WaterCharts = ({ m }: { m: WaterOutputs }) => {
     FCFE: r.fcfe / 1000,
   }));
 
-  // PPA contribution: each major cost line / tariff (Y1 view)
+  // Per-line PPA tariff composition (Reza-style breakdown)
   const tariff = m.tariffEgpPerM3;
-  const ppaData = [
-    { name: "Fixed costs", value: m.fixedCostPerM3, pct: m.fixedCostPerM3 / tariff },
-    { name: "Variable (FX)", value: m.variableCostPerM3 - (m.inputs.wellsIncluded ? m.inputs.wellsCostEgpPerM3 : 0) - m.inputs.otherVarEgpPerM3, pct: 0 },
-    { name: "Wells & Other Var", value: (m.inputs.wellsIncluded ? m.inputs.wellsCostEgpPerM3 : 0) + m.inputs.otherVarEgpPerM3, pct: 0 },
-    { name: "Electricity", value: m.electricityCostPerM3, pct: m.electricityCostPerM3 / tariff },
-    { name: "Depreciation", value: m.depreciationPerM3, pct: m.depreciationPerM3 / tariff },
-  ].map(d => ({ ...d, pct: d.value / tariff, label: `${fmtPct(d.value / tariff)}` }));
-  const margin = Math.max(0, 1 - ppaData.reduce((s, d) => s + d.pct, 0));
-  ppaData.push({ name: "Margin / Profit", value: tariff * margin, pct: margin, label: fmtPct(margin) });
+  const groupColor: Record<string, string> = {
+    "CAPEX": "hsl(var(--primary))",
+    "OPEX-Var": "hsl(var(--accent))",
+    "OPEX-Fixed": "hsl(var(--muted-foreground))",
+    "Electricity": "hsl(var(--destructive))",
+    "SG&A": "hsl(220 70% 50%)",
+    "Financing": "hsl(280 60% 55%)",
+    "Tax": "hsl(35 90% 50%)",
+    "Margin": "hsl(142 70% 45%)",
+  };
+  const compData = [...m.tariffComposition]
+    .filter(c => c.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .map(c => ({ ...c, label: fmtPct(c.pct) }));
 
   return (
     <div className="space-y-6">
@@ -82,19 +87,22 @@ export const WaterCharts = ({ m }: { m: WaterOutputs }) => {
         </Card>
       </div>
 
-      <Card title={`PPA Tariff Composition — ${fmtNum(tariff, 2)} EGP/m³`}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={ppaData} layout="vertical" margin={{ left: 80 }}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
-            <XAxis type="number" tickFormatter={(v) => fmtNum(v, 2)} />
-            <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={120}/>
-            <Tooltip {...tooltipStyle} formatter={(v: number, _n, p: any) => [`${fmtNum(v, 3)} EGP/m³ (${fmtPct(p.payload.pct)})`, "Contribution"]}/>
-            <Bar dataKey="value" label={{ position: "right", formatter: (v: any) => v.label, fontSize: 11 }}>
-              {ppaData.map((_, i) => <Cell key={i} fill={["hsl(var(--primary))","hsl(var(--accent))","hsl(var(--muted-foreground))","hsl(var(--destructive))","hsl(var(--success, 142 70% 45%))","hsl(var(--success, 142 70% 45%))"][i % 6]}/>)}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
+      <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <h3 className="font-semibold mb-3">PPA Tariff Composition — {fmtNum(tariff, 2)} EGP/m³ (per-line contribution)</h3>
+        <div style={{ height: Math.max(320, compData.length * 28) }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={compData} layout="vertical" margin={{ left: 140, right: 60 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
+              <XAxis type="number" tickFormatter={(v) => fmtNum(v, 2)} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={140}/>
+              <Tooltip {...tooltipStyle} formatter={(v: number, _n, p: any) => [`${fmtNum(v, 3)} EGP/m³ (${fmtPct(p.payload.pct)}) — ${p.payload.group}`, "Contribution"]}/>
+              <Bar dataKey="value" label={{ position: "right", formatter: (v: any) => v.label, fontSize: 11 }}>
+                {compData.map((c, i) => <Cell key={i} fill={groupColor[c.group] || "hsl(var(--primary))"}/>)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
 
       <Card title="Free Cash Flow to Equity (EGP '000)">
         <ResponsiveContainer width="100%" height="100%">

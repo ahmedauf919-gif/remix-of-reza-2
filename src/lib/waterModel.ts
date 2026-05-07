@@ -217,7 +217,7 @@ export const DEFAULT_WATER_INPUTS: WaterInputs = {
   opexVariableItems: DEFAULT_OPEX_VAR,
   opexFixedItems: DEFAULT_OPEX_FIXED,
   headOfficeEgpMonth: 500_000,
-  headOfficeAllocPct: 0,
+  headOfficeAllocPct: 1,
   otherSgaEgpMonth: 0,
   sgaCurrency: "EGP",
   depreciationYears: 25,
@@ -244,6 +244,9 @@ export const DEFAULT_WATER_INPUTS: WaterInputs = {
 // Migrate legacy scenarios that lack itemized arrays
 export function migrateInputs(raw: Partial<WaterInputs>): WaterInputs {
   const m: WaterInputs = { ...DEFAULT_WATER_INPUTS, ...raw };
+  // UI removed HQ Allocation & SG&A currency — always treat HO as 100% allocated and SG&A as EGP.
+  m.headOfficeAllocPct = 1;
+  m.sgaCurrency = "EGP";
   if (!m.capexItems || m.capexItems.length === 0) {
     m.capexItems = [
       { key: "feedSys",      label: "Feed System",     currency: "USD", amount: raw.feedSysUsd      ?? 45954.1,   depreciationYears: 25 },
@@ -423,6 +426,8 @@ export interface WaterOutputs {
   tariffAllocElectricity: number;
   tariffAllocFx: number;
   tariffAllocFixedUsd: number;
+  /** Per-line contribution to PPA tariff (EGP/m³, Year 1 view) */
+  tariffComposition: { name: string; group: "CAPEX" | "OPEX-Var" | "OPEX-Fixed" | "Electricity" | "SG&A" | "Financing" | "Tax" | "Margin"; value: number; pct: number }[];
 }
 
 export function runWaterModel(rawI: WaterInputs): WaterOutputs {
@@ -775,6 +780,40 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   const tariffAllocFx = variableEgpFromUsd_y1 / tariff;
   const tariffAllocFixedUsd = Math.max(0, 1 - tariffAllocCbeInflation - tariffAllocElectricity - tariffAllocFx);
 
+  // ── Per-line composition of PPA tariff (EGP/m³, Year-1 view) ──
+  const y1 = rows.find(r => r.yearIdx === 0);
+  const vol1 = y1?.volumeM3 || soldVolumeY1 || 1;
+  const composition: { name: string; group: any; value: number; pct: number }[] = [];
+  // CAPEX → annual depreciation per m³
+  for (const it of capexResolved) {
+    if (it.annualDepreciation > 0) composition.push({ name: `Dep: ${it.label}`, group: "CAPEX", value: it.annualDepreciation / vol1, pct: 0 });
+  }
+  // Variable OPEX
+  for (const it of I.opexVariableItems) {
+    const ownGross = it.amountPerM3 * (1 + (it.taxPct ?? 0));
+    const egp = it.currency === "USD" ? ownGross * fx0 : ownGross;
+    if (egp > 0) composition.push({ name: it.label, group: "OPEX-Var", value: egp, pct: 0 });
+  }
+  if (I.wellsIncluded && I.wellsCostEgpPerM3 > 0) composition.push({ name: "Wells (legacy)", group: "OPEX-Var", value: I.wellsCostEgpPerM3, pct: 0 });
+  if (I.otherVarEgpPerM3 > 0) composition.push({ name: "Other Var (legacy)", group: "OPEX-Var", value: I.otherVarEgpPerM3, pct: 0 });
+  // Electricity
+  if (I.electricityIncluded) composition.push({ name: "Electricity", group: "Electricity", value: electricityCostPerM3, pct: 0 });
+  // Fixed OPEX
+  for (const it of I.opexFixedItems) {
+    const annual = it.amountPerMonth * (it.employees ?? 1) * (1 + (it.taxPct ?? 0)) * 12 * (it.currency === "USD" ? fx0 : 1);
+    if (annual > 0) composition.push({ name: it.label, group: "OPEX-Fixed", value: annual / vol1, pct: 0 });
+  }
+  // SG&A
+  if (annualSgaEgp_y1 > 0) composition.push({ name: "SG&A / Head Office", group: "SG&A", value: annualSgaEgp_y1 / vol1, pct: 0 });
+  // Financing (interest Y1)
+  if (y1 && y1.interest > 0) composition.push({ name: "Interest (debt)", group: "Financing", value: y1.interest / vol1, pct: 0 });
+  // Tax
+  if (y1 && y1.tax > 0) composition.push({ name: "Income Tax", group: "Tax", value: y1.tax / vol1, pct: 0 });
+  const sumCost = composition.reduce((s, c) => s + c.value, 0);
+  const margin = Math.max(0, tariff - sumCost);
+  composition.push({ name: "Equity Margin / Profit", group: "Margin", value: margin, pct: 0 });
+  composition.forEach(c => c.pct = tariff > 0 ? c.value / tariff : 0);
+
   return {
     inputs: I,
     capexResolved,
@@ -787,6 +826,7 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     npvProject, npvEquity, minDSCR, avgDSCR,
     tariffEgpPerM3: tariff,
     tariffAllocCbeInflation, tariffAllocElectricity, tariffAllocFx, tariffAllocFixedUsd,
+    tariffComposition: composition,
   };
 }
 

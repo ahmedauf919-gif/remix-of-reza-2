@@ -5,7 +5,16 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Trash2, Plus } from "lucide-react";
+
+/** Percent-display field — user enters 80 for 80% (stored as 0.80). */
+const PctField = ({ label, value, onChange, step = 0.5, suffix }: { label: string; value: number; onChange: (n: number) => void; step?: number; suffix?: string }) => (
+  <div className="space-y-1">
+    <Label className="text-xs text-muted-foreground">{label} (%) {suffix && <span className="opacity-60">({suffix})</span>}</Label>
+    <Input type="number" step={step} value={+(value * 100).toFixed(4)} onChange={(e) => { const r = parseFloat(e.target.value); onChange(isFinite(r) ? r / 100 : 0); }} />
+  </div>
+);
 
 const Field = ({ label, value, onChange, step = 1, suffix }: { label: string; value: number; onChange: (n: number) => void; step?: number; suffix?: string }) => (
   <div className="space-y-1">
@@ -110,6 +119,38 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
         {F("contractYears", "Contract Duration", "years")}
       </Section>
 
+      <Tabs defaultValue="pricing">
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="capacity">Capacity & Take</TabsTrigger>
+          <TabsTrigger value="fx">FX & Inflation</TabsTrigger>
+          <TabsTrigger value="capex">CAPEX</TabsTrigger>
+          <TabsTrigger value="debt">Senior Debt</TabsTrigger>
+          <TabsTrigger value="shl">Shareholder Loan</TabsTrigger>
+          <TabsTrigger value="mm">Maintenance Reserve</TabsTrigger>
+          <TabsTrigger value="tv">Terminal Value</TabsTrigger>
+          <TabsTrigger value="opexvar">OPEX — Variable</TabsTrigger>
+          <TabsTrigger value="opexfix">OPEX — Fixed</TabsTrigger>
+          <TabsTrigger value="sga">SG&amp;A / WC / Tax</TabsTrigger>
+        </TabsList>
+
+      <TabsContent value="pricing" className="m-0 pt-4">
+        <Section title="Pricing">
+          {F("sellingPriceEgpPerM3", "Selling Price", "EGP/m³", 0.5)}
+          <PctField label="% Pegged to USD" value={inputs.pctPeggedToUsd} onChange={(n) => set("pctPeggedToUsd", n)} step={1}/>
+        </Section>
+      </TabsContent>
+
+      <TabsContent value="capacity" className="m-0 pt-4">
+        <FullSection title="Plant Capacity & Take">
+          <div className="space-y-4">
+            <YearArrayEditor label="Installed Capacity per year (m³/day)" years={N} values={inputs.capacityM3DayPerYear} fallback={inputs.capacityM3Day} onChange={(a) => set("capacityM3DayPerYear", a)} step={50}/>
+            <YearArrayEditor label="Min Take % per year" years={N} values={inputs.minTakePctPerYear} fallback={inputs.minTakePct} onChange={(a) => set("minTakePctPerYear", a)} step={0.5} asPct/>
+          </div>
+        </FullSection>
+      </TabsContent>
+
+      <TabsContent value="fx" className="m-0 pt-4">
       <FullSection title="FX & Inflation (per year, full PPA)">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
           {F("fxRateEgpPerUsd", "FX Rate (scalar fallback)", "EGP/USD", 0.01)}
@@ -126,19 +167,9 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
           <YearArrayEditor label="USD Inflation per year (%)" years={N} values={inputs.usdInflationPerYear} fallback={inputs.usdInflation} onChange={(a) => set("usdInflationPerYear", a)} step={0.1} asPct/>
         </div>
       </FullSection>
+      </TabsContent>
 
-      <FullSection title="Plant Capacity & Take">
-        <div className="space-y-4">
-          <YearArrayEditor label="Installed Capacity per year (m³/day)" years={N} values={inputs.capacityM3DayPerYear} fallback={inputs.capacityM3Day} onChange={(a) => set("capacityM3DayPerYear", a)} step={50}/>
-          <YearArrayEditor label="Min Take % per year" years={N} values={inputs.minTakePctPerYear} fallback={inputs.minTakePct} onChange={(a) => set("minTakePctPerYear", a)} step={0.5} asPct/>
-        </div>
-      </FullSection>
-
-      <Section title="Pricing">
-        {F("sellingPriceEgpPerM3", "Selling Price", "EGP/m³", 0.5)}
-        {F("pctPeggedToUsd", "% Pegged to USD", "decimal", 0.01)}
-      </Section>
-
+      <TabsContent value="capex" className="m-0 pt-4">
       <FullSection title="CAPEX (itemized)">
         <Table>
           <TableHeader>
@@ -171,15 +202,17 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
         </Table>
         <Button size="sm" variant="outline" onClick={addCapex} className="mt-3 gap-2"><Plus className="h-4 w-4"/>Add CAPEX item</Button>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-          {F("contingencyPct", "Contingency", "decimal", 0.01)}
+          <PctField label="Contingency" value={inputs.contingencyPct} onChange={(n) => set("contingencyPct", n)} step={0.5}/>
         </div>
       </FullSection>
+      </TabsContent>
 
+      <TabsContent value="debt" className="m-0 pt-4">
       <FullSection title="Financing — Senior Debt">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          <Field label="Debt %" value={inputs.debtToEquity * 100} onChange={(n) => set("debtToEquity", Math.max(0, Math.min(100, n)) / 100)} step={1} suffix="enter 80 for 80%"/>
+          <PctField label="Debt %" value={inputs.debtToEquity} onChange={(n) => set("debtToEquity", Math.max(0, Math.min(1, n)))} step={1} suffix="enter 80 for 80%"/>
           {F("loanTenorYears", "Loan Tenor", "years")}
-          {F("bankSpread", "Bank Spread", "decimal", 0.005)}
+          <PctField label="Bank Spread" value={inputs.bankSpread} onChange={(n) => set("bankSpread", n)} step={0.25}/>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Repayment Mode</Label>
             <Select value={inputs.debtRepaymentMode} onValueChange={(v) => set("debtRepaymentMode", v as any)}>
@@ -196,23 +229,29 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
         </div>
         <YearArrayEditor label="Interest rate per loan year (%)" years={Tenor} values={inputs.debtRatePerYear} fallback={inputs.debtRateYr1} onChange={(a) => set("debtRatePerYear", a)} step={0.1} asPct/>
       </FullSection>
+      </TabsContent>
 
+      <TabsContent value="shl" className="m-0 pt-4">
       <FullSection title="Shareholder Loan (subordinated)">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          <Field label="SHL % of Equity" value={inputs.shareholderLoanPct * 100} onChange={(n) => set("shareholderLoanPct", Math.max(0, Math.min(100, n)) / 100)} step={1} suffix="enter 30 for 30%"/>
-          {F("shareholderLoanRate", "SHL Rate", "decimal", 0.005)}
+          <PctField label="SHL % of Equity" value={inputs.shareholderLoanPct} onChange={(n) => set("shareholderLoanPct", Math.max(0, Math.min(1, n)))} step={1} suffix="enter 30 for 30%"/>
+          <PctField label="SHL Rate" value={inputs.shareholderLoanRate} onChange={(n) => set("shareholderLoanRate", n)} step={0.25}/>
           {F("shareholderLoanTenorYears", "SHL Tenor", "years")}
           {F("shareholderLoanGraceYears", "SHL Grace", "years")}
         </div>
       </FullSection>
+      </TabsContent>
 
+      <TabsContent value="mm" className="m-0 pt-4">
       <FullSection title="Maintenance Reserve (major maintenance)">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          {F("mmAnnualPctOfCapex", "Annual MM Reserve % of CAPEX (scalar fallback)", "decimal", 0.001)}
+          <PctField label="Annual MM Reserve % of CAPEX (scalar fallback)" value={inputs.mmAnnualPctOfCapex} onChange={(n) => set("mmAnnualPctOfCapex", n)} step={0.1}/>
         </div>
         <YearArrayEditor label="MM Reserve % of CAPEX per year" years={N} values={inputs.mmSchedulePctOfCapex} fallback={inputs.mmAnnualPctOfCapex} onChange={(a) => set("mmSchedulePctOfCapex", a)} step={0.1} asPct/>
       </FullSection>
+      </TabsContent>
 
+      <TabsContent value="tv" className="m-0 pt-4">
       <FullSection title="Terminal Value (end of contract)">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div className="space-y-1">
@@ -227,12 +266,14 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
               </SelectContent>
             </Select>
           </div>
-          {inputs.terminalValueMode === "salvage" && F("salvageValuePct", "Salvage % of CAPEX", "decimal", 0.01)}
+          {inputs.terminalValueMode === "salvage" && <PctField label="Salvage % of CAPEX" value={inputs.salvageValuePct} onChange={(n) => set("salvageValuePct", n)} step={1}/>}
           {inputs.terminalValueMode === "ebitda-multiple" && F("exitEbitdaMultiple", "Exit EBITDA Multiple", "x", 0.5)}
-          {inputs.terminalValueMode === "perpetuity" && F("terminalGrowth", "Terminal Growth (g)", "decimal", 0.005)}
+          {inputs.terminalValueMode === "perpetuity" && <PctField label="Terminal Growth (g)" value={inputs.terminalGrowth} onChange={(n) => set("terminalGrowth", n)} step={0.25}/>}
         </div>
       </FullSection>
+      </TabsContent>
 
+      <TabsContent value="opexvar" className="m-0 pt-4">
       <FullSection title="OPEX — Variable (per m³)">
         <Table>
           <TableHeader>
@@ -285,7 +326,9 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
           {F("electricityKwhPerM3", "Electricity Use", "kWh/m³", 0.1)}
         </div>
       </FullSection>
+      </TabsContent>
 
+      <TabsContent value="opexfix" className="m-0 pt-4">
       <FullSection title="OPEX — Fixed (per month, with employees & taxes)">
         <Table>
           <TableHeader>
@@ -327,25 +370,21 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
         </Table>
         <Button size="sm" variant="outline" onClick={addFixed} className="mt-3 gap-2"><Plus className="h-4 w-4"/>Add fixed item</Button>
       </FullSection>
+      </TabsContent>
 
-      <Section title="SG&A, WC, Tax">
-        {F("headOfficeEgpMonth", "Head Office", "per month")}
-        {F("headOfficeAllocPct", "HQ Allocation", "decimal", 0.01)}
-        {F("otherSgaEgpMonth", "Other SG&A", "per month")}
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">SG&A Currency</Label>
-          <Select value={inputs.sgaCurrency} onValueChange={(v) => set("sgaCurrency", v as Ccy)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="EGP">EGP</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent>
-          </Select>
-        </div>
-        
+      <TabsContent value="sga" className="m-0 pt-4">
+      <Section title="SG&A, WC, Tax (all EGP)">
+        {F("headOfficeEgpMonth", "Head Office", "EGP per month")}
+        {F("otherSgaEgpMonth", "Other SG&A", "EGP per month")}
         {F("receivablesDays", "Receivables", "DOH")}
         {F("payablesDays", "Payables", "DOH")}
-        {F("taxRate", "Tax Rate", "decimal", 0.01)}
-        {F("discountRateProject", "Project Discount Rate", "decimal", 0.01)}
-        {F("discountRateEquity", "Equity Discount Rate", "decimal", 0.01)}
+        <PctField label="Tax Rate" value={inputs.taxRate} onChange={(n) => set("taxRate", n)} step={0.5}/>
+        <PctField label="Project Discount Rate" value={inputs.discountRateProject} onChange={(n) => set("discountRateProject", n)} step={0.25}/>
+        <PctField label="Equity Discount Rate" value={inputs.discountRateEquity} onChange={(n) => set("discountRateEquity", n)} step={0.25}/>
       </Section>
+      </TabsContent>
+
+      </Tabs>
     </div>
   );
 };
