@@ -17,14 +17,17 @@ export interface OpexVarItem {
   key: string;
   label: string;
   currency: Ccy;
-  amountPerM3: number;       // per m³ of sold volume
+  amountPerM3: number;       // per m³ of sold volume (pre-tax, in own currency)
+  taxPct?: number;           // VAT/duty applied on top, e.g. 0.14
 }
 
 export interface OpexFixedItem {
   key: string;
   label: string;
   currency: Ccy;
-  amountPerMonth: number;
+  amountPerMonth: number;    // per-employee per-month if employees>1, else total per-month
+  employees?: number;        // multiplier (defaults to 1)
+  taxPct?: number;           // VAT/payroll tax applied on top
 }
 
 export interface WaterInputs {
