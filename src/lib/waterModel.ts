@@ -503,18 +503,18 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     const price = I.sellingPriceEgpPerM3 * inflRev;
     const revenue = volume * price;
 
-    // OPEX — variable: USD items × inflUsd × fx_y; EGP items × inflEgp
+    // OPEX — variable: USD items × inflUsd × fx_y; EGP items × inflEgp; tax applied per-item
     const varUsd = I.opexVariableItems.filter(it => it.currency === "USD")
-      .reduce((s, it) => s + it.amountPerM3, 0);
+      .reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
     const varEgp = I.opexVariableItems.filter(it => it.currency === "EGP")
-      .reduce((s, it) => s + it.amountPerM3, 0);
+      .reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
     const variableCost = volume * (varUsd * inflUsd * fx + (varEgp + wellsCost + I.otherVarEgpPerM3) * inflEgp);
 
     const elecPrice = (I.electricityCurrency === "USD" ? I.electricityPriceEgpKwh * fx : I.electricityPriceEgpKwh) * inflElec;
     const electricityCost = I.electricityIncluded ? volume * I.electricityKwhPerM3 * elecPrice : 0;
 
     const fixedCost = I.opexFixedItems.reduce((s, it) => {
-      const annual = it.amountPerMonth * 12;
+      const annual = it.amountPerMonth * (it.employees ?? 1) * (1 + (it.taxPct ?? 0)) * 12;
       return s + (it.currency === "USD" ? annual * fx * inflUsd : annual * inflEgp);
     }, 0);
 
