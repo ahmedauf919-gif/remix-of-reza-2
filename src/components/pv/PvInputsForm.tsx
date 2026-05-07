@@ -1,4 +1,4 @@
-import { PvInputs, PvCapexItem, Ccy, VoltageLevel, RepaymentMethod, Periodicity, DepMethod, YieldCase } from "@/lib/pvModel";
+import { PvInputs, PvCapexItem, Ccy, VoltageLevel, RepaymentMethod, Periodicity, DepMethod, YieldCase, TariffSource } from "@/lib/pvModel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -36,8 +36,8 @@ const FullSection = ({ title, children }: { title: string; children: React.React
   </div>
 );
 
-function YearArrayEditor({ label, years, values, fallback, onChange, step = 0.001, asPct = false }:
-  { label: string; years: number; values: number[] | undefined; fallback: number; onChange: (a: number[]) => void; step?: number; asPct?: boolean }) {
+function YearArrayEditor({ label, years, values, fallback, onChange, step = 0.001, asPct = false, prefix = "Y" }:
+  { label: string; years: number; values: number[] | undefined; fallback: number; onChange: (a: number[]) => void; step?: number; asPct?: boolean; prefix?: string }) {
   const arr = Array.from({ length: years }, (_, i) => values?.[i] ?? fallback);
   const update = (i: number, v: number) => { const n = [...arr]; n[i] = v; onChange(n); };
   return (
@@ -45,13 +45,13 @@ function YearArrayEditor({ label, years, values, fallback, onChange, step = 0.00
       <div className="flex items-center justify-between gap-2">
         <Label className="text-xs">{label}</Label>
         <div className="flex items-center gap-1">
-          <Button size="sm" variant="outline" onClick={() => onChange(Array.from({ length: years }, () => arr[0] ?? fallback))}>Fill Y1 → all</Button>
+          <Button size="sm" variant="outline" onClick={() => onChange(Array.from({ length: years }, () => arr[0] ?? fallback))}>Fill {prefix}1 → all</Button>
           <Button size="sm" variant="ghost" onClick={() => onChange([])}>Reset</Button>
         </div>
       </div>
       <div className="overflow-x-auto">
         <table className="text-xs">
-          <thead><tr>{arr.map((_, i) => <th key={i} className="px-1 font-normal text-muted-foreground">Y{i + 1}</th>)}</tr></thead>
+          <thead><tr>{arr.map((_, i) => <th key={i} className="px-1 font-normal text-muted-foreground">{prefix}{i + 1}</th>)}</tr></thead>
           <tbody><tr>{arr.map((v, i) => (
             <td key={i} className="px-1">
               <Input type="number" step={step} value={asPct ? +(v * 100).toFixed(4) : v}
@@ -72,11 +72,12 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
   );
 
   const updateCapex = (idx: number, patch: Partial<PvCapexItem>) => set("capexItems", inputs.capexItems.map((it, i) => i === idx ? { ...it, ...patch } : it));
-  const addCapex = () => set("capexItems", [...inputs.capexItems, { key: `it${Date.now()}`, label: "New Item", currency: "USD", units: 0, costPerUnit: 0, vatPct: inputs.vatStandardPct, customsPct: inputs.customsPctDefault, usefulLife: 25, depMethod: "StraightLine" }]);
+  const addCapex = () => set("capexItems", [...inputs.capexItems, { key: `it${Date.now()}`, label: "New Item", currency: "USD", units: 0, costPerUnit: 0, vatPct: 0.05, customsPct: 0.07, usefulLife: 25, depMethod: "StraightLine" }]);
   const removeCapex = (idx: number) => set("capexItems", inputs.capexItems.filter((_, i) => i !== idx));
 
   const N = inputs.contractYears;
   const Tenor = inputs.loanTenorYears;
+  const Months = Math.max(1, inputs.constructionMonths);
 
   return (
     <div className="space-y-6">
@@ -140,37 +141,77 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
             <PctField label="Loss in Year 1" value={inputs.lossYr1} onChange={(n) => set("lossYr1", n)} step={0.1}/>
             <PctField label="Annual Degradation (thereafter)" value={inputs.lossThereafterPct} onChange={(n) => set("lossThereafterPct", n)} step={0.05}/>
           </Section>
+
+          <div className="mt-4">
+            <Section title="Land & Rent">
+              <div className="flex items-center justify-between rounded border p-2 col-span-1">
+                <Label>Rent Enabled</Label>
+                <Switch checked={inputs.rentEnabled} onCheckedChange={(v) => set("rentEnabled", v)} />
+              </div>
+              {F("landAreaSqm", "Land Area", "sqm", 100)}
+              {F("rentEgpPerSqm", "Rent (Y1)", "EGP/sqm", 1)}
+              <div className="col-span-full text-xs text-muted-foreground">Rent escalates yearly using the <span className="font-medium">Usufruct YoY</span> rate set under OPEX.</div>
+            </Section>
+          </div>
         </TabsContent>
 
         <TabsContent value="tariff" className="m-0 pt-4">
-          <Section title="Tariff Assumptions">
-            <div className="flex items-center justify-between rounded border p-2 col-span-1">
-              <Label>Government Tariff</Label>
-              <Switch checked={inputs.govtTariffEnabled} onCheckedChange={(v) => set("govtTariffEnabled", v)} />
-            </div>
+          <Section title="Tariff Source">
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Voltage Level</Label>
-              <Select value={inputs.voltageLevel} onValueChange={(v) => set("voltageLevel", v as VoltageLevel)}>
+              <Label className="text-xs text-muted-foreground">Source</Label>
+              <Select value={inputs.tariffSource} onValueChange={(v) => set("tariffSource", v as TariffSource)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Extra High Voltage">Extra High Voltage</SelectItem>
-                  <SelectItem value="High Voltage">High Voltage</SelectItem>
-                  <SelectItem value="Medium Voltage">Medium Voltage</SelectItem>
-                  <SelectItem value="Low Voltage">Low Voltage</SelectItem>
+                  <SelectItem value="Government">Government Tariff</SelectItem>
+                  <SelectItem value="Custom">Custom Tariff</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {F("govtTariffEgp", "Government Tariff (Y1)", "EGP/kWh", 0.01)}
-            {F("separateTariffEgp", "Separate / Alt Tariff (Y1)", "EGP/kWh", 0.01)}
-            <PctField label="Government Escalation YoY" value={inputs.govtEscalationPct} onChange={(n) => set("govtEscalationPct", n)} step={0.5}/>
-            <PctField label="Separate Escalation YoY" value={inputs.separateEscalationPct} onChange={(n) => set("separateEscalationPct", n)} step={0.5}/>
-            <PctField label="Savings — Year 1" value={inputs.savingsPctYr1} onChange={(n) => set("savingsPctYr1", n)} step={1}/>
-            <PctField label="Savings — Thereafter" value={inputs.savingsPctThereafter} onChange={(n) => set("savingsPctThereafter", n)} step={1}/>
+            {inputs.tariffSource === "Government" && (
+              <>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Voltage Level</Label>
+                  <Select value={inputs.voltageLevel} onValueChange={(v) => set("voltageLevel", v as VoltageLevel)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Extra High Voltage">Extra High Voltage</SelectItem>
+                      <SelectItem value="High Voltage">High Voltage</SelectItem>
+                      <SelectItem value="Medium Voltage">Medium Voltage</SelectItem>
+                      <SelectItem value="Low Voltage">Low Voltage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {F("govtBaseTariffEgp", "Base Tariff (Y1)", "EGP/kWh", 0.01)}
+                <PctField label="Default Escalation YoY" value={inputs.govtEscalationPct} onChange={(n) => set("govtEscalationPct", n)} step={0.5}/>
+              </>
+            )}
           </Section>
+
+          <div className="mt-4">
+            <FullSection title="Tariff Schedule (EGP/kWh per year)">
+              <div className="mb-3 flex items-center gap-2">
+                <Button size="sm" variant="outline"
+                  onClick={() => set("tariffPerYear",
+                    Array.from({ length: N }, (_, i) => inputs.govtBaseTariffEgp * Math.pow(1 + inputs.govtEscalationPct, i)))}>
+                  Generate from base × escalation
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => set("tariffPerYear", [])}>Clear (use formula)</Button>
+              </div>
+              <YearArrayEditor label="Tariff (EGP/kWh)" years={N} values={inputs.tariffPerYear} fallback={inputs.govtBaseTariffEgp}
+                onChange={(a) => set("tariffPerYear", a)} step={0.01} />
+            </FullSection>
+          </div>
+
+          <div className="mt-4">
+            <FullSection title="Annual Savings vs Tariff (%)">
+              <YearArrayEditor label="Savings %" years={N} values={inputs.savingsPctPerYear} fallback={0.20}
+                onChange={(a) => set("savingsPctPerYear", a)} step={0.5} asPct />
+            </FullSection>
+          </div>
         </TabsContent>
 
         <TabsContent value="capex" className="m-0 pt-4">
-          <FullSection title="CAPEX (itemised)">
+          <FullSection title="CAPEX (itemised, VAT & customs per item)">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -215,33 +256,45 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
               </TableBody>
             </Table>
             <Button size="sm" variant="outline" onClick={addCapex} className="mt-3 gap-2"><Plus className="h-4 w-4"/>Add CAPEX item</Button>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
               <PctField label="Contingency" value={inputs.contingencyPct} onChange={(n) => set("contingencyPct", n)} step={0.5}/>
-              {F("capitalisedInterestEgp", "Capitalised Interest", "EGP", 100000)}
-              <PctField label="VAT — Standard (default)" value={inputs.vatStandardPct} onChange={(n) => set("vatStandardPct", n)} step={0.5}/>
-              <PctField label="VAT — BOS" value={inputs.vatBosPct} onChange={(n) => set("vatBosPct", n)} step={0.5}/>
-              <PctField label="Customs & Clearance (default)" value={inputs.customsPctDefault} onChange={(n) => set("customsPctDefault", n)} step={0.5}/>
             </div>
           </FullSection>
+
+          <div className="mt-4">
+            <FullSection title={`CAPEX Drawdown — % per construction month (×${Months})`}>
+              <div className="mb-3 flex items-center gap-2">
+                <Button size="sm" variant="outline"
+                  onClick={() => set("capexDrawScheduleMonthly", Array.from({ length: Months }, () => 1 / Months))}>
+                  Linear (equal split)
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => set("capexDrawScheduleMonthly", [])}>Clear</Button>
+                <span className="text-xs text-muted-foreground ml-auto">Sum normalises to 100%. Drives Capitalised Interest (IDC).</span>
+              </div>
+              <YearArrayEditor label="Drawdown" years={Months} values={inputs.capexDrawScheduleMonthly}
+                fallback={1 / Months} onChange={(a) => set("capexDrawScheduleMonthly", a)} step={0.5} asPct prefix="M" />
+            </FullSection>
+          </div>
         </TabsContent>
 
         <TabsContent value="opex" className="m-0 pt-4">
           <Section title="OPEX">
-            {F("maintenanceUsd", "Maintenance (annual)", "USD", 100)}
+            {F("maintenancePerMwUsd", "Maintenance", "USD/MW/yr", 100)}
             <PctField label="Maintenance EGP %" value={inputs.maintenanceEgpPct} onChange={(n) => set("maintenanceEgpPct", n)} step={5}/>
             <PctField label="Maintenance USD %" value={inputs.maintenanceUsdPct} onChange={(n) => set("maintenanceUsdPct", n)} step={5}/>
+            <div className="flex items-center justify-between rounded border p-2 col-span-1">
+              <Label>Maintenance Taxable (apply VAT)</Label>
+              <Switch checked={inputs.maintenanceTaxable} onCheckedChange={(v) => set("maintenanceTaxable", v)} />
+            </div>
+            {inputs.maintenanceTaxable && (
+              <PctField label="Maintenance VAT" value={inputs.maintenanceVatPct} onChange={(n) => set("maintenanceVatPct", n)} step={0.5}/>
+            )}
             <PctField label="OPEX YoY (real)" value={inputs.opexYoYPct} onChange={(n) => set("opexYoYPct", n)} step={0.25}/>
             <PctField label="Insurance % of CAPEX" value={inputs.insurancePctOfCapex} onChange={(n) => set("insurancePctOfCapex", n)} step={0.05}/>
             {F("replacementDurationYears", "Replacement every", "years")}
             <PctField label="Replacement Cost % of CAPEX" value={inputs.replacementCostPctOfCapex} onChange={(n) => set("replacementCostPctOfCapex", n)} step={0.5}/>
-            <div className="flex items-center justify-between rounded border p-2 col-span-1">
-              <Label>Rent Enabled</Label>
-              <Switch checked={inputs.rentEnabled} onCheckedChange={(v) => set("rentEnabled", v)} />
-            </div>
-            {F("rentEgpPerSqm", "Rent", "EGP/sqm", 1)}
-            {F("landAreaSqm", "Land Area", "sqm", 100)}
             <PctField label="Usufruct % of Revenue" value={inputs.usufructPctOfRevenue} onChange={(n) => set("usufructPctOfRevenue", n)} step={0.5}/>
-            <PctField label="Usufruct YoY" value={inputs.usufructYoYPct} onChange={(n) => set("usufructYoYPct", n)} step={0.5}/>
+            <PctField label="Usufruct YoY (also escalates Rent)" value={inputs.usufructYoYPct} onChange={(n) => set("usufructYoYPct", n)} step={0.5}/>
           </Section>
         </TabsContent>
 
@@ -249,7 +302,7 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
           <FullSection title="Debt Assumptions">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
               <PctField label="Debt %" value={inputs.debtPct} onChange={(n) => set("debtPct", Math.max(0, Math.min(1, n)))} step={1} suffix="enter 70 for 70%"/>
-              <PctField label="Bank Spread" value={inputs.spreadPct} onChange={(n) => set("spreadPct", n)} step={0.1}/>
+              <PctField label="Bank Spread (fallback)" value={inputs.spreadPct} onChange={(n) => set("spreadPct", n)} step={0.1}/>
               {F("loanTenorYears", "Tenor", "years")}
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Periodicity</Label>
@@ -279,6 +332,19 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
             {inputs.repaymentMethod === "Customized" && (
               <YearArrayEditor label="Customised principal % per year (sums to 100%)" years={Tenor} values={inputs.customizedSchedule} fallback={0} onChange={(a) => set("customizedSchedule", a)} step={0.5} asPct/>
             )}
+            <div className="mt-4">
+              <div className="mb-2 flex items-center gap-2">
+                <Button size="sm" variant="outline"
+                  onClick={() => set("bankInterestPerYear",
+                    Array.from({ length: N }, (_, i) => (inputs.corridorPctPerYear[i] ?? inputs.corridorPctPerYear[inputs.corridorPctPerYear.length - 1] ?? 0.0925) + inputs.spreadPct))}>
+                  Seed from Corridor + Spread
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => set("bankInterestPerYear", [])}>Clear (use Corridor + Spread)</Button>
+                <span className="text-xs text-muted-foreground ml-auto">When set, overrides Corridor + Spread per year.</span>
+              </div>
+              <YearArrayEditor label="Bank All-in Interest Rate per year (%)" years={N} values={inputs.bankInterestPerYear}
+                fallback={(inputs.corridorPctPerYear[0] ?? 0.0925) + inputs.spreadPct} onChange={(a) => set("bankInterestPerYear", a)} step={0.25} asPct/>
+            </div>
           </FullSection>
         </TabsContent>
 
