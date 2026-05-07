@@ -223,32 +223,6 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
           </TableBody>
         </Table>
 
-      <FullSection title="OPEX — Variable (per m³)">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Item</TableHead>
-              <TableHead className="w-24">Currency</TableHead>
-              <TableHead className="w-40">Per m³</TableHead>
-              <TableHead className="w-12"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {inputs.opexVariableItems.map((it, i) => (
-              <TableRow key={i}>
-                <TableCell><Input value={it.label} onChange={(e) => updateVar(i, { label: e.target.value })} /></TableCell>
-                <TableCell>
-                  <Select value={it.currency} onValueChange={(v) => updateVar(i, { currency: v as Ccy })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="EGP">EGP</SelectItem></SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell><Input type="number" step={0.0001} value={it.amountPerM3} onChange={(e) => updateVar(i, { amountPerM3: parseFloat(e.target.value) || 0 })} /></TableCell>
-                <TableCell><Button size="icon" variant="ghost" onClick={() => removeVar(i)}><Trash2 className="h-4 w-4"/></Button></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
         <Button size="sm" variant="outline" onClick={addVar} className="mt-3 gap-2"><Plus className="h-4 w-4"/>Add variable item</Button>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
@@ -268,18 +242,25 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
         </div>
       </FullSection>
 
-      <FullSection title="OPEX — Fixed (per month)">
+      <FullSection title="OPEX — Fixed (per month, with employees & taxes)">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Item</TableHead>
               <TableHead className="w-24">Currency</TableHead>
-              <TableHead className="w-40">Per month</TableHead>
+              <TableHead className="w-32">Per month</TableHead>
+              <TableHead className="w-24"># Employees</TableHead>
+              <TableHead className="w-24">Tax %</TableHead>
+              <TableHead className="w-40">Total / month</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {inputs.opexFixedItems.map((it, i) => (
+            {inputs.opexFixedItems.map((it, i) => {
+              const emp = it.employees ?? 1;
+              const totalOwn = it.amountPerMonth * emp * (1 + (it.taxPct ?? 0));
+              const totalEgp = it.currency === "USD" ? totalOwn * inputs.fxRateEgpPerUsd : totalOwn;
+              return (
               <TableRow key={i}>
                 <TableCell><Input value={it.label} onChange={(e) => updateFixed(i, { label: e.target.value })} /></TableCell>
                 <TableCell>
@@ -289,9 +270,15 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
                   </Select>
                 </TableCell>
                 <TableCell><Input type="number" step={100} value={it.amountPerMonth} onChange={(e) => updateFixed(i, { amountPerMonth: parseFloat(e.target.value) || 0 })} /></TableCell>
+                <TableCell><Input type="number" step={1} value={emp} onChange={(e) => updateFixed(i, { employees: parseFloat(e.target.value) || 1 })} /></TableCell>
+                <TableCell><Input type="number" step={0.5} value={+(((it.taxPct ?? 0) * 100).toFixed(4))} onChange={(e) => { const r = parseFloat(e.target.value); updateFixed(i, { taxPct: isFinite(r) ? r / 100 : 0 }); }} /></TableCell>
+                <TableCell className="font-mono text-xs">
+                  {totalOwn.toLocaleString("en-US", { maximumFractionDigits: 0 })} {it.currency}
+                  {it.currency === "USD" && <div className="text-muted-foreground">≈ EGP {totalEgp.toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>}
+                </TableCell>
                 <TableCell><Button size="icon" variant="ghost" onClick={() => removeFixed(i)}><Trash2 className="h-4 w-4"/></Button></TableCell>
               </TableRow>
-            ))}
+            );})}
           </TableBody>
         </Table>
         <Button size="sm" variant="outline" onClick={addFixed} className="mt-3 gap-2"><Plus className="h-4 w-4"/>Add fixed item</Button>
