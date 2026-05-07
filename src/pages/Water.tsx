@@ -1,6 +1,6 @@
 import { useMemo, useDeferredValue, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { FileText, RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon } from "lucide-react";
+import { FileText, RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -31,7 +31,24 @@ export default function Water() {
     } catch (e) { console.error(e); toast.error("Failed to generate memo", { id: "wmemo" }); }
   };
 
-  const reset = () => { setInputs(DEFAULT_WATER_INPUTS); toast.info("Reset to factory defaults"); };
+  const defaultKey = `water_default_inputs_1`;
+  const reset = () => {
+    try {
+      const stored = localStorage.getItem(defaultKey);
+      const base = stored ? { ...DEFAULT_WATER_INPUTS, ...JSON.parse(stored) } : DEFAULT_WATER_INPUTS;
+      setInputs(base);
+      toast.info(stored ? "Reset to your saved defaults" : "Reset to factory defaults");
+    } catch {
+      setInputs(DEFAULT_WATER_INPUTS);
+      toast.info("Reset to factory defaults");
+    }
+  };
+  const saveAsDefault = () => {
+    try {
+      localStorage.setItem(defaultKey, JSON.stringify(inputs));
+      toast.success("Current assumptions saved as your default");
+    } catch (e) { console.error(e); toast.error("Failed to save defaults"); }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -49,6 +66,7 @@ export default function Water() {
               {isStale ? <Loader2 className="h-4 w-4 animate-spin"/> : saving ? <UploadCloud className="h-4 w-4 animate-pulse"/> : <Check className="h-4 w-4"/>}
               {!loaded ? "Loading…" : isStale ? "Recalculating…" : saving ? "Saving…" : "All changes saved"}
             </div>
+            <Button variant="secondary" onClick={saveAsDefault} className="gap-2"><Save className="h-4 w-4"/>Save as default</Button>
             <Button variant="secondary" onClick={reset} className="gap-2"><RotateCcw className="h-4 w-4"/>Reset</Button>
             <Button onClick={exportMemo} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"><FileText className="h-4 w-4"/>Export Investment Memo</Button>
           </div>
