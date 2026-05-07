@@ -41,7 +41,7 @@ export function useSharedScenario(scenarioId: number = 1) {
   // Realtime sync from other browsers
   useEffect(() => {
     const ch = supabase
-      .channel(`shared_scenario_sync_${scenarioId}`)
+      .channel(`shared_scenario_sync_${scenarioId}_${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes",
         { event: "*", schema: "public", table: "shared_scenario", filter: `id=eq.${scenarioId}` },
         (payload: any) => {
