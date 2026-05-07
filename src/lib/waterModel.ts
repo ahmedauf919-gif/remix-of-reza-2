@@ -321,7 +321,8 @@ export function runWaterModel(I: WaterInputs): WaterOutputs {
     I.mmfUsdPerM3 + I.dosingUsdPerM3 + I.boosterUsdPerM3 + I.vfdUsdPerM3 +
     I.pxUsdPerM3 + I.pressureVesselUsdPerM3 + I.cfsUsdPerM3 +
     I.instrumentationUsdPerM3 + I.cipPumpsUsdPerM3 + I.pvcUsdPerM3;
-  const variableEgpFromUsd = variableUsdPerM3 * fx;
+  // Excel adds these USD/m³ values directly (no FX conversion) to EGP/m³ — preserved here for parity
+  const variableEgpFromUsd = variableUsdPerM3;
   const wellsCost = I.wellsIncluded ? I.wellsCostEgpPerM3 : 0;
   const variableCostPerM3 = variableEgpFromUsd + wellsCost + I.otherVarEgpPerM3;
   const electricityCostPerM3 = I.electricityIncluded
