@@ -557,10 +557,13 @@ const OPEX_PER_MW_KEYS = ["oAndM","assetMgmt","spvCost","insurance","csrContribu
 const OpexEditor = ({ inputs, onChange }: Props) => {
   const setBasis = (k: string, v: 0 | 1) =>
     onChange({ ...inputs, opexBasisPerMW: { ...(inputs.opexBasisPerMW ?? {}), [k]: v } });
+  const setVat = (k: string, pctValue: number) =>
+    onChange({ ...inputs, opexVatPct: { ...(inputs.opexVatPct ?? {}), [k]: Math.max(0, pctValue / 100) } });
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
         Per-line basis: <b>USD '000 p.a.</b> = absolute, or <b>USD '000/MW p.a.</b> = per MW × capacity ({inputs.capacityMWp} MW).
+        VAT % is added on top of each line and flows through to the resolved amount.
       </p>
       <div className="overflow-x-auto rounded-lg border border-border/60">
         <table className="w-full text-xs">
@@ -569,7 +572,8 @@ const OpexEditor = ({ inputs, onChange }: Props) => {
               <th className="text-left p-2 min-w-[170px]">Opex item</th>
               <th className="p-2 min-w-[140px]">Basis</th>
               <th className="text-right p-2 min-w-[120px]">Amount</th>
-              <th className="text-right p-2 min-w-[140px]">Resolved (USD '000 p.a.)</th>
+              <th className="text-right p-2 min-w-[80px]">VAT %</th>
+              <th className="text-right p-2 min-w-[140px]">Resolved (USD '000 p.a., incl. VAT)</th>
             </tr>
           </thead>
           <tbody>
@@ -577,7 +581,9 @@ const OpexEditor = ({ inputs, onChange }: Props) => {
               const k = f.key as string;
               const amt = inputs[f.key] as unknown as number;
               const perMW = (inputs.opexBasisPerMW?.[k] ?? 0) === 1;
-              const resolved = perMW ? (amt || 0) * (inputs.capacityMWp || 0) : (amt || 0);
+              const vatPct = (inputs.opexVatPct?.[k] ?? 0) * 100;
+              const base = perMW ? (amt || 0) * (inputs.capacityMWp || 0) : (amt || 0);
+              const resolved = base * (1 + vatPct / 100);
               return (
                 <tr key={k} className="border-t border-border/40 hover:bg-secondary/20">
                   <td className="p-2 font-medium">{f.label}</td>
@@ -594,6 +600,11 @@ const OpexEditor = ({ inputs, onChange }: Props) => {
                     <Input type="number" step={0.1} className="h-8 font-mono text-xs text-right"
                       value={String(amt ?? 0)}
                       onChange={(e) => onChange({ ...inputs, [k]: parseFloat(e.target.value) || 0 })} />
+                  </td>
+                  <td className="p-1">
+                    <Input type="number" step={0.1} min={0} className="h-8 font-mono text-xs text-right"
+                      value={vatPct.toFixed(2)}
+                      onChange={(e) => setVat(k, parseFloat(e.target.value) || 0)} />
                   </td>
                   <td className="p-2 text-right font-mono text-muted-foreground">{resolved.toLocaleString(undefined, { maximumFractionDigits: 1 })}</td>
                 </tr>
