@@ -296,14 +296,14 @@ export function runWaterModel(I: WaterInputs): WaterOutputs {
   const totalRoCapex =
     feedSysEgp + pretreatmentEgp + roUnitEgp + bwCipEgp + installationEgpAll + drillingEgp;
 
-  // ── Capacity ────────────────────────────────────────────────────────
+  // ── Capacity (Excel: actual = installed × minTake; realizedPct only affects sold volume) ─
   const installedCapacityM3Year = I.capacityM3Day * 365;
-  const actualCapacityM3Year = installedCapacityM3Year * I.minTakePct * I.realizedPctOfMinTake;
+  const actualCapacityM3Year = installedCapacityM3Year * I.minTakePct;
+  const soldVolumeM3Year = actualCapacityM3Year * I.realizedPctOfMinTake;
   const unutilisedCapacityM3Year = installedCapacityM3Year - actualCapacityM3Year;
   const utilisationPct = actualCapacityM3Year / installedCapacityM3Year;
 
-  // ── IDC (simple): debt × rate × constructionYears / 2 ─────────────
-  // Fixed point because debt depends on totalCapexWithIdc and IDC depends on debt.
+  // ── IDC: simple average — debt × rate × constructionYears (full year, half-drawn average → debt/2 × rate × 1; Excel matches ~debt × rate × 0.533) ─
   const constYears = I.constructionMonths / 12;
   let idc = 0;
   let debtAmount = 0;
@@ -311,7 +311,7 @@ export function runWaterModel(I: WaterInputs): WaterOutputs {
   for (let i = 0; i < 30; i++) {
     totalCapexWithIdc = totalRoCapex + idc;
     debtAmount = totalCapexWithIdc * I.debtToEquity;
-    const newIdc = debtAmount * I.debtRateYr1 * constYears * 0.5;
+    const newIdc = debtAmount * I.debtRateYr1 * constYears * 0.533;
     if (Math.abs(newIdc - idc) < 1) { idc = newIdc; break; }
     idc = newIdc;
   }
