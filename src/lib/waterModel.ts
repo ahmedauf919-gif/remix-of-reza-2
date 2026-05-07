@@ -166,6 +166,7 @@ export const DEFAULT_WATER_INPUTS: WaterInputs = {
   electricityInflationPerYear: [],
   usdInflationPerYear: [],
   capacityM3Day: 3500,
+  capacityM3DayPerYear: [],
   minTakePct: 0.95,
   realizedPctOfMinTake: 0.96,
   minTakePctPerYear: [],
