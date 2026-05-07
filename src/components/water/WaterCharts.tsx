@@ -87,8 +87,9 @@ export const WaterCharts = ({ m }: { m: WaterOutputs }) => {
         </Card>
       </div>
 
-      <Card title={`PPA Tariff Composition — ${fmtNum(tariff, 2)} EGP/m³ (per-line contribution)`}>
-        <div style={{ height: Math.max(280, compData.length * 28) }}>
+      <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <h3 className="font-semibold mb-3">PPA Tariff Composition — {fmtNum(tariff, 2)} EGP/m³ (per-line contribution)</h3>
+        <div style={{ height: Math.max(320, compData.length * 28) }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={compData} layout="vertical" margin={{ left: 140, right: 60 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
@@ -101,7 +102,7 @@ export const WaterCharts = ({ m }: { m: WaterOutputs }) => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </Card>
+      </div>
 
       <Card title="Free Cash Flow to Equity (EGP '000)">
         <ResponsiveContainer width="100%" height="100%">
