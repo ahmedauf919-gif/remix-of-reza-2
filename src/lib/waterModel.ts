@@ -76,6 +76,25 @@ export interface WaterInputs {
   debtRateStepDown: number;
   debtRateFloor: number;
   debtRatePerYear?: number[]; // override per loan year (length = loanTenor)
+  debtRepaymentMode: "equal" | "annuity" | "sculpted";
+  debtGraceYears: number;             // interest-only period at start
+  targetDSCR: number;                 // for sculpted mode
+
+  // Shareholder (subordinated) loan — funds part of the equity bucket
+  shareholderLoanPct: number;         // % of equity replaced by SHL (0..1)
+  shareholderLoanRate: number;        // annual interest
+  shareholderLoanTenorYears: number;
+  shareholderLoanGraceYears: number;
+
+  // Maintenance reserve (major maintenance accrual, % of total CAPEX, applied each operating year)
+  mmAnnualPctOfCapex: number;
+  mmSchedulePctOfCapex?: number[];    // optional per-year override (length = contractYears)
+
+  // Terminal value at end of contract
+  terminalValueMode: "none" | "salvage" | "ebitda-multiple" | "perpetuity";
+  salvageValuePct: number;            // % of total CAPEX (mode = salvage)
+  exitEbitdaMultiple: number;         // mode = ebitda-multiple
+  terminalGrowth: number;             // mode = perpetuity (Gordon)
 
   // OPEX
   electricityIncluded: boolean;
