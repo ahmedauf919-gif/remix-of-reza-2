@@ -297,24 +297,52 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
         </TabsContent>
 
         <TabsContent value="opex" className="m-0 pt-4">
-          <Section title="OPEX">
-            {F("maintenancePerMwUsd", "Maintenance", "USD/MW/yr", 100)}
-            <PctField label="Maintenance EGP %" value={inputs.maintenanceEgpPct} onChange={(n) => set("maintenanceEgpPct", n)} step={5}/>
-            <PctField label="Maintenance USD %" value={inputs.maintenanceUsdPct} onChange={(n) => set("maintenanceUsdPct", n)} step={5}/>
-            <div className="flex items-center justify-between rounded border p-2 col-span-1">
-              <Label>Maintenance Taxable (apply VAT)</Label>
-              <Switch checked={inputs.maintenanceTaxable} onCheckedChange={(v) => set("maintenanceTaxable", v)} />
-            </div>
-            {inputs.maintenanceTaxable && (
-              <PctField label="Maintenance VAT" value={inputs.maintenanceVatPct} onChange={(n) => set("maintenanceVatPct", n)} step={0.5}/>
-            )}
-            <PctField label="OPEX YoY (real)" value={inputs.opexYoYPct} onChange={(n) => set("opexYoYPct", n)} step={0.25}/>
-            <PctField label="Insurance % of CAPEX" value={inputs.insurancePctOfCapex} onChange={(n) => set("insurancePctOfCapex", n)} step={0.05}/>
-            {F("replacementDurationYears", "Replacement every", "years")}
-            <PctField label="Replacement Cost % of CAPEX" value={inputs.replacementCostPctOfCapex} onChange={(n) => set("replacementCostPctOfCapex", n)} step={0.5}/>
-            <PctField label="Usufruct % of Revenue" value={inputs.usufructPctOfRevenue} onChange={(n) => set("usufructPctOfRevenue", n)} step={0.5}/>
-            <PctField label="Usufruct YoY (also escalates Rent)" value={inputs.usufructYoYPct} onChange={(n) => set("usufructYoYPct", n)} step={0.5}/>
+          <Section title="Operations & Maintenance (O&M)">
+            {F("omPerMwUsd", "O&M", "USD/MW/yr", 100)}
+            <PctField label="VAT on O&M" value={inputs.omVatPct} onChange={(n) => set("omVatPct", n)} step={0.5}/>
+            <PctField label="O&M EGP %" value={inputs.omEgpPct} onChange={(n) => set("omEgpPct", n)} step={5}/>
+            <PctField label="O&M USD %" value={inputs.omUsdPct} onChange={(n) => set("omUsdPct", n)} step={5}/>
+            <PctField label="OPEX YoY (fallback)" value={inputs.opexYoYPct} onChange={(n) => set("opexYoYPct", n)} step={0.25}/>
           </Section>
+          <div className="mt-4">
+            <FullSection title="O&M Inflation per year (%)">
+              <YearArrayEditor label="O&M inflation %" years={N} values={inputs.omInflationPerYear} fallback={0.05}
+                onChange={(a) => set("omInflationPerYear", a)} step={0.5} asPct/>
+            </FullSection>
+          </div>
+
+          <div className="mt-4">
+            <Section title="MMRA (Major Maintenance Reserve)">
+              <PctField label="MMRA % of Revenue" value={inputs.mmraPctOfRevenue} onChange={(n) => set("mmraPctOfRevenue", n)} step={0.25}/>
+            </Section>
+            <div className="mt-2">
+              <FullSection title="MMRA Inflation per year (%)">
+                <YearArrayEditor label="MMRA inflation %" years={N} values={inputs.mmraInflationPerYear} fallback={0.05}
+                  onChange={(a) => set("mmraInflationPerYear", a)} step={0.5} asPct/>
+              </FullSection>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <Section title="Insurance">
+              <PctField label="Insurance % of CAPEX" value={inputs.insurancePctOfCapex} onChange={(n) => set("insurancePctOfCapex", n)} step={0.05}/>
+            </Section>
+            <div className="mt-2">
+              <FullSection title="Insurance Inflation per year (%)">
+                <YearArrayEditor label="Insurance inflation %" years={N} values={inputs.insuranceInflationPerYear} fallback={0.05}
+                  onChange={(a) => set("insuranceInflationPerYear", a)} step={0.5} asPct/>
+              </FullSection>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <Section title="Replacement / Usufruct / Rent escalation">
+              {F("replacementDurationYears", "Replacement every", "years")}
+              <PctField label="Replacement Cost % of CAPEX" value={inputs.replacementCostPctOfCapex} onChange={(n) => set("replacementCostPctOfCapex", n)} step={0.5}/>
+              <PctField label="Usufruct % of Revenue" value={inputs.usufructPctOfRevenue} onChange={(n) => set("usufructPctOfRevenue", n)} step={0.5}/>
+              <PctField label="Usufruct YoY (also escalates Rent)" value={inputs.usufructYoYPct} onChange={(n) => set("usufructYoYPct", n)} step={0.5}/>
+            </Section>
+          </div>
         </TabsContent>
 
         <TabsContent value="debt" className="m-0 pt-4">
