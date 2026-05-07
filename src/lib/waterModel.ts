@@ -552,35 +552,7 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     });
   };
   const shlSchedule = buildShlSchedule();
-
-  // ── Year-by-year rows ──
-  const rows: YearRow[] = [];
   const N = I.contractYears;
-  let prevAR = 0;
-  let cumDep = 0;
-  let cash = 0;
-  let retained = 0;
-  const ppeGross = totalCapexWithIdc;
-  const paidInEquity = equityAmount;
-
-  // Construction (yearIdx = -1)
-  rows.push({
-    year: I.startYear - 1, yearIdx: -1, fx: fx0,
-    volumeM3: 0, pricePerM3: 0,
-    revenue: 0, fixedCost: 0, variableCost: 0, electricityCost: 0,
-    operatingCost: 0, sga: 0, ebitda: 0, depreciation: 0, ebit: 0,
-    interest: 0, ebt: 0, tax: 0, netProfit: 0,
-    capex: -totalCapexWithIdc, debtDraw: debtAmount, principalRepay: 0,
-    workingCapDelta: 0,
-    fcff: -totalCapexWithIdc,
-    fcfe: -totalCapexWithIdc + debtAmount,
-    debtOpening: 0, debtClosing: debtAmount, rate: 0, dscr: NaN,
-    ppeGross, accumDep: 0, ppeNet: ppeGross,
-    accountsReceivable: 0, cash: 0,
-    totalAssets: ppeGross,
-    paidInEquity, retainedEarnings: 0, totalEquity: paidInEquity,
-    totalLiabAndEquity: paidInEquity + debtAmount,
-  });
 
   // ── Pre-pass: compute pre-debt EBITDA / tax / CFADS by year (for sculpting) ──
   const preCfads: number[] = [];
