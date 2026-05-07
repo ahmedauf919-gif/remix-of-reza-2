@@ -351,7 +351,20 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
               const sum = sched.reduce((a, b) => a + b, 0);
               const amount = inputs[it.key] as unknown as number;
               const basisPerMW = (inputs.capexBasisPerMW?.[k] ?? 0) === 1;
-              const resolved = basisPerMW ? (amount || 0) * (inputs.capacityMWp || 0) : (amount || 0);
+              const resolvedRaw = basisPerMW ? (amount || 0) * (inputs.capacityMWp || 0) : (amount || 0);
+              // For contingency, "resolved" is computed from the global Contingency % × all-other capex (incl. taxes).
+              let resolved = resolvedRaw;
+              if (k === "contingency") {
+                const pct = inputs.contingencyPct ?? 0;
+                let baseSum = 0;
+                for (const oi of CAPEX_ITEMS) {
+                  if (oi.key === "contingency") continue;
+                  const a = inputs[oi.key] as unknown as number;
+                  const b = (inputs.capexBasisPerMW?.[oi.key as string] ?? 0) === 1;
+                  baseSum += b ? (a || 0) * (inputs.capacityMWp || 0) : (a || 0);
+                }
+                resolved = baseSum * pct;
+              }
               const taxExcluded = CAPEX_TAX_EXCLUDED.has(k);
               const taxable = inputs.capexTaxable?.[k] ?? CAPEX_TAXABLE_DEFAULT[k] ?? false;
               const onshorePct = (inputs.capexOnshorePct?.[k] ?? 1) * 100;
