@@ -423,6 +423,8 @@ export interface WaterOutputs {
   tariffAllocElectricity: number;
   tariffAllocFx: number;
   tariffAllocFixedUsd: number;
+  /** Per-line contribution to PPA tariff (EGP/m³, Year 1 view) */
+  tariffComposition: { name: string; group: "CAPEX" | "OPEX-Var" | "OPEX-Fixed" | "Electricity" | "SG&A" | "Financing" | "Tax" | "Margin"; value: number; pct: number }[];
 }
 
 export function runWaterModel(rawI: WaterInputs): WaterOutputs {
