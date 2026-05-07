@@ -119,6 +119,38 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
         {F("contractYears", "Contract Duration", "years")}
       </Section>
 
+      <Tabs defaultValue="pricing">
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="capacity">Capacity & Take</TabsTrigger>
+          <TabsTrigger value="fx">FX & Inflation</TabsTrigger>
+          <TabsTrigger value="capex">CAPEX</TabsTrigger>
+          <TabsTrigger value="debt">Senior Debt</TabsTrigger>
+          <TabsTrigger value="shl">Shareholder Loan</TabsTrigger>
+          <TabsTrigger value="mm">Maintenance Reserve</TabsTrigger>
+          <TabsTrigger value="tv">Terminal Value</TabsTrigger>
+          <TabsTrigger value="opexvar">OPEX — Variable</TabsTrigger>
+          <TabsTrigger value="opexfix">OPEX — Fixed</TabsTrigger>
+          <TabsTrigger value="sga">SG&amp;A / WC / Tax</TabsTrigger>
+        </TabsList>
+
+      <TabsContent value="pricing" className="m-0 pt-4">
+        <Section title="Pricing">
+          {F("sellingPriceEgpPerM3", "Selling Price", "EGP/m³", 0.5)}
+          <PctField label="% Pegged to USD" value={inputs.pctPeggedToUsd} onChange={(n) => set("pctPeggedToUsd", n)} step={1}/>
+        </Section>
+      </TabsContent>
+
+      <TabsContent value="capacity" className="m-0 pt-4">
+        <FullSection title="Plant Capacity & Take">
+          <div className="space-y-4">
+            <YearArrayEditor label="Installed Capacity per year (m³/day)" years={N} values={inputs.capacityM3DayPerYear} fallback={inputs.capacityM3Day} onChange={(a) => set("capacityM3DayPerYear", a)} step={50}/>
+            <YearArrayEditor label="Min Take % per year" years={N} values={inputs.minTakePctPerYear} fallback={inputs.minTakePct} onChange={(a) => set("minTakePctPerYear", a)} step={0.5} asPct/>
+          </div>
+        </FullSection>
+      </TabsContent>
+
+      <TabsContent value="fx" className="m-0 pt-4">
       <FullSection title="FX & Inflation (per year, full PPA)">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
           {F("fxRateEgpPerUsd", "FX Rate (scalar fallback)", "EGP/USD", 0.01)}
