@@ -11,7 +11,6 @@ export const LcoeWaterfallChart = ({ m }: { m: ModelOutputs }) => {
   const lcoeUsd = m.lcoeUsdPerKWh * 1000;
   const data = m.lcoeContributions.map(c => ({
     name: c.label,
-    pctLcoe: +(c.pct * 100).toFixed(2),
     pctPpa: ppaUsd > 0 ? +((c.usdPerMWh / ppaUsd) * 100).toFixed(2) : 0,
     usd: +c.usdPerMWh.toFixed(2),
   }));
@@ -24,7 +23,7 @@ export const LcoeWaterfallChart = ({ m }: { m: ModelOutputs }) => {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
       <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-        <h3 className="font-semibold">LCOE waterfall — % weight per item (per CAPEX & OPEX line)</h3>
+        <h3 className="font-semibold">LCOE waterfall — % of PPA per item</h3>
         <div className="text-sm text-muted-foreground">
           LCOE: <span className="font-mono font-semibold text-foreground">{fmt(lcoeUsd, 2)} USD/MWh</span>
           <span className="mx-2">·</span>
@@ -64,22 +63,18 @@ export const LcoeWaterfallChart = ({ m }: { m: ModelOutputs }) => {
           <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => v + "%"}/>
           <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={250}/>
           <Tooltip {...tooltipStyle}
-            formatter={(_v: number, n: string, p: any) => {
-              if (n === "% of LCOE") return [`${fmt(p.payload.pctLcoe, 2)}% · ${fmt(p.payload.usd, 2)} USD/MWh`, "% of LCOE"];
-              return [`${fmt(p.payload.pctPpa, 2)}% of PPA price`, "% of PPA"];
+            formatter={(_v: number, _n: string, p: any) => {
+              return [`${fmt(p.payload.pctPpa, 2)}% of PPA · ${fmt(p.payload.usd, 2)} USD/MWh`, "% of PPA"];
             }}/>
-          <Bar dataKey="pctLcoe" name="% of LCOE" radius={[0, 6, 6, 0]}>
+          <Bar dataKey="pctPpa" name="% of PPA" radius={[0, 6, 6, 0]}>
             {data.map((_, i) => <Cell key={i} fill={palette[i % palette.length]}/>)}
-            <LabelList dataKey="pctLcoe" position="right" formatter={(v: any) => `${fmt(Number(v), 1)}%`} style={{ fontSize: 10, fill: "hsl(var(--foreground))" }}/>
-          </Bar>
-          <Bar dataKey="pctPpa" name="% of PPA" radius={[0, 6, 6, 0]} fill="hsl(var(--muted-foreground))" fillOpacity={0.4}>
-            <LabelList dataKey="pctPpa" position="right" formatter={(v: any) => `${fmt(Number(v), 1)}%`} style={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}/>
+            <LabelList dataKey="pctPpa" position="right" formatter={(v: any) => `${fmt(Number(v), 1)}%`} style={{ fontSize: 10, fill: "hsl(var(--foreground))" }}/>
           </Bar>
         </BarChart>
       </ResponsiveContainer>
       <p className="mt-3 text-xs text-muted-foreground">
-        Each line shows that item's discounted-cost weight in LCOE (coloured) and what % of the PPA price it consumes (grey).
-        If the grey bars sum below 100%, the project earns a margin over LCOE; above 100% means LCOE exceeds PPA.
+        Each bar shows what percentage of the PPA price that LCOE component consumes.
+        If the bars sum below 100%, the project earns a margin; above 100% means LCOE exceeds PPA.
       </p>
     </div>
   );
