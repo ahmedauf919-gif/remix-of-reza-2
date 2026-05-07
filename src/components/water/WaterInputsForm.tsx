@@ -77,7 +77,7 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
     const next = inputs.capexItems.map((it, i) => i === idx ? { ...it, ...patch } : it);
     set("capexItems", next);
   };
-  const addCapex = () => set("capexItems", [...inputs.capexItems, { key: `item${Date.now()}`, label: "New Item", currency: "USD", amount: 0, depreciationYears: inputs.depreciationYears }]);
+  const addCapex = () => set("capexItems", [...inputs.capexItems, { key: `item${Date.now()}`, label: "New Item", currency: "USD", amount: 0, taxPct: 0, depreciationYears: inputs.depreciationYears }]);
   const removeCapex = (idx: number) => set("capexItems", inputs.capexItems.filter((_, i) => i !== idx));
 
   const updateVar = (idx: number, patch: Partial<OpexVarItem>) => {
@@ -151,6 +151,7 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
               <TableHead>Item</TableHead>
               <TableHead className="w-24">Currency</TableHead>
               <TableHead className="w-40">Amount</TableHead>
+              <TableHead className="w-28">Tax % (VAT/duty)</TableHead>
               <TableHead className="w-32">Depreciation (yrs)</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
@@ -166,6 +167,7 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
                   </Select>
                 </TableCell>
                 <TableCell><Input type="number" step={100} value={it.amount} onChange={(e) => updateCapex(i, { amount: parseFloat(e.target.value) || 0 })} /></TableCell>
+                <TableCell><Input type="number" step={0.5} value={+(((it.taxPct ?? 0) * 100).toFixed(4))} onChange={(e) => { const r = parseFloat(e.target.value); updateCapex(i, { taxPct: isFinite(r) ? r / 100 : 0 }); }} /></TableCell>
                 <TableCell><Input type="number" step={1} value={it.depreciationYears} onChange={(e) => updateCapex(i, { depreciationYears: parseInt(e.target.value) || 0 })} /></TableCell>
                 <TableCell><Button size="icon" variant="ghost" onClick={() => removeCapex(i)}><Trash2 className="h-4 w-4"/></Button></TableCell>
               </TableRow>
