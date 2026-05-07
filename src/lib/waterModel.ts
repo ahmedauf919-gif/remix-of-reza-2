@@ -145,6 +145,8 @@ const DEFAULT_OPEX_VAR: OpexVarItem[] = [
   { key: "instrumentation", label: "Instrumentation", currency: "USD", amountPerM3: 0.0010315872146118722 },
   { key: "cipPumps",        label: "CIP Pumps",       currency: "USD", amountPerM3: 0.000704905205479452 },
   { key: "pvc",             label: "PVC",             currency: "USD", amountPerM3: 0.0007912328767123285 },
+  { key: "wells",           label: "Wells Cost",      currency: "EGP", amountPerM3: 0 },
+  { key: "otherVar",        label: "Other Variable",  currency: "EGP", amountPerM3: 0 },
 ];
 
 const DEFAULT_OPEX_FIXED: OpexFixedItem[] = [
