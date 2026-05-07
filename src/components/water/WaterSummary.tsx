@@ -30,13 +30,8 @@ export const WaterSummary = ({ m }: { m: WaterOutputs }) => {
           <table className="w-full text-sm">
             <tbody>
               {[
-                ["Feed System", m.feedSysEgp],
-                ["Pretreatment", m.pretreatmentEgp],
-                ["RO Unit", m.roUnitEgp],
-                ["BW/CIP", m.bwCipEgp],
-                ["Installation", m.installationEgpAll],
-                ["Drilling/Wells", m.drillingEgp],
-                ["IDC", m.idc],
+                ...m.capexResolved.map(it => [it.label, it.amountEgp] as [string, number]),
+                ["IDC", m.idc] as [string, number],
               ].map(([l, v]) => (
                 <tr key={l as string} className="border-t border-border/40">
                   <td className="py-1.5">{l}</td>
