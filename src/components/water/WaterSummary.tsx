@@ -1,6 +1,7 @@
 import { WaterOutputs, fmtNum, fmtPct, fmtEgp } from "@/lib/waterModel";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { Banknote, TrendingUp, Activity, Gauge, Zap, Droplets, Layers, Calendar } from "lucide-react";
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
 
 export const WaterSummary = ({ m }: { m: WaterOutputs }) => {
   const I = m.inputs;
