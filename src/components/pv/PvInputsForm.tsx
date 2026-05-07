@@ -1,4 +1,5 @@
 import { PvInputs, PvCapexItem, Ccy, VoltageLevel, RepaymentMethod, Periodicity, DepMethod, YieldCase, TariffSource, GOVT_TARIFF_BY_VOLTAGE } from "@/lib/pvModel";
+import { Fragment } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -170,24 +171,48 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
             {inputs.tariffSource === "Government" && (
               <>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Voltage Level</Label>
+                  <Label className="text-xs text-muted-foreground">Voltage Level (basis)</Label>
                   <Select value={inputs.voltageLevel} onValueChange={(v) => {
                     const lvl = v as VoltageLevel;
-                    onChange({ ...inputs, voltageLevel: lvl, govtBaseTariffEgp: GOVT_TARIFF_BY_VOLTAGE[lvl] });
+                    onChange({ ...inputs, voltageLevel: lvl, govtBaseTariffEgp: inputs.voltageTariffs?.[lvl] ?? GOVT_TARIFF_BY_VOLTAGE[lvl] });
                   }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {(Object.keys(GOVT_TARIFF_BY_VOLTAGE) as VoltageLevel[]).map(lvl => (
-                        <SelectItem key={lvl} value={lvl}>{lvl} — {GOVT_TARIFF_BY_VOLTAGE[lvl].toFixed(3)} EGP/kWh</SelectItem>
+                      {(Object.keys(inputs.voltageTariffs ?? GOVT_TARIFF_BY_VOLTAGE) as VoltageLevel[]).map(lvl => (
+                        <SelectItem key={lvl} value={lvl}>{lvl} — {(inputs.voltageTariffs?.[lvl] ?? GOVT_TARIFF_BY_VOLTAGE[lvl]).toFixed(3)} EGP/kWh</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                {F("govtBaseTariffEgp", "Base Tariff (Y1)", "EGP/kWh", 0.01)}
                 <PctField label="Default Escalation YoY" value={inputs.govtEscalationPct} onChange={(n) => set("govtEscalationPct", n)} step={0.5}/>
               </>
             )}
           </Section>
+
+          {inputs.tariffSource === "Government" && (
+            <div className="mt-4">
+              <FullSection title="Voltage tariff schedule (EGP/kWh, Y1) — pick which to base model on">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {(Object.keys(GOVT_TARIFF_BY_VOLTAGE) as VoltageLevel[]).map(lvl => (
+                    <div key={lvl} className={`flex items-center gap-2 rounded border p-2 ${inputs.voltageLevel === lvl ? "border-primary bg-primary/5" : ""}`}>
+                      <Button size="sm" variant={inputs.voltageLevel === lvl ? "default" : "outline"}
+                        onClick={() => onChange({ ...inputs, voltageLevel: lvl, govtBaseTariffEgp: inputs.voltageTariffs?.[lvl] ?? GOVT_TARIFF_BY_VOLTAGE[lvl] })}>
+                        {inputs.voltageLevel === lvl ? "✓ Selected" : "Select"}
+                      </Button>
+                      <Label className="flex-1 text-xs">{lvl}</Label>
+                      <Input type="number" step={0.001} className="h-8 w-32"
+                        value={inputs.voltageTariffs?.[lvl] ?? GOVT_TARIFF_BY_VOLTAGE[lvl]}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value) || 0;
+                          const next = { ...(inputs.voltageTariffs ?? GOVT_TARIFF_BY_VOLTAGE), [lvl]: v } as Record<VoltageLevel, number>;
+                          onChange({ ...inputs, voltageTariffs: next, ...(inputs.voltageLevel === lvl ? { govtBaseTariffEgp: v } : {}) });
+                        }} />
+                    </div>
+                  ))}
+                </div>
+              </FullSection>
+            </div>
+          )}
 
           {inputs.tariffSource === "Government" ? (
             <div className="mt-4">
@@ -296,24 +321,52 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
         </TabsContent>
 
         <TabsContent value="opex" className="m-0 pt-4">
-          <Section title="OPEX">
-            {F("maintenancePerMwUsd", "Maintenance", "USD/MW/yr", 100)}
-            <PctField label="Maintenance EGP %" value={inputs.maintenanceEgpPct} onChange={(n) => set("maintenanceEgpPct", n)} step={5}/>
-            <PctField label="Maintenance USD %" value={inputs.maintenanceUsdPct} onChange={(n) => set("maintenanceUsdPct", n)} step={5}/>
-            <div className="flex items-center justify-between rounded border p-2 col-span-1">
-              <Label>Maintenance Taxable (apply VAT)</Label>
-              <Switch checked={inputs.maintenanceTaxable} onCheckedChange={(v) => set("maintenanceTaxable", v)} />
-            </div>
-            {inputs.maintenanceTaxable && (
-              <PctField label="Maintenance VAT" value={inputs.maintenanceVatPct} onChange={(n) => set("maintenanceVatPct", n)} step={0.5}/>
-            )}
-            <PctField label="OPEX YoY (real)" value={inputs.opexYoYPct} onChange={(n) => set("opexYoYPct", n)} step={0.25}/>
-            <PctField label="Insurance % of CAPEX" value={inputs.insurancePctOfCapex} onChange={(n) => set("insurancePctOfCapex", n)} step={0.05}/>
-            {F("replacementDurationYears", "Replacement every", "years")}
-            <PctField label="Replacement Cost % of CAPEX" value={inputs.replacementCostPctOfCapex} onChange={(n) => set("replacementCostPctOfCapex", n)} step={0.5}/>
-            <PctField label="Usufruct % of Revenue" value={inputs.usufructPctOfRevenue} onChange={(n) => set("usufructPctOfRevenue", n)} step={0.5}/>
-            <PctField label="Usufruct YoY (also escalates Rent)" value={inputs.usufructYoYPct} onChange={(n) => set("usufructYoYPct", n)} step={0.5}/>
+          <Section title="Operations & Maintenance (O&M)">
+            {F("omPerMwUsd", "O&M", "USD/MW/yr", 100)}
+            <PctField label="VAT on O&M" value={inputs.omVatPct} onChange={(n) => set("omVatPct", n)} step={0.5}/>
+            <PctField label="O&M EGP %" value={inputs.omEgpPct} onChange={(n) => set("omEgpPct", n)} step={5}/>
+            <PctField label="O&M USD %" value={inputs.omUsdPct} onChange={(n) => set("omUsdPct", n)} step={5}/>
+            <PctField label="OPEX YoY (fallback)" value={inputs.opexYoYPct} onChange={(n) => set("opexYoYPct", n)} step={0.25}/>
           </Section>
+          <div className="mt-4">
+            <FullSection title="O&M Inflation per year (%)">
+              <YearArrayEditor label="O&M inflation %" years={N} values={inputs.omInflationPerYear} fallback={0.05}
+                onChange={(a) => set("omInflationPerYear", a)} step={0.5} asPct/>
+            </FullSection>
+          </div>
+
+          <div className="mt-4">
+            <Section title="MMRA (Major Maintenance Reserve)">
+              <PctField label="MMRA % of Revenue" value={inputs.mmraPctOfRevenue} onChange={(n) => set("mmraPctOfRevenue", n)} step={0.25}/>
+            </Section>
+            <div className="mt-2">
+              <FullSection title="MMRA Inflation per year (%)">
+                <YearArrayEditor label="MMRA inflation %" years={N} values={inputs.mmraInflationPerYear} fallback={0.05}
+                  onChange={(a) => set("mmraInflationPerYear", a)} step={0.5} asPct/>
+              </FullSection>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <Section title="Insurance">
+              <PctField label="Insurance % of CAPEX" value={inputs.insurancePctOfCapex} onChange={(n) => set("insurancePctOfCapex", n)} step={0.05}/>
+            </Section>
+            <div className="mt-2">
+              <FullSection title="Insurance Inflation per year (%)">
+                <YearArrayEditor label="Insurance inflation %" years={N} values={inputs.insuranceInflationPerYear} fallback={0.05}
+                  onChange={(a) => set("insuranceInflationPerYear", a)} step={0.5} asPct/>
+              </FullSection>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <Section title="Replacement / Usufruct / Rent escalation">
+              {F("replacementDurationYears", "Replacement every", "years")}
+              <PctField label="Replacement Cost % of CAPEX" value={inputs.replacementCostPctOfCapex} onChange={(n) => set("replacementCostPctOfCapex", n)} step={0.5}/>
+              <PctField label="Usufruct % of Revenue" value={inputs.usufructPctOfRevenue} onChange={(n) => set("usufructPctOfRevenue", n)} step={0.5}/>
+              <PctField label="Usufruct YoY (also escalates Rent)" value={inputs.usufructYoYPct} onChange={(n) => set("usufructYoYPct", n)} step={0.5}/>
+            </Section>
+          </div>
         </TabsContent>
 
         <TabsContent value="debt" className="m-0 pt-4">
@@ -342,10 +395,14 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
                     <SelectItem value="Equal">Equal Payments</SelectItem>
                     <SelectItem value="Customized">Customized</SelectItem>
                     <SelectItem value="Annuity">Annuity</SelectItem>
+                    <SelectItem value="Sculpted">Sculpted (DSCR target)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {F("graceYears", "Grace Period (interest-only)", "years")}
+              {inputs.repaymentMethod === "Sculpted" && (
+                <PctField label="Target DSCR (sculpting)" value={inputs.targetDSCR} onChange={(n) => set("targetDSCR", n)} step={5} suffix="enter 130 for 1.30x"/>
+              )}
             </div>
             {inputs.repaymentMethod === "Customized" && (
               <YearArrayEditor label="Customised principal % per year (sums to 100%)" years={Tenor} values={inputs.customizedSchedule} fallback={0} onChange={(a) => set("customizedSchedule", a)} step={0.5} asPct/>
@@ -364,6 +421,36 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
                 fallback={(inputs.corridorPctPerYear[0] ?? 0.0925) + inputs.spreadPct} onChange={(a) => set("bankInterestPerYear", a)} step={0.25} asPct/>
             </div>
           </FullSection>
+
+          <div className="mt-4">
+            <FullSection title="Shareholder Loan">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="flex items-center justify-between rounded border p-2 col-span-1">
+                  <Label>Enable Shareholder Loan</Label>
+                  <Switch checked={inputs.slEnabled} onCheckedChange={(v) => set("slEnabled", v)}/>
+                </div>
+                <PctField label="SL % of Equity" value={inputs.slPctOfEquity} onChange={(n) => set("slPctOfEquity", Math.max(0, Math.min(1, n)))} step={5}/>
+                <PctField label="SL Interest Rate" value={inputs.slRatePct} onChange={(n) => set("slRatePct", n)} step={0.5}/>
+                {F("slTenorYears", "SL Tenor", "years")}
+                {F("slGraceYears", "SL Grace", "years")}
+              </div>
+            </FullSection>
+          </div>
+
+          <div className="mt-4">
+            <FullSection title="Refinancing">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="flex items-center justify-between rounded border p-2 col-span-1">
+                  <Label>Enable Refinancing</Label>
+                  <Switch checked={inputs.refiEnabled} onCheckedChange={(v) => set("refiEnabled", v)}/>
+                </div>
+                {F("refiYear", "Refi Year (1 = first ops year)")}
+                <PctField label="New Interest Rate" value={inputs.refiNewRatePct} onChange={(n) => set("refiNewRatePct", n)} step={0.25}/>
+                {F("refiNewTenorYears", "New Tenor", "years")}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">At Refi Year, remaining principal is re-amortised over the new tenor at the new rate.</p>
+            </FullSection>
+          </div>
         </TabsContent>
 
         <TabsContent value="macro" className="m-0 pt-4">

@@ -3,7 +3,7 @@
 export type Ccy = "EGP" | "USD";
 export type VoltageLevel = "Extra High Voltage" | "High Voltage" | "Medium Voltage" | "Low Voltage";
 export type Periodicity = "Monthly" | "Quarterly" | "Semi-Annual" | "Annual";
-export type RepaymentMethod = "Equal" | "Customized" | "Annuity";
+export type RepaymentMethod = "Equal" | "Customized" | "Annuity" | "Sculpted";
 export type DepMethod = "UnitOfProduction" | "StraightLine";
 export type YieldCase = "P50" | "P90";
 export type TariffSource = "Government" | "Custom";
@@ -13,9 +13,9 @@ export interface PvCapexItem {
   label: string;
   currency: Ccy;
   units: number;
-  costPerUnit: number;       // pre-VAT, pre-customs, in own currency
-  vatPct: number;            // applied per item
-  customsPct?: number;       // applied per item
+  costPerUnit: number;
+  vatPct: number;
+  customsPct?: number;
   usefulLife: number;
   depMethod: DepMethod;
 }
@@ -26,7 +26,7 @@ export interface PvInputs {
 
   // Timing
   startYear: number;
-  contractYears: number;        // 25
+  contractYears: number;
   constructionMonths: number;
   contractType: "BOO" | "BOT" | "PPA";
 
@@ -39,37 +39,45 @@ export interface PvInputs {
   lossYr1: number;
   lossThereafterPct: number;
 
-  // Land (under Capacity & Yield)
+  // Land
   landAreaSqm: number;
   rentEgpPerSqm: number;
   rentEnabled: boolean;
 
-  // Tariff (schedule per year)
+  // Tariff
   tariffSource: TariffSource;
   voltageLevel: VoltageLevel;
-  govtBaseTariffEgp: number;     // seed for default schedule (used for Government)
-  govtEscalationPct: number;     // seed escalation (used to fill schedule)
-  tariffEscalationPerYear: number[]; // % escalation per year (cumulative). Y0 is base.
-  tariffPerYear: number[];       // EGP/kWh per year — Custom override
-  savingsPctPerYear: number[];   // % discount vs tariff per year
+  voltageTariffs: Record<VoltageLevel, number>; // editable per voltage (EGP/kWh, Y1)
+  govtBaseTariffEgp: number;
+  govtEscalationPct: number;
+  tariffEscalationPerYear: number[];
+  tariffPerYear: number[];
+  savingsPctPerYear: number[];
 
   // CAPEX
   capexItems: PvCapexItem[];
   contingencyPct: number;
-  capexDrawScheduleMonthly: number[]; // % of capex drawn each construction month (sums to 1)
+  capexDrawScheduleMonthly: number[];
 
-  // OPEX
-  maintenancePerMwUsd: number;        // USD per MW per year
-  maintenanceEgpPct: number;          // 0..1 share in EGP
-  maintenanceUsdPct: number;          // 0..1 share in USD
-  maintenanceTaxable: boolean;        // include VAT
-  maintenanceVatPct: number;          // VAT % when taxable
-  opexYoYPct: number;
+  // OPEX — restructured
+  omPerMwUsd: number;             // Operations & Maintenance USD/MW/yr (was maintenancePerMwUsd)
+  omEgpPct: number;
+  omUsdPct: number;
+  omVatPct: number;               // VAT applied on O&M (separately tracked)
+  omInflationPerYear: number[];   // O&M inflation per year (overrides opexYoYPct when set)
+  opexYoYPct: number;             // fallback escalation
+
+  mmraPctOfRevenue: number;       // Major Maintenance Reserve Account (annual provision)
+  mmraInflationPerYear: number[]; // MMRA escalation per year
+
   insurancePctOfCapex: number;
+  insuranceInflationPerYear: number[];
+
   replacementDurationYears: number;
   replacementCostPctOfCapex: number;
+
   usufructPctOfRevenue: number;
-  usufructYoYPct: number;             // also escalates rent (EGP/sqm)
+  usufructYoYPct: number;
 
   // Working capital
   arDays: number;
@@ -83,9 +91,23 @@ export interface PvInputs {
   repaymentMethod: RepaymentMethod;
   graceYears: number;
   customizedSchedule: number[];
-  bankInterestPerYear: number[];      // all-in % per year (overrides corridor+spread when set)
+  bankInterestPerYear: number[];
+  targetDSCR: number;             // for Sculpted
 
-  // Macro per year
+  // Shareholder loan
+  slEnabled: boolean;
+  slPctOfEquity: number;          // share of equity raised as SL (rest is paid-in)
+  slRatePct: number;
+  slTenorYears: number;
+  slGraceYears: number;
+
+  // Refinancing
+  refiEnabled: boolean;
+  refiYear: number;               // year (1-indexed in ops) when refi happens
+  refiNewRatePct: number;
+  refiNewTenorYears: number;
+
+  // Macro
   egpInflationPerYear: number[];
   usdInflationPerYear: number[];
   corridorPctPerYear: number[];
@@ -109,7 +131,6 @@ export const DEFAULT_PV_CAPEX: PvCapexItem[] = [
   { key: "leveling",    label: "Land Leveling",         currency: "EGP", units: 0,     costPerUnit: 0,     vatPct: 0,    customsPct: 0,    usefulLife: 25, depMethod: "StraightLine" },
 ];
 
-// Government tariff presets (EGP/kWh) by voltage level
 export const GOVT_TARIFF_BY_VOLTAGE: Record<VoltageLevel, number> = {
   "Extra High Voltage": 2.296,
   "High Voltage": 2.508,
@@ -142,6 +163,7 @@ export const DEFAULT_PV_INPUTS: PvInputs = {
 
   tariffSource: "Government",
   voltageLevel: "Medium Voltage",
+  voltageTariffs: { ...GOVT_TARIFF_BY_VOLTAGE },
   govtBaseTariffEgp: 2.716,
   govtEscalationPct: 0.10,
   tariffEscalationPerYear: M(0.10, 25),
@@ -152,15 +174,22 @@ export const DEFAULT_PV_INPUTS: PvInputs = {
   contingencyPct: 0,
   capexDrawScheduleMonthly: linearDrawdown(12),
 
-  maintenancePerMwUsd: 1000, // USD/MW/yr
-  maintenanceEgpPct: 0,
-  maintenanceUsdPct: 1,
-  maintenanceTaxable: false,
-  maintenanceVatPct: 0.14,
+  omPerMwUsd: 1000,
+  omEgpPct: 0,
+  omUsdPct: 1,
+  omVatPct: 0.14,
+  omInflationPerYear: M(0.05, 25),
   opexYoYPct: 0.02,
+
+  mmraPctOfRevenue: 0.01,
+  mmraInflationPerYear: M(0.05, 25),
+
   insurancePctOfCapex: 0.00025,
+  insuranceInflationPerYear: M(0.05, 25),
+
   replacementDurationYears: 7,
   replacementCostPctOfCapex: 0.03,
+
   usufructPctOfRevenue: 0,
   usufructYoYPct: 0,
 
@@ -175,6 +204,18 @@ export const DEFAULT_PV_INPUTS: PvInputs = {
   graceYears: 1,
   customizedSchedule: [0.06, 0.06, 0.10, 0.10, 0.12, 0.12, 0.135, 0.145, 0.16, 0.00],
   bankInterestPerYear: [],
+  targetDSCR: 1.30,
+
+  slEnabled: false,
+  slPctOfEquity: 0.50,
+  slRatePct: 0.12,
+  slTenorYears: 12,
+  slGraceYears: 2,
+
+  refiEnabled: false,
+  refiYear: 5,
+  refiNewRatePct: 0.10,
+  refiNewTenorYears: 8,
 
   egpInflationPerYear: [...M(0.15, 13), ...M(0.07, 12)],
   usdInflationPerYear: M(0.03, 25),
@@ -236,29 +277,53 @@ export interface PvYearRow {
   energyKwh: number;
   tariffEgp: number;
   revenue: number;
-  maintenance: number;
+
+  // OPEX (segregated)
+  om: number;
+  omVat: number;
+  mmra: number;
   insurance: number;
   replacement: number;
   rent: number;
   usufruct: number;
   opex: number;
+
   ebitda: number;
   depreciation: number;
   ebit: number;
   interest: number;
+  slInterest: number;
   ebt: number;
   tax: number;
   netProfit: number;
+
   capex: number;
   debtDraw: number;
   principalRepay: number;
+  slDraw: number;
+  slPrincipalRepay: number;
   workingCapDelta: number;
+
   fcff: number;
   fcfe: number;
+  cfads: number;
+
   debtOpening: number;
   debtClosing: number;
   rate: number;
+  slOpening: number;
+  slClosing: number;
+
   dscr: number;
+
+  // Balance sheet
+  ar: number;
+  ap: number;
+  netPPE: number;
+  accumDep: number;
+  cash: number;
+  paidInEquity: number;
+  retainedEarnings: number;
 }
 
 export interface PvOutputs {
@@ -270,6 +335,8 @@ export interface PvOutputs {
   capexBreakdown: { label: string; egp: number; vatEgp: number; customsEgp: number; totalEgp: number; annualDep: number; depMethod: DepMethod }[];
   debtAmount: number;
   equityAmount: number;
+  shareholderLoan: number;
+  paidInEquity: number;
   rows: PvYearRow[];
   projectIRR: number;
   equityIRR: number;
@@ -282,15 +349,14 @@ export interface PvOutputs {
   tariffComposition: { name: string; group: string; value: number; pct: number }[];
 }
 
-// Build effective tariff schedule
 function tariffScheduleEgp(I: PvInputs): number[] {
   const N = I.contractYears;
   if (I.tariffSource === "Custom" && I.tariffPerYear && I.tariffPerYear.length > 0) {
     return Array.from({ length: N }, (_, i) => I.tariffPerYear[i] ?? I.tariffPerYear[I.tariffPerYear.length - 1] ?? 0);
   }
-  // Government: base × cumulative escalation per year (Y1 = base; Y(i) = Y(i-1) × (1+esc[i]))
+  const base = I.voltageTariffs?.[I.voltageLevel] ?? I.govtBaseTariffEgp;
   const out: number[] = [];
-  let cur = I.govtBaseTariffEgp;
+  let cur = base;
   for (let i = 0; i < N; i++) {
     if (i > 0) {
       const esc = (I.tariffEscalationPerYear && I.tariffEscalationPerYear.length > 0)
@@ -307,7 +373,7 @@ export function runPvModel(I: PvInputs): PvOutputs {
   const N = I.contractYears;
   const fx0 = at(I.fxEgpPerUsdPerYear, 0, 50);
 
-  // ── CAPEX (hard costs incl. per-item VAT/customs) ──
+  // ── CAPEX ──
   const breakdown = I.capexItems.map(it => {
     const ownGross = it.units * it.costPerUnit;
     const customs = ownGross * (it.customsPct ?? 0);
@@ -329,24 +395,22 @@ export function runPvModel(I: PvInputs): PvOutputs {
   const hardCapexEgp = breakdown.reduce((s, b) => s + b.totalEgp, 0);
   const contingencyEgp = hardCapexEgp * I.contingencyPct;
 
-  // ── IDC (capitalised interest) from monthly capex draws × debt% ──
+  // ── IDC ──
   const months = Math.max(1, I.constructionMonths);
   const draw = I.capexDrawScheduleMonthly && I.capexDrawScheduleMonthly.length > 0
     ? Array.from({ length: months }, (_, i) => I.capexDrawScheduleMonthly[i] ?? 0)
     : linearDrawdown(months);
   const drawSum = draw.reduce((s, v) => s + v, 0) || 1;
   const drawNorm = draw.map(v => v / drawSum);
-  // construction-period rate: prefer first year bank rate else corridor[0]+spread
   const constructionAnnualRate = (I.bankInterestPerYear && I.bankInterestPerYear.length > 0)
     ? I.bankInterestPerYear[0]
     : at(I.corridorPctPerYear, 0, 0.10) + I.spreadPct;
   const monthlyRate = Math.pow(1 + constructionAnnualRate, 1 / 12) - 1;
-  const baseForDraw = hardCapexEgp + contingencyEgp; // IDC excluded from base
+  const baseForDraw = hardCapexEgp + contingencyEgp;
   let cumDebt = 0;
   let idc = 0;
   for (let m = 0; m < months; m++) {
     const monthDebtDraw = baseForDraw * drawNorm[m] * I.debtPct;
-    // interest accrues mid-month on new + full month on prior
     idc += cumDebt * monthlyRate + monthDebtDraw * monthlyRate * 0.5;
     cumDebt += monthDebtDraw;
   }
@@ -377,8 +441,52 @@ export function runPvModel(I: PvInputs): PvOutputs {
 
   // ── Financing ──
   const debtAmount = totalCapexEgp * I.debtPct;
-  const equityAmount = totalCapexEgp - debtAmount;
+  const equityRaise = totalCapexEgp - debtAmount;
+  const shareholderLoan = I.slEnabled ? equityRaise * Math.max(0, Math.min(1, I.slPctOfEquity)) : 0;
+  const paidInEquity = equityRaise - shareholderLoan;
 
+  // ── Senior debt amortisation schedule (with optional refinancing) ──
+  const seniorRateAt = (y: number): number => {
+    if (I.refiEnabled && y >= Math.max(1, I.refiYear)) return I.refiNewRatePct;
+    if (I.bankInterestPerYear && I.bankInterestPerYear.length > 0)
+      return at(I.bankInterestPerYear, y, at(I.corridorPctPerYear, y, 0.10) + I.spreadPct);
+    return at(I.corridorPctPerYear, y, 0.10) + I.spreadPct;
+  };
+
+  // Pre-compute principal schedule (vector of length N) for non-sculpted methods.
+  const tariffSched = tariffScheduleEgp(I);
+  const capacityMw = I.capacityKwp / 1000;
+  const omVatMul = 1; // VAT tracked separately
+
+  // Pre-compute revenue & opex (without principal) so sculpting can see CFADS
+  const opexFor = (y: number) => {
+    const inflEgp = Math.pow(1 + at(I.egpInflationPerYear, y, 0.15), y);
+    const inflUsd = Math.pow(1 + at(I.usdInflationPerYear, y, 0.03), y);
+    const fx = at(I.fxEgpPerUsdPerYear, y, fx0);
+    const omEsc = (I.omInflationPerYear && I.omInflationPerYear.length > 0)
+      ? Math.pow(1 + at(I.omInflationPerYear, y, I.opexYoYPct), y)
+      : Math.pow(1 + I.opexYoYPct, y);
+    const baseUsd = I.omPerMwUsd * capacityMw;
+    const om = (baseUsd * I.omEgpPct * inflEgp + baseUsd * I.omUsdPct * inflUsd) * fx * omEsc;
+    const omVat = om * I.omVatPct;
+    const insEsc = Math.pow(1 + at(I.insuranceInflationPerYear, y, 0.05), y);
+    const insurance = totalCapexEgp * I.insurancePctOfCapex * insEsc;
+    const replacement = (I.replacementDurationYears > 0 && (y + 1) % I.replacementDurationYears === 0)
+      ? totalCapexEgp * I.replacementCostPctOfCapex * inflEgp : 0;
+    const rentEsc = Math.pow(1 + I.usufructYoYPct, y);
+    const rent = I.rentEnabled ? I.rentEgpPerSqm * I.landAreaSqm * rentEsc : 0;
+    const energy = energyPerYear[y];
+    const tariff = tariffSched[y];
+    const savings = at(I.savingsPctPerYear, y, 0);
+    const revenue = energy * tariff * (1 - savings);
+    const usufruct = revenue * I.usufructPctOfRevenue * rentEsc;
+    const mmraEsc = Math.pow(1 + at(I.mmraInflationPerYear, y, 0.05), y);
+    const mmra = revenue * I.mmraPctOfRevenue * mmraEsc;
+    const opex = om + omVat + insurance + replacement + rent + usufruct + mmra;
+    return { revenue, om, omVat, insurance, replacement, rent, usufruct, mmra, opex, fx, energy, tariff };
+  };
+
+  // CFADS estimate per year for sculpting (approx tax = ebit*tax_rate)
   const principalSharePerYear: number[] = (() => {
     const tenor = I.loanTenorYears;
     const grace = Math.min(tenor - 1, Math.max(0, I.graceYears));
@@ -392,110 +500,151 @@ export function runPvModel(I: PvInputs): PvOutputs {
     } else if (I.repaymentMethod === "Equal") {
       const amortYrs = tenor - grace;
       for (let y = grace; y < tenor; y++) arr[y] = debtAmount / amortYrs;
-    } else {
-      const r = (I.bankInterestPerYear && I.bankInterestPerYear.length > 0) ? I.bankInterestPerYear[0] : at(I.corridorPctPerYear, 0, 0.10) + I.spreadPct;
+    } else if (I.repaymentMethod === "Annuity") {
+      const r = seniorRateAt(grace);
       const amortYrs = tenor - grace;
       const pmt = r > 0 ? debtAmount * r / (1 - Math.pow(1 + r, -amortYrs)) : debtAmount / amortYrs;
       let bal = debtAmount;
       for (let y = grace; y < tenor; y++) {
-        const interest = bal * r;
+        const interest = bal * seniorRateAt(y);
         const principal = Math.min(bal, pmt - interest);
         arr[y] = principal; bal -= principal;
       }
+    } else {
+      // Sculpted: principal = max(0, CFADS/target - interest), capped by balance, while tenor allows
+      const totalDep = allCapex.reduce((s, b) => s + (b.depMethod === "UnitOfProduction" ? b.annualDep * energyPerYear[0] : b.annualDep), 0);
+      let bal = debtAmount;
+      for (let y = grace; y < tenor && bal > 0; y++) {
+        const o = opexFor(y);
+        const ebitda = o.revenue - o.opex;
+        const dep = allCapex.reduce((s, b) => b.depMethod === "UnitOfProduction" ? s + b.annualDep * o.energy : s + (y < b._life ? b.annualDep : 0), 0);
+        const ebit = ebitda - dep;
+        const r = seniorRateAt(y);
+        const intExp = bal * r;
+        const ebt = ebit - intExp;
+        const tax = Math.max(0, ebt) * I.taxRatePct;
+        const cfads = ebitda - tax;
+        const ds = Math.max(0, cfads / Math.max(0.01, I.targetDSCR));
+        const principal = Math.max(0, Math.min(bal, ds - intExp));
+        arr[y] = principal;
+        bal -= principal;
+      }
+      // Sweep any residual into final tenor year
+      if (bal > 0) arr[tenor - 1] += bal;
+      void totalDep;
     }
     return arr;
   })();
 
-  const tariffSched = tariffScheduleEgp(I);
-  const capacityMw = I.capacityKwp / 1000;
-  const maintenanceVatMul = I.maintenanceTaxable ? (1 + I.maintenanceVatPct) : 1;
+  // Shareholder loan principal schedule (equal amortisation after grace)
+  const slPrincipalSchedule: number[] = (() => {
+    const arr = new Array(N).fill(0);
+    if (shareholderLoan <= 0) return arr;
+    const tenor = Math.min(N, Math.max(1, I.slTenorYears));
+    const grace = Math.min(tenor - 1, Math.max(0, I.slGraceYears));
+    const amortYrs = tenor - grace;
+    for (let y = grace; y < tenor; y++) arr[y] = shareholderLoan / amortYrs;
+    return arr;
+  })();
 
   // ── Year-by-year ──
   const rows: PvYearRow[] = [];
   rows.push({
     year: I.startYear - 1, yearIdx: -1, fx: fx0,
     capacityKwp: I.capacityKwp, energyKwh: 0, tariffEgp: 0, revenue: 0,
-    maintenance: 0, insurance: 0, replacement: 0, rent: 0, usufruct: 0, opex: 0,
-    ebitda: 0, depreciation: 0, ebit: 0, interest: 0, ebt: 0, tax: 0, netProfit: 0,
-    capex: -totalCapexEgp, debtDraw: debtAmount, principalRepay: 0, workingCapDelta: 0,
-    fcff: -totalCapexEgp, fcfe: -totalCapexEgp + debtAmount,
-    debtOpening: 0, debtClosing: debtAmount, rate: 0, dscr: NaN,
+    om: 0, omVat: 0, mmra: 0, insurance: 0, replacement: 0, rent: 0, usufruct: 0, opex: 0,
+    ebitda: 0, depreciation: 0, ebit: 0, interest: 0, slInterest: 0, ebt: 0, tax: 0, netProfit: 0,
+    capex: -totalCapexEgp, debtDraw: debtAmount, principalRepay: 0, slDraw: shareholderLoan, slPrincipalRepay: 0,
+    workingCapDelta: 0,
+    fcff: -totalCapexEgp, fcfe: -paidInEquity, cfads: 0,
+    debtOpening: 0, debtClosing: debtAmount, rate: constructionAnnualRate,
+    slOpening: 0, slClosing: shareholderLoan,
+    dscr: NaN,
+    ar: 0, ap: 0, netPPE: totalCapexEgp, accumDep: 0,
+    cash: 0, paidInEquity, retainedEarnings: 0,
   });
 
   let debtOutstanding = debtAmount;
+  let slOutstanding = shareholderLoan;
   let prevAR = 0;
-  const ppy = periodsPerYear(I.paymentPeriodicity);
+  let prevAP = 0;
+  let cash = 0;
+  let accumDep = 0;
+  let retainedEarnings = 0;
+  void periodsPerYear;
 
   for (let y = 0; y < N; y++) {
-    const fx = at(I.fxEgpPerUsdPerYear, y, fx0);
-    const inflEgp = Math.pow(1 + at(I.egpInflationPerYear, y, 0.15), y);
-    const inflUsd = Math.pow(1 + at(I.usdInflationPerYear, y, 0.03), y);
-
-    const energy = energyPerYear[y];
-    const tariff = tariffSched[y];
-    const savings = at(I.savingsPctPerYear, y, 0);
-    const revenue = energy * tariff * (1 - savings);
-
-    // OPEX: maintenance per MW
-    const escEsc = Math.pow(1 + I.opexYoYPct, y);
-    const maintBaseUsd = I.maintenancePerMwUsd * capacityMw;
-    const maintEgp = maintBaseUsd * I.maintenanceEgpPct * inflEgp * escEsc * fx; // using fx because base is USD; if user wants pure EGP set USD%=0
-    const maintUsdEgp = maintBaseUsd * I.maintenanceUsdPct * inflUsd * escEsc * fx;
-    const maintenance = (maintEgp + maintUsdEgp) * maintenanceVatMul;
-
-    const insurance = totalCapexEgp * I.insurancePctOfCapex * inflEgp;
-    const replacement = (I.replacementDurationYears > 0 && (y + 1) % I.replacementDurationYears === 0)
-      ? totalCapexEgp * I.replacementCostPctOfCapex * inflEgp : 0;
-    const rentEsc = Math.pow(1 + I.usufructYoYPct, y);
-    const rent = I.rentEnabled ? I.rentEgpPerSqm * I.landAreaSqm * rentEsc : 0;
-    const usufruct = revenue * I.usufructPctOfRevenue * rentEsc;
-    const opex = maintenance + insurance + replacement + rent + usufruct;
-
-    const ebitda = revenue - opex;
+    const o = opexFor(y);
+    const energy = o.energy;
+    const ebitda = o.revenue - o.opex;
 
     const depreciation = allCapex.reduce((s, b) => {
       if (b.depMethod === "UnitOfProduction") return s + b.annualDep * energy;
       return s + (y < b._life ? b.annualDep : 0);
     }, 0);
-
     const ebit = ebitda - depreciation;
 
-    // Debt service — bank interest schedule overrides corridor+spread
-    const annualRate = (I.bankInterestPerYear && I.bankInterestPerYear.length > 0)
-      ? at(I.bankInterestPerYear, y, at(I.corridorPctPerYear, y, 0.10) + I.spreadPct)
-      : at(I.corridorPctPerYear, y, 0.10) + I.spreadPct;
-    void ppy;
-    const principalRepay = y < I.loanTenorYears ? Math.min(debtOutstanding, principalSharePerYear[y] || 0) : 0;
+    const annualRate = seniorRateAt(y);
+    let principalRepay = y < I.loanTenorYears ? Math.min(debtOutstanding, principalSharePerYear[y] || 0) : 0;
+    // Refi: at refi year, refresh the schedule for remaining balance
+    if (I.refiEnabled && y === Math.max(1, I.refiYear)) {
+      const newTenor = Math.max(1, I.refiNewTenorYears);
+      // distribute remaining balance over new tenor (equal)
+      const perYear = debtOutstanding / newTenor;
+      principalRepay = Math.min(debtOutstanding, perYear);
+      // also update future schedule
+      for (let yy = y + 1; yy < Math.min(N, y + newTenor); yy++) principalSharePerYear[yy] = perYear;
+    }
     const avgBal = debtOutstanding - principalRepay / 2;
     const interest = Math.max(0, avgBal) * annualRate;
+
+    // SL
+    const slPrincipal = y < I.slTenorYears ? Math.min(slOutstanding, slPrincipalSchedule[y] || 0) : 0;
+    const slAvgBal = slOutstanding - slPrincipal / 2;
+    const slInterest = Math.max(0, slAvgBal) * I.slRatePct;
+
     const debtOpening = debtOutstanding;
     debtOutstanding = Math.max(0, debtOutstanding - principalRepay);
     const debtClosing = debtOutstanding;
 
-    const ebt = ebit - interest;
+    const slOpening = slOutstanding;
+    slOutstanding = Math.max(0, slOutstanding - slPrincipal);
+    const slClosing = slOutstanding;
+
+    const ebt = ebit - interest - slInterest;
     const tax = Math.max(0, ebt) * I.taxRatePct;
     const netProfit = ebt - tax;
 
-    const ar = revenue * (I.arDays / 365);
-    const wcDelta = -(ar - prevAR);
-    prevAR = ar;
+    const ar = o.revenue * (I.arDays / 365);
+    const ap = o.opex * (I.apDays / 365);
+    const wcDelta = -(ar - prevAR) + (ap - prevAP);
+    prevAR = ar; prevAP = ap;
 
     const taxAdjUnlev = Math.max(0, ebit) * I.taxRatePct;
     const fcff = ebit - taxAdjUnlev + depreciation + wcDelta;
-    const fcfe = netProfit + depreciation + wcDelta - principalRepay;
+    const fcfe = netProfit + depreciation + wcDelta - principalRepay - slPrincipal;
 
     const cfads = ebitda - tax;
     const ds = interest + principalRepay;
     const dscr = ds > 0 ? cfads / ds : NaN;
 
+    accumDep += depreciation;
+    retainedEarnings += netProfit;
+    cash = cash + fcfe; // residual to equity holders accumulates as cash
+    const netPPE = Math.max(0, totalCapexEgp - accumDep);
+
     rows.push({
-      year: I.startYear + y, yearIdx: y, fx,
-      capacityKwp: I.capacityKwp, energyKwh: energy, tariffEgp: tariff, revenue,
-      maintenance, insurance, replacement, rent, usufruct, opex,
-      ebitda, depreciation, ebit, interest, ebt, tax, netProfit,
-      capex: 0, debtDraw: 0, principalRepay,
-      workingCapDelta: wcDelta, fcff, fcfe,
-      debtOpening, debtClosing, rate: annualRate, dscr,
+      year: I.startYear + y, yearIdx: y, fx: o.fx,
+      capacityKwp: I.capacityKwp, energyKwh: energy, tariffEgp: o.tariff, revenue: o.revenue,
+      om: o.om, omVat: o.omVat, mmra: o.mmra, insurance: o.insurance, replacement: o.replacement,
+      rent: o.rent, usufruct: o.usufruct, opex: o.opex,
+      ebitda, depreciation, ebit, interest, slInterest, ebt, tax, netProfit,
+      capex: 0, debtDraw: 0, principalRepay, slDraw: 0, slPrincipalRepay: slPrincipal,
+      workingCapDelta: wcDelta, fcff, fcfe, cfads,
+      debtOpening, debtClosing, rate: annualRate,
+      slOpening, slClosing,
+      dscr,
+      ar, ap, netPPE, accumDep, cash, paidInEquity, retainedEarnings,
     });
   }
 
@@ -531,12 +680,15 @@ export function runPvModel(I: PvInputs): PvOutputs {
     const dep = b.depMethod === "UnitOfProduction" ? b.annualDep * y1.energyKwh : (y1.yearIdx < b._life ? b.annualDep : 0);
     if (dep > 0) comp.push({ name: `Dep: ${b.label}`, group: "CAPEX", value: dep / e1, pct: 0 });
   }
-  if (y1.maintenance > 0) comp.push({ name: "Maintenance", group: "OPEX", value: y1.maintenance / e1, pct: 0 });
+  if (y1.om > 0) comp.push({ name: "O&M", group: "OPEX", value: y1.om / e1, pct: 0 });
+  if (y1.omVat > 0) comp.push({ name: "VAT on O&M", group: "OPEX", value: y1.omVat / e1, pct: 0 });
+  if (y1.mmra > 0) comp.push({ name: "MMRA", group: "OPEX", value: y1.mmra / e1, pct: 0 });
   if (y1.insurance > 0) comp.push({ name: "Insurance", group: "OPEX", value: y1.insurance / e1, pct: 0 });
   if (y1.rent > 0) comp.push({ name: "Rent", group: "OPEX", value: y1.rent / e1, pct: 0 });
   if (y1.usufruct > 0) comp.push({ name: "Usufruct", group: "OPEX", value: y1.usufruct / e1, pct: 0 });
   if (y1.replacement > 0) comp.push({ name: "Replacement", group: "OPEX", value: y1.replacement / e1, pct: 0 });
-  if (y1.interest > 0) comp.push({ name: "Interest (debt)", group: "Financing", value: y1.interest / e1, pct: 0 });
+  if (y1.interest > 0) comp.push({ name: "Senior Interest", group: "Financing", value: y1.interest / e1, pct: 0 });
+  if (y1.slInterest > 0) comp.push({ name: "SL Interest", group: "Financing", value: y1.slInterest / e1, pct: 0 });
   if (y1.tax > 0) comp.push({ name: "Income Tax", group: "Tax", value: y1.tax / e1, pct: 0 });
   const sumCost = comp.reduce((s, c) => s + c.value, 0);
   comp.push({ name: "Equity Margin / Profit", group: "Margin", value: Math.max(0, tariff - sumCost), pct: 0 });
@@ -549,7 +701,7 @@ export function runPvModel(I: PvInputs): PvOutputs {
     contingencyEgp,
     capitalisedInterestEgp,
     capexBreakdown: allCapex.map(b => ({ label: b.label, egp: b.egp, vatEgp: b.vatEgp, customsEgp: b.customsEgp, totalEgp: b.totalEgp, annualDep: b.annualDep, depMethod: b.depMethod })),
-    debtAmount, equityAmount,
+    debtAmount, equityAmount: equityRaise, shareholderLoan, paidInEquity,
     rows,
     projectIRR, equityIRR, npvProject, npvEquity, minDSCR, avgDSCR, paybackYears: payback,
     lcoeEgpPerKwh: lcoe,

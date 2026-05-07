@@ -16,7 +16,8 @@ export const PvSummary = ({ m }: { m: PvOutputs }) => {
   const totalUses = uses.reduce((s, u) => s + u.v, 0);
   const sources = [
     { label: "Senior debt", v: m.debtAmount },
-    { label: "Sponsor equity", v: m.equityAmount },
+    ...(m.shareholderLoan > 0 ? [{ label: "Shareholder loan", v: m.shareholderLoan }] : []),
+    { label: "Sponsor paid-in equity", v: m.paidInEquity },
   ];
   const totalSources = sources.reduce((s, u) => s + u.v, 0);
 
