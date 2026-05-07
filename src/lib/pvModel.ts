@@ -280,11 +280,19 @@ function tariffScheduleEgp(I: PvInputs): number[] {
   if (I.tariffSource === "Custom" && I.tariffPerYear && I.tariffPerYear.length > 0) {
     return Array.from({ length: N }, (_, i) => I.tariffPerYear[i] ?? I.tariffPerYear[I.tariffPerYear.length - 1] ?? 0);
   }
-  if (I.tariffSource === "Government" && I.tariffPerYear && I.tariffPerYear.length > 0) {
-    return Array.from({ length: N }, (_, i) => I.tariffPerYear[i] ?? I.tariffPerYear[I.tariffPerYear.length - 1] ?? 0);
+  // Government: base × cumulative escalation per year (Y1 = base; Y(i) = Y(i-1) × (1+esc[i]))
+  const out: number[] = [];
+  let cur = I.govtBaseTariffEgp;
+  for (let i = 0; i < N; i++) {
+    if (i > 0) {
+      const esc = (I.tariffEscalationPerYear && I.tariffEscalationPerYear.length > 0)
+        ? (I.tariffEscalationPerYear[i] ?? I.tariffEscalationPerYear[I.tariffEscalationPerYear.length - 1] ?? I.govtEscalationPct)
+        : I.govtEscalationPct;
+      cur = cur * (1 + esc);
+    }
+    out.push(cur);
   }
-  // default: govt base × escalation
-  return Array.from({ length: N }, (_, i) => I.govtBaseTariffEgp * Math.pow(1 + I.govtEscalationPct, i));
+  return out;
 }
 
 export function runPvModel(I: PvInputs): PvOutputs {
