@@ -265,6 +265,7 @@ export const inflRevAt = (I: WaterInputs, y: number) => at(I.revenueInflationPer
 export const inflElecAt = (I: WaterInputs, y: number) => at(I.electricityInflationPerYear, y, I.electricityInflation);
 export const inflUsdAt = (I: WaterInputs, y: number) => at(I.usdInflationPerYear, y, I.usdInflation);
 export const minTakeAt = (I: WaterInputs, y: number) => at(I.minTakePctPerYear, y, I.minTakePct);
+export const capacityM3DayAt = (I: WaterInputs, y: number) => at(I.capacityM3DayPerYear, y, I.capacityM3Day);
 export const debtRateAt = (I: WaterInputs, y: number) => {
   const fallback = Math.max(I.debtRateYr1 - I.debtRateStepDown * y, I.debtRateFloor);
   return at(I.debtRatePerYear, y, fallback);
