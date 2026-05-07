@@ -17,14 +17,17 @@ export interface OpexVarItem {
   key: string;
   label: string;
   currency: Ccy;
-  amountPerM3: number;       // per m³ of sold volume
+  amountPerM3: number;       // per m³ of sold volume (pre-tax, in own currency)
+  taxPct?: number;           // VAT/duty applied on top, e.g. 0.14
 }
 
 export interface OpexFixedItem {
   key: string;
   label: string;
   currency: Ccy;
-  amountPerMonth: number;
+  amountPerMonth: number;    // per-employee per-month if employees>1, else total per-month
+  employees?: number;        // multiplier (defaults to 1)
+  taxPct?: number;           // VAT/payroll tax applied on top
 }
 
 export interface WaterInputs {
@@ -142,6 +145,8 @@ const DEFAULT_OPEX_VAR: OpexVarItem[] = [
   { key: "instrumentation", label: "Instrumentation", currency: "USD", amountPerM3: 0.0010315872146118722 },
   { key: "cipPumps",        label: "CIP Pumps",       currency: "USD", amountPerM3: 0.000704905205479452 },
   { key: "pvc",             label: "PVC",             currency: "USD", amountPerM3: 0.0007912328767123285 },
+  { key: "wells",           label: "Wells Cost",      currency: "EGP", amountPerM3: 0 },
+  { key: "otherVar",        label: "Other Variable",  currency: "EGP", amountPerM3: 0 },
 ];
 
 const DEFAULT_OPEX_FIXED: OpexFixedItem[] = [
@@ -421,17 +426,17 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   // ── OPEX per m³ (steady state, Year-1 FX) ──
   const variableEgpFromUsd_y1 = I.opexVariableItems
     .filter(it => it.currency === "USD")
-    .reduce((s, it) => s + it.amountPerM3, 0) * fx0;
+    .reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0) * fx0;
   const variableEgp_y1 = I.opexVariableItems
     .filter(it => it.currency === "EGP")
-    .reduce((s, it) => s + it.amountPerM3, 0);
+    .reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
   const wellsCost = I.wellsIncluded ? I.wellsCostEgpPerM3 : 0;
   const variableCostPerM3 = variableEgpFromUsd_y1 + variableEgp_y1 + wellsCost + I.otherVarEgpPerM3;
   const elecPriceEgp_y1 = I.electricityCurrency === "USD" ? I.electricityPriceEgpKwh * fx0 : I.electricityPriceEgpKwh;
   const electricityCostPerM3 = I.electricityIncluded ? I.electricityKwhPerM3 * elecPriceEgp_y1 : 0;
 
   const annualFixedEgp_y1 = I.opexFixedItems.reduce((s, it) => {
-    const v = it.amountPerMonth * 12;
+    const v = it.amountPerMonth * (it.employees ?? 1) * (1 + (it.taxPct ?? 0)) * 12;
     return s + (it.currency === "USD" ? v * fx0 : v);
   }, 0);
   const fixedCostPerM3 = soldVolumeY1 > 0 ? annualFixedEgp_y1 / soldVolumeY1 : 0;
@@ -500,18 +505,18 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     const price = I.sellingPriceEgpPerM3 * inflRev;
     const revenue = volume * price;
 
-    // OPEX — variable: USD items × inflUsd × fx_y; EGP items × inflEgp
+    // OPEX — variable: USD items × inflUsd × fx_y; EGP items × inflEgp; tax applied per-item
     const varUsd = I.opexVariableItems.filter(it => it.currency === "USD")
-      .reduce((s, it) => s + it.amountPerM3, 0);
+      .reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
     const varEgp = I.opexVariableItems.filter(it => it.currency === "EGP")
-      .reduce((s, it) => s + it.amountPerM3, 0);
+      .reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
     const variableCost = volume * (varUsd * inflUsd * fx + (varEgp + wellsCost + I.otherVarEgpPerM3) * inflEgp);
 
     const elecPrice = (I.electricityCurrency === "USD" ? I.electricityPriceEgpKwh * fx : I.electricityPriceEgpKwh) * inflElec;
     const electricityCost = I.electricityIncluded ? volume * I.electricityKwhPerM3 * elecPrice : 0;
 
     const fixedCost = I.opexFixedItems.reduce((s, it) => {
-      const annual = it.amountPerMonth * 12;
+      const annual = it.amountPerMonth * (it.employees ?? 1) * (1 + (it.taxPct ?? 0)) * 12;
       return s + (it.currency === "USD" ? annual * fx * inflUsd : annual * inflEgp);
     }, 0);
 
