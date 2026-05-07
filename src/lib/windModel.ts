@@ -214,7 +214,7 @@ export interface ProjectInputs {
   pctRevUsufructLease: number;
   pctRevInsuranceOps: number;
   migaPremium: number;
-  opexVat: number;                // manual VAT applied on final opex (USD '000 p.a., escalated by CPI)
+  opexVat: number;                // legacy — kept for back-compat, no longer used (replaced by per-item opexVatPct)
 
   // Working capital
   daysReceivable: number;
@@ -402,16 +402,20 @@ export interface ProjectInputs {
 
   // Per-OPEX-item: basis = "perMW" → stored amount is USD/MW p.a.; else absolute USD '000 p.a.
   opexBasisPerMW?: Partial<Record<string, 0 | 1>>;
+  // Per-OPEX-item: VAT rate (decimal) added on top of the resolved amount.
+  opexVatPct?: Partial<Record<string, number>>;
+  // Contingency as a % (decimal) applied to total capex AFTER onshore + offshore taxes.
+  contingencyPct?: number;
 }
 
 // Phase 2 helpers ---------------------------------------------------------------
 // Items that should NEVER be auto-taxed (financing/reserves/already-tax line itself).
 export const CAPEX_TAX_EXCLUDED = new Set<string>([
-  "loanRepayment", "taxesCapex",
+  "loanRepayment", "taxesCapex", "contingency",
 ]);
 // Default taxable items (EPC + BoP/civil/grid + everything physical). Financing items default off.
 export const CAPEX_TAXABLE_DEFAULT: Record<string, boolean> = {
-  epcCost: true, substation: true, contingency: true,
+  epcCost: true, substation: true,
   preConstructionCosts: true, developmentPremiums: true, developmentExpenses: true,
   land: true, esMeasures: true, lendersTechAdvisors: true, legalExpenses: true,
   administrativeCosts: true, financialAudit: true, insuranceConstruction: true,
@@ -754,6 +758,8 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   capexTaxable: {},
   capexOnshorePct: {},
   opexBasisPerMW: {},
+  opexVatPct: {},
+  contingencyPct: 0.04,
 };
 
 export interface AnnualRow {
@@ -1017,11 +1023,20 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const carbonOn = I.cdmSwitch === 1 && year >= I.cdmStartYear && year < I.cdmStartYear + I.cdmDurationYears;
     const carbonRevenue = carbonOn ? mwh * I.gridEmissionFactor * I.cdmPriceUSD / 1000 : 0;
     const totalRev = revenue + carbonRevenue;
-    const baseOpex = (I.oAndM + I.assetMgmt + I.spvCost + I.insurance + I.csrContribution + I.eetcCost) * escal;
+    // Per-item VAT% (decimal) applied to each opex line.
+    const vp = I.opexVatPct ?? {};
+    const v = (k: string) => 1 + Math.max(0, vp[k] ?? 0);
+    const baseOpex = (
+      I.oAndM * v("oAndM") + I.assetMgmt * v("assetMgmt") + I.spvCost * v("spvCost") +
+      I.insurance * v("insurance") + I.csrContribution * v("csrContribution") + I.eetcCost * v("eetcCost")
+    ) * escal;
     const rentalValue = I.epcCost * (I.rentalValuePct || 0.5);
     const realEstate = rentalValue * I.realEstateTaxableAmount * I.realEstateTaxRate * (1 - (I.exemptedProportion || 0)) * escal;
-    const otherFixedOpex = (I.bondExpenses + I.lease + I.auxiliaryPower + I.opexContingency
-      + I.usufructEGP * I.fxEGP + I.migaPremium) * escal;
+    const otherFixedOpex = (
+      I.bondExpenses * v("bondExpenses") + I.lease * v("lease") + I.auxiliaryPower * v("auxiliaryPower") +
+      I.opexContingency * v("opexContingency") + I.usufructEGP * v("usufructEGP") * I.fxEGP +
+      I.migaPremium * v("migaPremium")
+    ) * escal;
     const mmFlat = (I.mmWindSpareParts + I.mmSubstationSpareParts + I.mmPmCm + I.mmSpare) * escal;
     const mmSchedPct = (I.mmSchedulePctOfCapex && I.mmSchedulePctOfCapex[y - 1]) || 0;
     const mmScheduled = hardCapex * mmSchedPct * escal;
@@ -1029,8 +1044,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const revPctOpex = totalRev * (I.pctRevConvLocalEUR + I.pctRevUsufructLease + I.pctRevInsuranceOps);
     const decommissioning = decommissioningAnnual * escal;
     const levy = I.additionalLevy * totalRev;
-    const opexVat = (I.opexVat || 0) * escal;
-    const opex = baseOpex + realEstate + levy + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning + opexVat;
+    const opex = baseOpex + realEstate + levy + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning;
     const ebitda = totalRev - opex;
     const depPPE = y <= depYearsPPE ? depAnnualPPE : 0;
     const depIDC = y <= depYearsIDC ? depAnnualIDC : 0;
@@ -1039,7 +1053,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const ebitdaTax = (!taxYearsActive(year) || ebit <= 0) ? 0 : ebit * I.taxRate;
     const newReceivables = totalRev * (I.daysReceivable / 365);
     // Payables on cash opex only (exclude real-estate tax & decommissioning sinking fund)
-    const cashOpexForDPO = baseOpex + otherFixedOpex + majorMaintenance + revPctOpex + levy + opexVat;
+    const cashOpexForDPO = baseOpex + otherFixedOpex + majorMaintenance + revPctOpex + levy;
     const newPayables = cashOpexForDPO * (I.daysPayable / 365);
     const wcChange = -((newReceivables - recv) - (newPayables - pay));
     recv = newReceivables; pay = newPayables;
@@ -1268,6 +1282,17 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     const itemMap: Record<string, number> = {};
     for (const k of CAPEX_KEYS) itemMap[k] = (resolved as any)[k];
     resolved.taxesCapex = computeAutoTaxesCapex(inputs, itemMap);
+  }
+  // Contingency = contingencyPct × (all capex items + taxes, excluding the contingency line itself).
+  {
+    const pct = Math.max(0, inputs.contingencyPct ?? 0);
+    let baseForContingency = 0;
+    for (const k of CAPEX_KEYS) {
+      if (k === "contingency") continue;
+      baseForContingency += (resolved as any)[k] || 0;
+    }
+    baseForContingency += resolved.taxesCapex || 0;
+    resolved.contingency = baseForContingency * pct;
   }
   const I = resolved;
   const agg = aggregate(I);

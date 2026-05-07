@@ -1,5 +1,6 @@
 import { useMemo, useDeferredValue, lazy, Suspense } from "react";
-import { FileText, RotateCcw, Check, UploadCloud, Loader2 } from "lucide-react";
+import { FileText, RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon, Save } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -44,21 +45,47 @@ const Index = () => {
     }
   };
 
-  const reset = () => { setInputs(DEFAULT_INPUTS); toast.info("Reset to defaults"); };
+  const reset = () => {
+    try {
+      const stored = localStorage.getItem("reza_default_inputs");
+      const base = stored ? { ...DEFAULT_INPUTS, ...JSON.parse(stored) } : DEFAULT_INPUTS;
+      setInputs(base);
+      toast.info(stored ? "Reset to your saved defaults" : "Reset to factory defaults");
+    } catch {
+      setInputs(DEFAULT_INPUTS);
+      toast.info("Reset to factory defaults");
+    }
+  };
+
+  const saveAsDefault = () => {
+    try {
+      localStorage.setItem("reza_default_inputs", JSON.stringify(inputs));
+      toast.success("Current assumptions saved as your default");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to save defaults");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-[var(--gradient-hero)] text-primary-foreground">
         <div className="container flex flex-col gap-4 py-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-black">REZA Project Finance Model</h1>
-            <p className="text-xs opacity-80">{inputs.projectName} · {inputs.country}</p>
-          </div>
           <div className="flex items-center gap-3">
+            <Link to="/">
+              <Button variant="secondary" size="sm" className="gap-2"><HomeIcon className="h-4 w-4"/>Home</Button>
+            </Link>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-black">REZA Project Finance Model</h1>
+              <p className="text-xs opacity-80">{inputs.projectName} · {inputs.country}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1.5 text-xs opacity-90">
               {isStale ? <Loader2 className="h-4 w-4 animate-spin"/> : saving ? <UploadCloud className="h-4 w-4 animate-pulse"/> : <Check className="h-4 w-4"/>}
               {!loaded ? "Loading…" : isStale ? "Recalculating…" : saving ? "Saving…" : "All changes saved"}
             </div>
+            <Button variant="secondary" onClick={saveAsDefault} className="gap-2"><Save className="h-4 w-4"/>Save as default</Button>
             <Button variant="secondary" onClick={reset} className="gap-2"><RotateCcw className="h-4 w-4"/>Reset</Button>
             <Button onClick={exportMemo} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"><FileText className="h-4 w-4"/>Export Investment Memo</Button>
           </div>

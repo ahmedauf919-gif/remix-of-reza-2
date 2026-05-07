@@ -298,7 +298,7 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
         <NumberField obj={inputs} k={"constructionMonths" as keyof ProjectInputs}
           f={{ label: "Construction period", unit: "months" }}
           onSet={(v) => onChange({ ...inputs, constructionMonths: Math.max(1, Math.min(36, Math.round(v))) })} />
@@ -311,11 +311,14 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
         <NumberField obj={inputs} k={"customsDutyRate" as keyof ProjectInputs}
           f={{ label: "VAT rate (offshore supply)", pct: true, step: 0.001 }}
           onSet={(v) => onChange({ ...inputs, customsDutyRate: v })} />
+        <NumberField obj={inputs} k={"contingencyPct" as keyof ProjectInputs}
+          f={{ label: "Contingency %", pct: true, step: 0.001 }}
+          onSet={(v) => onChange({ ...inputs, contingencyPct: Math.max(0, v) })} />
       </div>
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <Switch checked={(inputs.taxesCapexAuto ?? 1) === 1}
           onCheckedChange={(v) => onChange({ ...inputs, taxesCapexAuto: v ? 1 : 0 })} />
-        <span>Auto-compute "Taxes (capex)" from Onshore VAT × onshore portion + Offshore VAT × offshore portion on every taxable line. Onshore % + Offshore % must sum to 100. Loan repayment is excluded.</span>
+        <span>Auto-compute "Taxes (capex)" from Onshore VAT × onshore portion + Offshore VAT × offshore portion on every taxable line. Onshore % + Offshore % must sum to 100. Loan repayment is excluded. <b>Contingency</b> is computed as Contingency % × (all capex items + taxes).</span>
       </div>
       <p className="text-xs text-muted-foreground">
         Per-line basis: <b>USD '000</b> = absolute amount; <b>USD/MW</b> = amount per MW × capacity.
@@ -348,7 +351,20 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
               const sum = sched.reduce((a, b) => a + b, 0);
               const amount = inputs[it.key] as unknown as number;
               const basisPerMW = (inputs.capexBasisPerMW?.[k] ?? 0) === 1;
-              const resolved = basisPerMW ? (amount || 0) * (inputs.capacityMWp || 0) : (amount || 0);
+              const resolvedRaw = basisPerMW ? (amount || 0) * (inputs.capacityMWp || 0) : (amount || 0);
+              // For contingency, "resolved" is computed from the global Contingency % × all-other capex (incl. taxes).
+              let resolved = resolvedRaw;
+              if (k === "contingency") {
+                const pct = inputs.contingencyPct ?? 0;
+                let baseSum = 0;
+                for (const oi of CAPEX_ITEMS) {
+                  if (oi.key === "contingency") continue;
+                  const a = inputs[oi.key] as unknown as number;
+                  const b = (inputs.capexBasisPerMW?.[oi.key as string] ?? 0) === 1;
+                  baseSum += b ? (a || 0) * (inputs.capacityMWp || 0) : (a || 0);
+                }
+                resolved = baseSum * pct;
+              }
               const taxExcluded = CAPEX_TAX_EXCLUDED.has(k);
               const taxable = inputs.capexTaxable?.[k] ?? CAPEX_TAXABLE_DEFAULT[k] ?? false;
               const onshorePct = (inputs.capexOnshorePct?.[k] ?? 1) * 100;
@@ -375,9 +391,13 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
                     )}
                   </td>
                   <td className="p-1">
-                    <Input type="number" step={1} className="h-8 font-mono text-xs text-right"
-                      value={String(amount ?? 0)}
-                      onChange={(e) => onChange({ ...inputs, [it.key]: parseFloat(e.target.value) || 0 })} />
+                    {k === "contingency" ? (
+                      <span className="text-[10px] text-muted-foreground italic">auto = {((inputs.contingencyPct ?? 0) * 100).toFixed(2)}%</span>
+                    ) : (
+                      <Input type="number" step={1} className="h-8 font-mono text-xs text-right"
+                        value={String(amount ?? 0)}
+                        onChange={(e) => onChange({ ...inputs, [it.key]: parseFloat(e.target.value) || 0 })} />
+                    )}
                   </td>
                   <td className="p-2 text-right font-mono text-muted-foreground">{resolved.toLocaleString(undefined, { maximumFractionDigits: 1 })}</td>
                   <td className="p-1 text-center">
@@ -525,7 +545,6 @@ const OPEX: Field[] = [
   { key: "auxiliaryPower", label: "Auxiliary power", unit: "USD '000 p.a." },
   { key: "opexContingency", label: "Opex contingency", unit: "USD '000 p.a." },
   { key: "usufructEGP", label: "User's share usufruct (EGP)", unit: "EGP '000 p.a." },
-  { key: "opexVat", label: "VAT on opex (manual)", unit: "USD '000 p.a." },
   { key: "cpi", label: "Opex escalation (CPI)", pct: true, step: 0.001 },
   { key: "daysReceivable", label: "Debtor days", unit: "days" },
   { key: "daysPayable", label: "Creditor days", unit: "days" },
@@ -537,10 +556,13 @@ const OPEX_PER_MW_KEYS = ["oAndM","assetMgmt","spvCost","insurance","csrContribu
 const OpexEditor = ({ inputs, onChange }: Props) => {
   const setBasis = (k: string, v: 0 | 1) =>
     onChange({ ...inputs, opexBasisPerMW: { ...(inputs.opexBasisPerMW ?? {}), [k]: v } });
+  const setVat = (k: string, pctValue: number) =>
+    onChange({ ...inputs, opexVatPct: { ...(inputs.opexVatPct ?? {}), [k]: Math.max(0, pctValue / 100) } });
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
         Per-line basis: <b>USD '000 p.a.</b> = absolute, or <b>USD '000/MW p.a.</b> = per MW × capacity ({inputs.capacityMWp} MW).
+        VAT % is added on top of each line and flows through to the resolved amount.
       </p>
       <div className="overflow-x-auto rounded-lg border border-border/60">
         <table className="w-full text-xs">
@@ -549,7 +571,8 @@ const OpexEditor = ({ inputs, onChange }: Props) => {
               <th className="text-left p-2 min-w-[170px]">Opex item</th>
               <th className="p-2 min-w-[140px]">Basis</th>
               <th className="text-right p-2 min-w-[120px]">Amount</th>
-              <th className="text-right p-2 min-w-[140px]">Resolved (USD '000 p.a.)</th>
+              <th className="text-right p-2 min-w-[80px]">VAT %</th>
+              <th className="text-right p-2 min-w-[140px]">Resolved (USD '000 p.a., incl. VAT)</th>
             </tr>
           </thead>
           <tbody>
@@ -557,7 +580,9 @@ const OpexEditor = ({ inputs, onChange }: Props) => {
               const k = f.key as string;
               const amt = inputs[f.key] as unknown as number;
               const perMW = (inputs.opexBasisPerMW?.[k] ?? 0) === 1;
-              const resolved = perMW ? (amt || 0) * (inputs.capacityMWp || 0) : (amt || 0);
+              const vatPct = (inputs.opexVatPct?.[k] ?? 0) * 100;
+              const base = perMW ? (amt || 0) * (inputs.capacityMWp || 0) : (amt || 0);
+              const resolved = base * (1 + vatPct / 100);
               return (
                 <tr key={k} className="border-t border-border/40 hover:bg-secondary/20">
                   <td className="p-2 font-medium">{f.label}</td>
@@ -574,6 +599,11 @@ const OpexEditor = ({ inputs, onChange }: Props) => {
                     <Input type="number" step={0.1} className="h-8 font-mono text-xs text-right"
                       value={String(amt ?? 0)}
                       onChange={(e) => onChange({ ...inputs, [k]: parseFloat(e.target.value) || 0 })} />
+                  </td>
+                  <td className="p-1">
+                    <Input type="number" step={0.1} min={0} className="h-8 font-mono text-xs text-right"
+                      value={vatPct.toFixed(2)}
+                      onChange={(e) => setVat(k, parseFloat(e.target.value) || 0)} />
                   </td>
                   <td className="p-2 text-right font-mono text-muted-foreground">{resolved.toLocaleString(undefined, { maximumFractionDigits: 1 })}</td>
                 </tr>
