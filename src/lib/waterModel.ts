@@ -51,6 +51,7 @@ export interface WaterInputs {
 
   // Plant
   capacityM3Day: number;
+  capacityM3DayPerYear?: number[]; // per-year override (length = contractYears)
   minTakePct: number;
   realizedPctOfMinTake: number;
   minTakePctPerYear?: number[]; // per-year override (length = contractYears)
@@ -165,6 +166,7 @@ export const DEFAULT_WATER_INPUTS: WaterInputs = {
   electricityInflationPerYear: [],
   usdInflationPerYear: [],
   capacityM3Day: 3500,
+  capacityM3DayPerYear: [],
   minTakePct: 0.95,
   realizedPctOfMinTake: 0.96,
   minTakePctPerYear: [],
@@ -263,6 +265,7 @@ export const inflRevAt = (I: WaterInputs, y: number) => at(I.revenueInflationPer
 export const inflElecAt = (I: WaterInputs, y: number) => at(I.electricityInflationPerYear, y, I.electricityInflation);
 export const inflUsdAt = (I: WaterInputs, y: number) => at(I.usdInflationPerYear, y, I.usdInflation);
 export const minTakeAt = (I: WaterInputs, y: number) => at(I.minTakePctPerYear, y, I.minTakePct);
+export const capacityM3DayAt = (I: WaterInputs, y: number) => at(I.capacityM3DayPerYear, y, I.capacityM3Day);
 export const debtRateAt = (I: WaterInputs, y: number) => {
   const fallback = Math.max(I.debtRateYr1 - I.debtRateStepDown * y, I.debtRateFloor);
   return at(I.debtRatePerYear, y, fallback);
@@ -490,7 +493,8 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     const inflUsd = Math.pow(1 + inflUsdAt(I, y), y);
 
     const minTake = minTakeAt(I, y);
-    const volume = installedCapacityM3Year * minTake * I.realizedPctOfMinTake;
+    const installedY = capacityM3DayAt(I, y) * 365;
+    const volume = installedY * minTake * I.realizedPctOfMinTake;
     const price = I.sellingPriceEgpPerM3 * inflRev;
     const revenue = volume * price;
 
