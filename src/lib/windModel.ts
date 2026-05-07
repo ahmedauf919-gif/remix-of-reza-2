@@ -1275,6 +1275,17 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     for (const k of CAPEX_KEYS) itemMap[k] = (resolved as any)[k];
     resolved.taxesCapex = computeAutoTaxesCapex(inputs, itemMap);
   }
+  // Contingency = contingencyPct × (all capex items + taxes, excluding the contingency line itself).
+  {
+    const pct = Math.max(0, inputs.contingencyPct ?? 0);
+    let baseForContingency = 0;
+    for (const k of CAPEX_KEYS) {
+      if (k === "contingency") continue;
+      baseForContingency += (resolved as any)[k] || 0;
+    }
+    baseForContingency += resolved.taxesCapex || 0;
+    resolved.contingency = baseForContingency * pct;
+  }
   const I = resolved;
   const agg = aggregate(I);
   const consYears = I.constructionMonths / 12;
