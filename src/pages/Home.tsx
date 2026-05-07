@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wind, Plus } from "lucide-react";
+import { Wind, Sun, Plus } from "lucide-react";
 
 const models = [
   {
@@ -13,9 +13,9 @@ const models = [
   },
   {
     id: "reza-2",
-    title: "REZA Project Finance Model (Copy)",
+    title: "REZA Project Finance Model",
     description: "Independent duplicate with its own saved assumptions — run a parallel scenario for comparison.",
-    icon: Wind,
+    icon: Sun,
     href: "/models/reza-2",
     available: true,
   },
