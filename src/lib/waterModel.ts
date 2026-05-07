@@ -493,7 +493,8 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     const inflUsd = Math.pow(1 + inflUsdAt(I, y), y);
 
     const minTake = minTakeAt(I, y);
-    const volume = installedCapacityM3Year * minTake * I.realizedPctOfMinTake;
+    const installedY = capacityM3DayAt(I, y) * 365;
+    const volume = installedY * minTake * I.realizedPctOfMinTake;
     const price = I.sellingPriceEgpPerM3 * inflRev;
     const revenue = volume * price;
 
