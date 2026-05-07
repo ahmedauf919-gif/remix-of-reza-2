@@ -26,8 +26,8 @@ const TabFallback = () => (
   </div>
 );
 
-const Index = () => {
-  const { inputs, setInputs, loaded, saving } = useSharedScenario();
+const Index = ({ scenarioId = 1 }: { scenarioId?: number }) => {
+  const { inputs, setInputs, loaded, saving } = useSharedScenario(scenarioId);
   // Defer the heavy model recompute so input typing stays smooth.
   // React will run the model on the latest inputs once the user pauses.
   const deferredInputs = useDeferredValue(inputs);
