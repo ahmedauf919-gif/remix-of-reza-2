@@ -217,7 +217,7 @@ export const DEFAULT_WATER_INPUTS: WaterInputs = {
   opexVariableItems: DEFAULT_OPEX_VAR,
   opexFixedItems: DEFAULT_OPEX_FIXED,
   headOfficeEgpMonth: 500_000,
-  headOfficeAllocPct: 0,
+  headOfficeAllocPct: 1,
   otherSgaEgpMonth: 0,
   sgaCurrency: "EGP",
   depreciationYears: 25,
