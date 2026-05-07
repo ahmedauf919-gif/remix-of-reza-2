@@ -12,20 +12,19 @@ type VarDef = {
 };
 
 const VARIABLES: VarDef[] = [
-  { key: "govtTariffEgp",          label: "Government tariff (EGP/kWh)", unit: "abs" },
-  { key: "separateTariffEgp",      label: "Separate tariff (EGP/kWh)",   unit: "abs" },
+  { key: "govtBaseTariffEgp",      label: "Tariff base (EGP/kWh)",        unit: "abs" },
+  { key: "govtEscalationPct",      label: "Tariff escalation",             unit: "pct" },
   { key: "yieldP50",               label: "Yield P50 (kWh/kWp)",         unit: "abs" },
   { key: "yieldP90",               label: "Yield P90 (kWh/kWp)",         unit: "abs" },
   { key: "capacityKwp",            label: "Installed capacity (kWp)",     unit: "abs" },
   { key: "lossThereafterPct",      label: "Annual degradation",           unit: "pct" },
-  { key: "maintenanceUsd",         label: "Maintenance / O&M (USD)",      unit: "abs" },
+  { key: "maintenancePerMwUsd",    label: "Maintenance USD/MW",           unit: "abs" },
   { key: "insurancePctOfCapex",    label: "Insurance % of CAPEX",         unit: "pct" },
   { key: "debtPct",                label: "Gearing",                       unit: "pct" },
   { key: "spreadPct",              label: "Bank spread",                   unit: "pct" },
   { key: "loanTenorYears",         label: "Debt tenor (yrs)",              unit: "abs" },
   { key: "taxRatePct",             label: "Tax rate",                      unit: "pct" },
   { key: "opexYoYPct",             label: "OPEX escalation",               unit: "pct" },
-  { key: "capitalisedInterestEgp", label: "Capitalised interest (EGP)",   unit: "abs" },
   { key: "contingencyPct",         label: "Contingency %",                 unit: "pct" },
 ];
 
