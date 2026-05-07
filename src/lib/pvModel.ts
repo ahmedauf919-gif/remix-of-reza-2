@@ -109,6 +109,14 @@ export const DEFAULT_PV_CAPEX: PvCapexItem[] = [
   { key: "leveling",    label: "Land Leveling",         currency: "EGP", units: 0,     costPerUnit: 0,     vatPct: 0,    customsPct: 0,    usefulLife: 25, depMethod: "StraightLine" },
 ];
 
+// Government tariff presets (EGP/kWh) by voltage level
+export const GOVT_TARIFF_BY_VOLTAGE: Record<VoltageLevel, number> = {
+  "Extra High Voltage": 2.296,
+  "High Voltage": 2.508,
+  "Medium Voltage": 2.716,
+  "Low Voltage": 2.928,
+};
+
 const M = (v: number, n: number) => Array.from({ length: n }, () => v);
 const linearDrawdown = (months: number) => Array.from({ length: months }, () => 1 / Math.max(1, months));
 
