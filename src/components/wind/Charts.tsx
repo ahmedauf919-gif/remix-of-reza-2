@@ -61,7 +61,7 @@ export const DSCRChart = ({ m }: { m: ModelOutputs }) => {
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
           <XAxis dataKey="year" tick={{ fontSize: 11 }}/>
-          <YAxis tick={{ fontSize: 11 }} domain={[0, 4]} allowDataOverflow ticks={[0, 1, 2, 3, 4]}/>
+          <YAxis tick={{ fontSize: 11 }} domain={[0, 2]} allowDataOverflow ticks={[0, 0.5, 1, 1.5, 2]}/>
           <Tooltip {...tooltipStyle}/>
           <ReferenceLine y={m.inputs.targetDSCR} stroke="hsl(var(--accent))" strokeDasharray="4 4" label={{ value: `Target ${m.inputs.targetDSCR}x`, fontSize: 10, fill: "hsl(var(--accent))" }}/>
           <ReferenceLine y={1} stroke="hsl(var(--destructive))" strokeDasharray="2 2"/>
