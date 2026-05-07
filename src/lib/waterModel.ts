@@ -582,6 +582,72 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     totalLiabAndEquity: paidInEquity + debtAmount,
   });
 
+  // ── Pre-pass: compute pre-debt EBITDA / tax / CFADS by year (for sculpting) ──
+  const preCfads: number[] = [];
+  const preEbit: number[] = [];
+  const preEbitda: number[] = [];
+  for (let y = 0; y < N; y++) {
+    const fx = fxAt(I, y);
+    const inflRev = Math.pow(1 + inflRevAt(I, y), y);
+    const inflEgp = Math.pow(1 + inflEgpAt(I, y), y);
+    const inflElec = Math.pow(1 + inflElecAt(I, y), y);
+    const inflUsd = Math.pow(1 + inflUsdAt(I, y), y);
+    const minTake = minTakeAt(I, y);
+    const installedY = capacityM3DayAt(I, y) * 365;
+    const volume = installedY * minTake;
+    const revenue = volume * I.sellingPriceEgpPerM3 * inflRev;
+    const varUsd = I.opexVariableItems.filter(it => it.currency === "USD").reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
+    const varEgp = I.opexVariableItems.filter(it => it.currency === "EGP").reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
+    const variableCost = volume * (varUsd * inflUsd * fx + (varEgp + wellsCost + I.otherVarEgpPerM3) * inflEgp);
+    const elecPrice = (I.electricityCurrency === "USD" ? I.electricityPriceEgpKwh * fx : I.electricityPriceEgpKwh) * inflElec;
+    const electricityCost = I.electricityIncluded ? volume * I.electricityKwhPerM3 * elecPrice : 0;
+    const fixedCost = I.opexFixedItems.reduce((s, it) => {
+      const annual = it.amountPerMonth * (it.employees ?? 1) * (1 + (it.taxPct ?? 0)) * 12;
+      return s + (it.currency === "USD" ? annual * fx * inflUsd : annual * inflEgp);
+    }, 0);
+    const sgaBase = sgaMonthlyOwn * 12;
+    const sga = I.sgaCurrency === "USD" ? sgaBase * fx * inflUsd : sgaBase * inflEgp;
+    const ebitda = revenue - fixedCost - variableCost - electricityCost - sga - mmSchedule[y];
+    const dep = capexResolved.reduce((s, it) => s + (it.depreciationYears > 0 && y < it.depreciationYears ? it.annualDepreciation : 0), 0);
+    const ebit = ebitda - dep;
+    const tax = Math.max(0, ebit) * I.taxRate;
+    preEbitda.push(ebitda); preEbit.push(ebit); preCfads.push(ebitda - tax);
+  }
+
+  // Rebuild sculpted schedule using CFADS if needed
+  if (I.debtRepaymentMode === "sculpted") {
+    debtSchedule = buildSeniorSchedule(preCfads);
+  }
+
+  // ── Year-by-year rows ──
+  const rows: YearRow[] = [];
+  let prevAR = 0;
+  let cumDep = 0;
+  let cash = 0;
+  let retained = 0;
+  let shlOutstanding = shlAmount;
+  const ppeGross = totalCapexWithIdc;
+  const paidInEquity = equityAmount;
+
+  // Construction (yearIdx = -1)
+  rows.push({
+    year: I.startYear - 1, yearIdx: -1, fx: fx0,
+    volumeM3: 0, pricePerM3: 0,
+    revenue: 0, fixedCost: 0, variableCost: 0, electricityCost: 0,
+    operatingCost: 0, sga: 0, ebitda: 0, depreciation: 0, ebit: 0,
+    interest: 0, ebt: 0, tax: 0, netProfit: 0,
+    capex: -totalCapexWithIdc, debtDraw: debtAmount + shlAmount, principalRepay: 0,
+    workingCapDelta: 0,
+    fcff: -totalCapexWithIdc,
+    fcfe: -totalCapexWithIdc + debtAmount + shlAmount,
+    debtOpening: 0, debtClosing: debtAmount, rate: 0, dscr: NaN,
+    ppeGross, accumDep: 0, ppeNet: ppeGross,
+    accountsReceivable: 0, cash: 0,
+    totalAssets: ppeGross,
+    paidInEquity, retainedEarnings: 0, totalEquity: paidInEquity,
+    totalLiabAndEquity: paidInEquity + debtAmount + shlAmount,
+  });
+
   for (let y = 0; y < N; y++) {
     const fx = fxAt(I, y);
     const inflRev = Math.pow(1 + inflRevAt(I, y), y);
@@ -591,11 +657,10 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
 
     const minTake = minTakeAt(I, y);
     const installedY = capacityM3DayAt(I, y) * 365;
-    const volume = installedY * minTake * I.realizedPctOfMinTake;
+    const volume = installedY * minTake;
     const price = I.sellingPriceEgpPerM3 * inflRev;
     const revenue = volume * price;
 
-    // OPEX — variable: USD items × inflUsd × fx_y; EGP items × inflEgp; tax applied per-item
     const varUsd = I.opexVariableItems.filter(it => it.currency === "USD")
       .reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
     const varEgp = I.opexVariableItems.filter(it => it.currency === "EGP")
@@ -610,24 +675,30 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
       return s + (it.currency === "USD" ? annual * fx * inflUsd : annual * inflEgp);
     }, 0);
 
-    const operatingCost = fixedCost + variableCost + electricityCost;
+    const mmCost = mmSchedule[y];
+    const operatingCost = fixedCost + variableCost + electricityCost + mmCost;
 
     const sgaBase = sgaMonthlyOwn * 12;
     const sga = I.sgaCurrency === "USD" ? sgaBase * fx * inflUsd : sgaBase * inflEgp;
 
     const ebitda = revenue - operatingCost - sga;
 
-    // Per-item depreciation respects each item's depreciation tenor
     const depreciation = capexResolved.reduce((s, it) =>
       s + (it.depreciationYears > 0 && y < it.depreciationYears ? it.annualDepreciation : 0), 0);
 
     const ebit = ebitda - depreciation;
     const ds = y < tenor ? debtSchedule[y] : null;
-    const interest = ds ? ds.interest : 0;
-    const principalRepay = ds ? ds.principal : 0;
+    const seniorInterest = ds ? ds.interest : 0;
+    const seniorPrincipal = ds ? ds.principal : 0;
     const debtOpen = ds ? ds.open : 0;
     const debtClose = ds ? ds.close : 0;
     const rate = ds ? ds.rate : 0;
+    const shl = y < shlTenor ? shlSchedule[y] : null;
+    const shlInterest = shl ? shl.interest : 0;
+    const shlPrincipal = shl ? shl.principal : 0;
+    if (shl) shlOutstanding = shl.close;
+    const interest = seniorInterest + shlInterest;
+    const principalRepay = seniorPrincipal + shlPrincipal;
     const ebt = ebit - interest;
     const tax = Math.max(0, ebt) * I.taxRate;
     const netProfit = ebt - tax;
@@ -637,14 +708,29 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     prevAR = ar;
 
     const taxAdjUnlev = Math.max(0, ebit) * I.taxRate;
-    const fcff = ebit - taxAdjUnlev + depreciation + wcDelta;
-    const fcfe = netProfit + depreciation + wcDelta - principalRepay;
+    let fcff = ebit - taxAdjUnlev + depreciation + wcDelta;
+    let fcfe = netProfit + depreciation + wcDelta - principalRepay;
+
+    // Terminal value at last operating year
+    if (y === N - 1) {
+      let tv = 0;
+      if (I.terminalValueMode === "salvage") tv = totalCapexWithIdc * I.salvageValuePct;
+      else if (I.terminalValueMode === "ebitda-multiple") tv = ebitda * I.exitEbitdaMultiple;
+      else if (I.terminalValueMode === "perpetuity") {
+        const g = I.terminalGrowth;
+        const r = I.discountRateProject;
+        if (r > g) tv = (ebitda * (1 - I.taxRate)) * (1 + g) / (r - g);
+      }
+      fcff += tv;
+      fcfe += tv - debtClose - shlOutstanding; // repay residual debt at exit
+    }
+
     const cfads = ebitda - tax;
-    const debtService = interest + principalRepay;
-    const dscr = debtService > 0 ? cfads / debtService : NaN;
+    const seniorDS = seniorInterest + seniorPrincipal;
+    const dscr = seniorDS > 0 ? cfads / seniorDS : NaN;
 
     cumDep += depreciation;
-    cash += fcfe; // simple: cash builds with FCFE (pre-distributions)
+    cash += fcfe;
     retained += netProfit;
 
     const ppeNet = Math.max(0, ppeGross - cumDep);
@@ -659,12 +745,12 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
       interest, ebt, tax, netProfit,
       capex: 0, debtDraw: 0, principalRepay,
       workingCapDelta: wcDelta, fcff, fcfe,
-      debtOpening: debtOpen, debtClosing: debtClose, rate, dscr,
+      debtOpening: debtOpen, debtClosing: debtClose + shlOutstanding, rate, dscr,
       ppeGross, accumDep: cumDep, ppeNet,
       accountsReceivable: ar, cash,
       totalAssets,
       paidInEquity, retainedEarnings: retained, totalEquity,
-      totalLiabAndEquity: totalEquity + debtClose,
+      totalLiabAndEquity: totalEquity + debtClose + shlOutstanding,
     });
   }
 
