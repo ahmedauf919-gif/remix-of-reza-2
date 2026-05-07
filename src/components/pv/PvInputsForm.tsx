@@ -239,7 +239,7 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
                   <TableHead className="w-32">Cost / Unit</TableHead>
                   <TableHead className="w-20">VAT %</TableHead>
                   <TableHead className="w-20">Customs %</TableHead>
-                  <TableHead className="w-20">Life (yrs)</TableHead>
+                  <TableHead className="w-24">Life (yrs)</TableHead>
                   <TableHead className="w-32">Dep. Method</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
