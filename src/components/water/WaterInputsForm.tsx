@@ -128,11 +128,6 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
       </FullSection>
 
       <FullSection title="Plant Capacity & Take">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          {F("capacityM3Day", "Installed Capacity (scalar fallback)", "m³/day")}
-          {F("minTakePct", "Min Take (scalar fallback)", "decimal", 0.01)}
-          {F("realizedPctOfMinTake", "Realized % of Min Take", "decimal", 0.01)}
-        </div>
         <div className="space-y-4">
           <YearArrayEditor label="Installed Capacity per year (m³/day)" years={N} values={inputs.capacityM3DayPerYear} fallback={inputs.capacityM3Day} onChange={(a) => set("capacityM3DayPerYear", a)} step={50}/>
           <YearArrayEditor label="Min Take % per year" years={N} values={inputs.minTakePctPerYear} fallback={inputs.minTakePct} onChange={(a) => set("minTakePctPerYear", a)} step={0.5} asPct/>
@@ -180,13 +175,62 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
         </div>
       </FullSection>
 
-      <FullSection title="Financing — interest rate per year">
+      <FullSection title="Financing — Senior Debt">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
           <Field label="Debt %" value={inputs.debtToEquity * 100} onChange={(n) => set("debtToEquity", Math.max(0, Math.min(100, n)) / 100)} step={1} suffix="enter 80 for 80%"/>
           {F("loanTenorYears", "Loan Tenor", "years")}
           {F("bankSpread", "Bank Spread", "decimal", 0.005)}
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Repayment Mode</Label>
+            <Select value={inputs.debtRepaymentMode} onValueChange={(v) => set("debtRepaymentMode", v as any)}>
+              <SelectTrigger><SelectValue/></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="equal">Equal principal</SelectItem>
+                <SelectItem value="annuity">Annuity (level payment)</SelectItem>
+                <SelectItem value="sculpted">Sculpted to target DSCR</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {F("debtGraceYears", "Grace Period (interest-only)", "years")}
+          {inputs.debtRepaymentMode === "sculpted" && F("targetDSCR", "Target DSCR (sculpting)", "x", 0.05)}
         </div>
         <YearArrayEditor label="Interest rate per loan year (%)" years={Tenor} values={inputs.debtRatePerYear} fallback={inputs.debtRateYr1} onChange={(a) => set("debtRatePerYear", a)} step={0.1} asPct/>
+      </FullSection>
+
+      <FullSection title="Shareholder Loan (subordinated)">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <Field label="SHL % of Equity" value={inputs.shareholderLoanPct * 100} onChange={(n) => set("shareholderLoanPct", Math.max(0, Math.min(100, n)) / 100)} step={1} suffix="enter 30 for 30%"/>
+          {F("shareholderLoanRate", "SHL Rate", "decimal", 0.005)}
+          {F("shareholderLoanTenorYears", "SHL Tenor", "years")}
+          {F("shareholderLoanGraceYears", "SHL Grace", "years")}
+        </div>
+      </FullSection>
+
+      <FullSection title="Maintenance Reserve (major maintenance)">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          {F("mmAnnualPctOfCapex", "Annual MM Reserve % of CAPEX (scalar fallback)", "decimal", 0.001)}
+        </div>
+        <YearArrayEditor label="MM Reserve % of CAPEX per year" years={N} values={inputs.mmSchedulePctOfCapex} fallback={inputs.mmAnnualPctOfCapex} onChange={(a) => set("mmSchedulePctOfCapex", a)} step={0.1} asPct/>
+      </FullSection>
+
+      <FullSection title="Terminal Value (end of contract)">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Mode</Label>
+            <Select value={inputs.terminalValueMode} onValueChange={(v) => set("terminalValueMode", v as any)}>
+              <SelectTrigger><SelectValue/></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="salvage">Salvage % of CAPEX</SelectItem>
+                <SelectItem value="ebitda-multiple">Exit EBITDA multiple</SelectItem>
+                <SelectItem value="perpetuity">Gordon perpetuity</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {inputs.terminalValueMode === "salvage" && F("salvageValuePct", "Salvage % of CAPEX", "decimal", 0.01)}
+          {inputs.terminalValueMode === "ebitda-multiple" && F("exitEbitdaMultiple", "Exit EBITDA Multiple", "x", 0.5)}
+          {inputs.terminalValueMode === "perpetuity" && F("terminalGrowth", "Terminal Growth (g)", "decimal", 0.005)}
+        </div>
       </FullSection>
 
       <FullSection title="OPEX — Variable (per m³)">
