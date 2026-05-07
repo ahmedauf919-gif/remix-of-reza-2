@@ -214,7 +214,7 @@ export interface ProjectInputs {
   pctRevUsufructLease: number;
   pctRevInsuranceOps: number;
   migaPremium: number;
-  opexVat: number;                // manual VAT applied on final opex (USD '000 p.a., escalated by CPI)
+  opexVat: number;                // legacy — kept for back-compat, no longer used (replaced by per-item opexVatPct)
 
   // Working capital
   daysReceivable: number;
