@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wind, Plus } from "lucide-react";
+import { Wind, Sun, Plus } from "lucide-react";
 
 const models = [
   {
