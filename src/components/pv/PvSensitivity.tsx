@@ -18,7 +18,7 @@ const VARIABLES: VarDef[] = [
   { key: "yieldP90",               label: "Yield P90 (kWh/kWp)",         unit: "abs" },
   { key: "capacityKwp",            label: "Installed capacity (kWp)",     unit: "abs" },
   { key: "lossThereafterPct",      label: "Annual degradation",           unit: "pct" },
-  { key: "maintenancePerMwUsd",    label: "Maintenance USD/MW",           unit: "abs" },
+  { key: "omPerMwUsd",             label: "O&M USD/MW",                    unit: "abs" },
   { key: "insurancePctOfCapex",    label: "Insurance % of CAPEX",         unit: "pct" },
   { key: "debtPct",                label: "Gearing",                       unit: "pct" },
   { key: "spreadPct",              label: "Bank spread",                   unit: "pct" },

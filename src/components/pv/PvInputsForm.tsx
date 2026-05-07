@@ -1,4 +1,5 @@
 import { PvInputs, PvCapexItem, Ccy, VoltageLevel, RepaymentMethod, Periodicity, DepMethod, YieldCase, TariffSource, GOVT_TARIFF_BY_VOLTAGE } from "@/lib/pvModel";
+import { Fragment } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
