@@ -415,7 +415,7 @@ export const CAPEX_TAX_EXCLUDED = new Set<string>([
 ]);
 // Default taxable items (EPC + BoP/civil/grid + everything physical). Financing items default off.
 export const CAPEX_TAXABLE_DEFAULT: Record<string, boolean> = {
-  epcCost: true, substation: true, contingency: true,
+  epcCost: true, substation: true,
   preConstructionCosts: true, developmentPremiums: true, developmentExpenses: true,
   land: true, esMeasures: true, lendersTechAdvisors: true, legalExpenses: true,
   administrativeCosts: true, financialAudit: true, insuranceConstruction: true,
