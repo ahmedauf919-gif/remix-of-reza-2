@@ -387,10 +387,9 @@ export function runWaterModel(I: WaterInputs): WaterOutputs {
     const inflElec = Math.pow(1 + I.electricityInflation, y);
     const inflUsd = Math.pow(1 + I.usdInflation, y);
 
-    const volume = actualCapacityM3Year;
-    const soldVol = soldVolumeM3Year;
+    const volume = soldVolumeM3Year;
     const price = I.sellingPriceEgpPerM3 * inflRev;
-    const revenue = soldVol * price;
+    const revenue = volume * price;
 
     const fixedCost = annualFixedEgp * inflCost;
     const variableCost = volume * (variableEgpFromUsd * inflUsd + (wellsCost + I.otherVarEgpPerM3) * inflCost);
