@@ -298,7 +298,7 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
         <NumberField obj={inputs} k={"constructionMonths" as keyof ProjectInputs}
           f={{ label: "Construction period", unit: "months" }}
           onSet={(v) => onChange({ ...inputs, constructionMonths: Math.max(1, Math.min(36, Math.round(v))) })} />
@@ -311,11 +311,14 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
         <NumberField obj={inputs} k={"customsDutyRate" as keyof ProjectInputs}
           f={{ label: "VAT rate (offshore supply)", pct: true, step: 0.001 }}
           onSet={(v) => onChange({ ...inputs, customsDutyRate: v })} />
+        <NumberField obj={inputs} k={"contingencyPct" as keyof ProjectInputs}
+          f={{ label: "Contingency %", pct: true, step: 0.001 }}
+          onSet={(v) => onChange({ ...inputs, contingencyPct: Math.max(0, v) })} />
       </div>
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <Switch checked={(inputs.taxesCapexAuto ?? 1) === 1}
           onCheckedChange={(v) => onChange({ ...inputs, taxesCapexAuto: v ? 1 : 0 })} />
-        <span>Auto-compute "Taxes (capex)" from Onshore VAT × onshore portion + Offshore VAT × offshore portion on every taxable line. Onshore % + Offshore % must sum to 100. Loan repayment is excluded.</span>
+        <span>Auto-compute "Taxes (capex)" from Onshore VAT × onshore portion + Offshore VAT × offshore portion on every taxable line. Onshore % + Offshore % must sum to 100. Loan repayment is excluded. <b>Contingency</b> is computed as Contingency % × (all capex items + taxes).</span>
       </div>
       <p className="text-xs text-muted-foreground">
         Per-line basis: <b>USD '000</b> = absolute amount; <b>USD/MW</b> = amount per MW × capacity.
