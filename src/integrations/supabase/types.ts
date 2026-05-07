@@ -32,6 +32,24 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_water_scenario: {
+        Row: {
+          id: number
+          inputs: Json
+          updated_at: string
+        }
+        Insert: {
+          id: number
+          inputs: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          inputs?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

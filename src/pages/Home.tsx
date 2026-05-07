@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wind, Sun, Plus } from "lucide-react";
+import { Wind, Sun, Droplets, Plus } from "lucide-react";
 
 const models = [
   {
@@ -17,6 +17,14 @@ const models = [
     description: "Independent duplicate with its own saved assumptions — run a parallel scenario for comparison.",
     icon: Sun,
     href: "/models/reza-2",
+    available: true,
+  },
+  {
+    id: "water",
+    title: "Water (SWRO) Project Finance Model",
+    description: "Seawater RO desalination model: CAPEX, debt sizing, DSCR, LCOM³, equity IRR, tariff allocation and sensitivities.",
+    icon: Droplets,
+    href: "/models/water",
     available: true,
   },
 ];
