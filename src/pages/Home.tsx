@@ -11,6 +11,14 @@ const models = [
     href: "/models/reza",
     available: true,
   },
+  {
+    id: "reza-2",
+    title: "REZA Project Finance Model (Copy)",
+    description: "Duplicate of the REZA project finance model for parallel scenarios and comparisons.",
+    icon: Wind,
+    href: "/models/reza",
+    available: true,
+  },
 ];
 
 export default function Home() {
