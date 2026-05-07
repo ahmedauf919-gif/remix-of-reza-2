@@ -378,9 +378,14 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
                     )}
                   </td>
                   <td className="p-1">
-                    <Input type="number" step={1} className="h-8 font-mono text-xs text-right"
-                      value={String(amount ?? 0)}
-                      onChange={(e) => onChange({ ...inputs, [it.key]: parseFloat(e.target.value) || 0 })} />
+                    {k === "contingency" ? (
+                      <Input type="number" disabled className="h-8 font-mono text-xs text-right opacity-70"
+                        value={(((inputs.contingencyPct ?? 0)) > 0 ? "auto" : String(amount ?? 0))} />
+                    ) : (
+                      <Input type="number" step={1} className="h-8 font-mono text-xs text-right"
+                        value={String(amount ?? 0)}
+                        onChange={(e) => onChange({ ...inputs, [it.key]: parseFloat(e.target.value) || 0 })} />
+                    )}
                   </td>
                   <td className="p-2 text-right font-mono text-muted-foreground">{resolved.toLocaleString(undefined, { maximumFractionDigits: 1 })}</td>
                   <td className="p-1 text-center">
