@@ -45,9 +45,10 @@ const Index = ({ scenarioId = 1 }: { scenarioId?: number }) => {
     }
   };
 
+  const defaultKey = `reza_default_inputs_${scenarioId}`;
   const reset = () => {
     try {
-      const stored = localStorage.getItem("reza_default_inputs");
+      const stored = localStorage.getItem(defaultKey);
       const base = stored ? { ...DEFAULT_INPUTS, ...JSON.parse(stored) } : DEFAULT_INPUTS;
       setInputs(base);
       toast.info(stored ? "Reset to your saved defaults" : "Reset to factory defaults");
@@ -59,7 +60,7 @@ const Index = ({ scenarioId = 1 }: { scenarioId?: number }) => {
 
   const saveAsDefault = () => {
     try {
-      localStorage.setItem("reza_default_inputs", JSON.stringify(inputs));
+      localStorage.setItem(defaultKey, JSON.stringify(inputs));
       toast.success("Current assumptions saved as your default");
     } catch (e) {
       console.error(e);
