@@ -171,24 +171,48 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
             {inputs.tariffSource === "Government" && (
               <>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Voltage Level</Label>
+                  <Label className="text-xs text-muted-foreground">Voltage Level (basis)</Label>
                   <Select value={inputs.voltageLevel} onValueChange={(v) => {
                     const lvl = v as VoltageLevel;
-                    onChange({ ...inputs, voltageLevel: lvl, govtBaseTariffEgp: GOVT_TARIFF_BY_VOLTAGE[lvl] });
+                    onChange({ ...inputs, voltageLevel: lvl, govtBaseTariffEgp: inputs.voltageTariffs?.[lvl] ?? GOVT_TARIFF_BY_VOLTAGE[lvl] });
                   }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {(Object.keys(GOVT_TARIFF_BY_VOLTAGE) as VoltageLevel[]).map(lvl => (
-                        <SelectItem key={lvl} value={lvl}>{lvl} — {GOVT_TARIFF_BY_VOLTAGE[lvl].toFixed(3)} EGP/kWh</SelectItem>
+                      {(Object.keys(inputs.voltageTariffs ?? GOVT_TARIFF_BY_VOLTAGE) as VoltageLevel[]).map(lvl => (
+                        <SelectItem key={lvl} value={lvl}>{lvl} — {(inputs.voltageTariffs?.[lvl] ?? GOVT_TARIFF_BY_VOLTAGE[lvl]).toFixed(3)} EGP/kWh</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                {F("govtBaseTariffEgp", "Base Tariff (Y1)", "EGP/kWh", 0.01)}
                 <PctField label="Default Escalation YoY" value={inputs.govtEscalationPct} onChange={(n) => set("govtEscalationPct", n)} step={0.5}/>
               </>
             )}
           </Section>
+
+          {inputs.tariffSource === "Government" && (
+            <div className="mt-4">
+              <FullSection title="Voltage tariff schedule (EGP/kWh, Y1) — pick which to base model on">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {(Object.keys(GOVT_TARIFF_BY_VOLTAGE) as VoltageLevel[]).map(lvl => (
+                    <div key={lvl} className={`flex items-center gap-2 rounded border p-2 ${inputs.voltageLevel === lvl ? "border-primary bg-primary/5" : ""}`}>
+                      <Button size="sm" variant={inputs.voltageLevel === lvl ? "default" : "outline"}
+                        onClick={() => onChange({ ...inputs, voltageLevel: lvl, govtBaseTariffEgp: inputs.voltageTariffs?.[lvl] ?? GOVT_TARIFF_BY_VOLTAGE[lvl] })}>
+                        {inputs.voltageLevel === lvl ? "✓ Selected" : "Select"}
+                      </Button>
+                      <Label className="flex-1 text-xs">{lvl}</Label>
+                      <Input type="number" step={0.001} className="h-8 w-32"
+                        value={inputs.voltageTariffs?.[lvl] ?? GOVT_TARIFF_BY_VOLTAGE[lvl]}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value) || 0;
+                          const next = { ...(inputs.voltageTariffs ?? GOVT_TARIFF_BY_VOLTAGE), [lvl]: v } as Record<VoltageLevel, number>;
+                          onChange({ ...inputs, voltageTariffs: next, ...(inputs.voltageLevel === lvl ? { govtBaseTariffEgp: v } : {}) });
+                        }} />
+                    </div>
+                  ))}
+                </div>
+              </FullSection>
+            </div>
+          )}
 
           {inputs.tariffSource === "Government" ? (
             <div className="mt-4">
