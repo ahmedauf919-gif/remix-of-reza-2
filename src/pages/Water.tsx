@@ -13,6 +13,7 @@ import { useSharedWaterScenario } from "@/hooks/useSharedWaterScenario";
 const WaterCharts = lazy(() => import("@/components/water/WaterCharts").then(m => ({ default: m.WaterCharts })));
 const WaterSensitivity = lazy(() => import("@/components/water/WaterSensitivity").then(m => ({ default: m.WaterSensitivity })));
 const WaterRecommendations = lazy(() => import("@/components/water/WaterRecommendations").then(m => ({ default: m.WaterRecommendations })));
+const WaterOutput = lazy(() => import("@/components/water/WaterOutput").then(m => ({ default: m.WaterOutput })));
 
 const Fallback = () => <div className="flex items-center justify-center py-16 text-muted-foreground text-sm"><Loader2 className="h-4 w-4 mr-2 animate-spin"/> Loading…</div>;
 
@@ -59,6 +60,7 @@ export default function Water() {
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="inputs">Inputs</TabsTrigger>
+            <TabsTrigger value="output">Output</TabsTrigger>
             <TabsTrigger value="charts">Charts</TabsTrigger>
             <TabsTrigger value="sensitivity">Sensitivity</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
@@ -66,6 +68,7 @@ export default function Water() {
 
           <TabsContent value="summary" className="m-0 pt-6"><WaterSummary m={model}/></TabsContent>
           <TabsContent value="inputs" className="m-0 pt-6"><WaterInputsForm inputs={inputs} onChange={setInputs}/></TabsContent>
+          <TabsContent value="output" className="m-0 pt-6"><Suspense fallback={<Fallback/>}><WaterOutput m={model}/></Suspense></TabsContent>
           <TabsContent value="charts" className="m-0 pt-6"><Suspense fallback={<Fallback/>}><WaterCharts m={model}/></Suspense></TabsContent>
           <TabsContent value="sensitivity" className="m-0 pt-6"><Suspense fallback={<Fallback/>}><WaterSensitivity inputs={deferred}/></Suspense></TabsContent>
           <TabsContent value="recommendations" className="m-0 pt-6"><Suspense fallback={<Fallback/>}><WaterRecommendations m={model}/></Suspense></TabsContent>
