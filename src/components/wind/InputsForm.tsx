@@ -392,8 +392,7 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
                   </td>
                   <td className="p-1">
                     {k === "contingency" ? (
-                      <Input type="number" disabled className="h-8 font-mono text-xs text-right opacity-70"
-                        value={(((inputs.contingencyPct ?? 0)) > 0 ? "auto" : String(amount ?? 0))} />
+                      <span className="text-[10px] text-muted-foreground italic">auto = {((inputs.contingencyPct ?? 0) * 100).toFixed(2)}%</span>
                     ) : (
                       <Input type="number" step={1} className="h-8 font-mono text-xs text-right"
                         value={String(amount ?? 0)}
