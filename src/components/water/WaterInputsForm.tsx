@@ -1,7 +1,11 @@
-import { WaterInputs } from "@/lib/waterModel";
+import { WaterInputs, CapexItem, OpexVarItem, OpexFixedItem, Ccy } from "@/lib/waterModel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Trash2, Plus } from "lucide-react";
 
 const Field = ({ label, value, onChange, step = 1, suffix }: { label: string; value: number; onChange: (n: number) => void; step?: number; suffix?: string }) => (
   <div className="space-y-1">
@@ -17,11 +21,76 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
   </div>
 );
 
+const FullSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="rounded-xl border bg-card p-5 shadow-sm">
+    <h3 className="font-semibold mb-3">{title}</h3>
+    {children}
+  </div>
+);
+
+// Year-array editor (compact horizontal scroller)
+function YearArrayEditor({
+  label, years, values, fallback, onChange, step = 0.001, asPct = false,
+}: { label: string; years: number; values: number[] | undefined; fallback: number; onChange: (a: number[]) => void; step?: number; asPct?: boolean }) {
+  const arr = Array.from({ length: years }, (_, i) => values?.[i] ?? fallback);
+  const update = (i: number, v: number) => {
+    const n = [...arr]; n[i] = v; onChange(n);
+  };
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">{label}</Label>
+        <Button size="sm" variant="ghost" onClick={() => onChange([])}>Reset to scalar</Button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="text-xs">
+          <thead><tr>{arr.map((_, i) => <th key={i} className="px-1 font-normal text-muted-foreground">Y{i + 1}</th>)}</tr></thead>
+          <tbody><tr>{arr.map((v, i) => (
+            <td key={i} className="px-1">
+              <Input type="number" step={step} value={asPct ? +(v * 100).toFixed(4) : v}
+                onChange={(e) => {
+                  const raw = parseFloat(e.target.value);
+                  update(i, asPct ? (isFinite(raw) ? raw / 100 : 0) : (isFinite(raw) ? raw : 0));
+                }}
+                className="h-8 w-20" />
+            </td>
+          ))}</tr></tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onChange: (i: WaterInputs) => void }) => {
   const set = <K extends keyof WaterInputs>(k: K, v: WaterInputs[K]) => onChange({ ...inputs, [k]: v });
   const F = (k: keyof WaterInputs, label: string, suffix?: string, step = 1) => (
     <Field label={label} value={inputs[k] as number} onChange={(n) => set(k, n as any)} step={step} suffix={suffix} />
   );
+
+  // CAPEX item helpers
+  const updateCapex = (idx: number, patch: Partial<CapexItem>) => {
+    const next = inputs.capexItems.map((it, i) => i === idx ? { ...it, ...patch } : it);
+    set("capexItems", next);
+  };
+  const addCapex = () => set("capexItems", [...inputs.capexItems, { key: `item${Date.now()}`, label: "New Item", currency: "USD", amount: 0, depreciationYears: inputs.depreciationYears }]);
+  const removeCapex = (idx: number) => set("capexItems", inputs.capexItems.filter((_, i) => i !== idx));
+
+  const updateVar = (idx: number, patch: Partial<OpexVarItem>) => {
+    const next = inputs.opexVariableItems.map((it, i) => i === idx ? { ...it, ...patch } : it);
+    set("opexVariableItems", next);
+  };
+  const addVar = () => set("opexVariableItems", [...inputs.opexVariableItems, { key: `var${Date.now()}`, label: "New Item", currency: "USD", amountPerM3: 0 }]);
+  const removeVar = (idx: number) => set("opexVariableItems", inputs.opexVariableItems.filter((_, i) => i !== idx));
+
+  const updateFixed = (idx: number, patch: Partial<OpexFixedItem>) => {
+    const next = inputs.opexFixedItems.map((it, i) => i === idx ? { ...it, ...patch } : it);
+    set("opexFixedItems", next);
+  };
+  const addFixed = () => set("opexFixedItems", [...inputs.opexFixedItems, { key: `fix${Date.now()}`, label: "New Item", currency: "EGP", amountPerMonth: 0 }]);
+  const removeFixed = (idx: number) => set("opexFixedItems", inputs.opexFixedItems.filter((_, i) => i !== idx));
+
+  const N = inputs.contractYears;
+  const Tenor = inputs.loanTenorYears;
 
   return (
     <div className="space-y-6">
@@ -36,88 +105,174 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
         {F("contractYears", "Contract Duration", "years")}
       </Section>
 
-      <Section title="FX & Inflation">
-        {F("fxRateEgpPerUsd", "FX Rate", "EGP/USD", 0.01)}
-        {F("egpInflation", "EGP Cost Inflation", "%", 0.001)}
-        {F("revenueInflation", "Revenue Inflation", "%", 0.001)}
-        {F("electricityInflation", "Electricity Inflation", "%", 0.001)}
-        {F("usdInflation", "USD Inflation", "%", 0.001)}
-      </Section>
+      <FullSection title="FX & Inflation (per year, full PPA)">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          {F("fxRateEgpPerUsd", "FX Rate (scalar fallback)", "EGP/USD", 0.01)}
+          {F("egpInflation", "EGP Cost Inflation", "decimal", 0.001)}
+          {F("revenueInflation", "Revenue Inflation", "decimal", 0.001)}
+          {F("electricityInflation", "Electricity Inflation", "decimal", 0.001)}
+          {F("usdInflation", "USD Inflation", "decimal", 0.001)}
+        </div>
+        <div className="space-y-4">
+          <YearArrayEditor label="FX EGP/USD per year" years={N} values={inputs.fxRatePerYear} fallback={inputs.fxRateEgpPerUsd} onChange={(a) => set("fxRatePerYear", a)} step={0.01}/>
+          <YearArrayEditor label="EGP Inflation per year (%)" years={N} values={inputs.egpInflationPerYear} fallback={inputs.egpInflation} onChange={(a) => set("egpInflationPerYear", a)} step={0.1} asPct/>
+          <YearArrayEditor label="Revenue Inflation per year (%)" years={N} values={inputs.revenueInflationPerYear} fallback={inputs.revenueInflation} onChange={(a) => set("revenueInflationPerYear", a)} step={0.1} asPct/>
+          <YearArrayEditor label="Electricity Inflation per year (%)" years={N} values={inputs.electricityInflationPerYear} fallback={inputs.electricityInflation} onChange={(a) => set("electricityInflationPerYear", a)} step={0.1} asPct/>
+          <YearArrayEditor label="USD Inflation per year (%)" years={N} values={inputs.usdInflationPerYear} fallback={inputs.usdInflation} onChange={(a) => set("usdInflationPerYear", a)} step={0.1} asPct/>
+        </div>
+      </FullSection>
 
-      <Section title="Plant Capacity & Take">
-        {F("capacityM3Day", "Installed Capacity", "m³/day")}
-        {F("minTakePct", "Year-1 Min Take", "%", 0.01)}
-        {F("realizedPctOfMinTake", "Realized % of Min Take", "%", 0.01)}
-      </Section>
+      <FullSection title="Plant Capacity & Take">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          {F("capacityM3Day", "Installed Capacity", "m³/day")}
+          {F("minTakePct", "Min Take (scalar fallback)", "decimal", 0.01)}
+          {F("realizedPctOfMinTake", "Realized % of Min Take", "decimal", 0.01)}
+        </div>
+        <YearArrayEditor label="Min Take % per year" years={N} values={inputs.minTakePctPerYear} fallback={inputs.minTakePct} onChange={(a) => set("minTakePctPerYear", a)} step={0.5} asPct/>
+      </FullSection>
 
       <Section title="Pricing">
         {F("sellingPriceEgpPerM3", "Selling Price", "EGP/m³", 0.5)}
-        {F("pctPeggedToUsd", "% Pegged to USD", "%", 0.01)}
+        {F("pctPeggedToUsd", "% Pegged to USD", "decimal", 0.01)}
       </Section>
 
-      <Section title="CAPEX">
-        {F("feedSysUsd", "Feed System", "USD")}
-        {F("pretreatmentUsd", "Pretreatment", "USD")}
-        {F("roUnitUsd", "RO Unit", "USD")}
-        {F("bwCipUsd", "BW/CIP", "USD")}
-        {F("installationEgp", "Installation", "EGP")}
-        {F("drillingUsd", "Drilling/Wells", "USD")}
-        {F("contingencyPct", "Contingency", "%", 0.01)}
-      </Section>
-
-      <Section title="Financing">
-        {F("debtToEquity", "Debt %", "of total", 0.01)}
-        {F("loanTenorYears", "Loan Tenor", "years")}
-        {F("debtRateYr1", "Yr-1 Interest Rate", "%", 0.01)}
-        {F("debtRateStepDown", "Annual Step-down", "pp", 0.01)}
-        {F("debtRateFloor", "Rate Floor", "%", 0.01)}
-        {F("bankSpread", "Bank Spread", "%", 0.005)}
-      </Section>
-
-      <Section title="OPEX — Fixed & Electricity">
-        <div className="flex items-center justify-between rounded border p-2">
-          <Label>Electricity Included</Label>
-          <Switch checked={inputs.electricityIncluded} onCheckedChange={(v) => set("electricityIncluded", v)} />
+      <FullSection title="CAPEX (itemized)">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead className="w-24">Currency</TableHead>
+              <TableHead className="w-40">Amount</TableHead>
+              <TableHead className="w-32">Depreciation (yrs)</TableHead>
+              <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {inputs.capexItems.map((it, i) => (
+              <TableRow key={i}>
+                <TableCell><Input value={it.label} onChange={(e) => updateCapex(i, { label: e.target.value })} /></TableCell>
+                <TableCell>
+                  <Select value={it.currency} onValueChange={(v) => updateCapex(i, { currency: v as Ccy })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="EGP">EGP</SelectItem></SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell><Input type="number" step={100} value={it.amount} onChange={(e) => updateCapex(i, { amount: parseFloat(e.target.value) || 0 })} /></TableCell>
+                <TableCell><Input type="number" step={1} value={it.depreciationYears} onChange={(e) => updateCapex(i, { depreciationYears: parseInt(e.target.value) || 0 })} /></TableCell>
+                <TableCell><Button size="icon" variant="ghost" onClick={() => removeCapex(i)}><Trash2 className="h-4 w-4"/></Button></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <Button size="sm" variant="outline" onClick={addCapex} className="mt-3 gap-2"><Plus className="h-4 w-4"/>Add CAPEX item</Button>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          {F("contingencyPct", "Contingency", "decimal", 0.01)}
         </div>
-        {F("electricityPriceEgpKwh", "Electricity Price", "EGP/kWh", 0.01)}
-        {F("electricityKwhPerM3", "Electricity Use", "kWh/m³", 0.1)}
-        <div className="flex items-center justify-between rounded border p-2">
-          <Label>Wells Included</Label>
-          <Switch checked={inputs.wellsIncluded} onCheckedChange={(v) => set("wellsIncluded", v)} />
+      </FullSection>
+
+      <FullSection title="Financing — interest rate per year">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          {F("debtToEquity", "Debt %", "of total", 0.01)}
+          {F("loanTenorYears", "Loan Tenor", "years")}
+          {F("debtRateYr1", "Yr-1 Rate (fallback)", "decimal", 0.005)}
+          {F("debtRateStepDown", "Annual Step-down (fallback)", "pp", 0.005)}
+          {F("debtRateFloor", "Rate Floor (fallback)", "decimal", 0.005)}
+          {F("bankSpread", "Bank Spread", "decimal", 0.005)}
         </div>
-        {F("wellsCostEgpPerM3", "Wells Cost", "EGP/m³", 0.01)}
-        {F("otherVarEgpPerM3", "Other Variable", "EGP/m³", 0.01)}
-        {F("salariesEgpMonth", "Salaries", "EGP/month")}
-        {F("otherFixedEgpMonth", "Other Fixed", "EGP/month")}
-      </Section>
+        <YearArrayEditor label="Interest rate per loan year (%)" years={Tenor} values={inputs.debtRatePerYear} fallback={inputs.debtRateYr1} onChange={(a) => set("debtRatePerYear", a)} step={0.1} asPct/>
+      </FullSection>
 
-      <Section title="OPEX — Variable USD/m³ (RO Consumables)">
-        {F("chemicalsUsdPerM3", "Chemicals", "USD/m³", 0.001)}
-        {F("smbsUsdPerM3", "SMBS", "USD/m³", 0.001)}
-        {F("hppUsdPerM3", "HPP", "USD/m³", 0.001)}
-        {F("feedUsdPerM3", "Feed", "USD/m³", 0.0001)}
-        {F("mmfUsdPerM3", "MMF", "USD/m³", 0.0001)}
-        {F("dosingUsdPerM3", "Dosing Pumps", "USD/m³", 0.0001)}
-        {F("boosterUsdPerM3", "Booster/Turbo", "USD/m³", 0.0001)}
-        {F("vfdUsdPerM3", "VFD", "USD/m³", 0.0001)}
-        {F("pxUsdPerM3", "PX", "USD/m³", 0.0001)}
-        {F("pressureVesselUsdPerM3", "Pressure Vessel", "USD/m³", 0.0001)}
-        {F("cfsUsdPerM3", "CF's", "USD/m³", 0.0001)}
-        {F("instrumentationUsdPerM3", "Instrumentation", "USD/m³", 0.0001)}
-        {F("cipPumpsUsdPerM3", "CIP Pumps", "USD/m³", 0.0001)}
-        {F("pvcUsdPerM3", "PVC", "USD/m³", 0.0001)}
-      </Section>
+      <FullSection title="OPEX — Variable (per m³)">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead className="w-24">Currency</TableHead>
+              <TableHead className="w-40">Per m³</TableHead>
+              <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {inputs.opexVariableItems.map((it, i) => (
+              <TableRow key={i}>
+                <TableCell><Input value={it.label} onChange={(e) => updateVar(i, { label: e.target.value })} /></TableCell>
+                <TableCell>
+                  <Select value={it.currency} onValueChange={(v) => updateVar(i, { currency: v as Ccy })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="EGP">EGP</SelectItem></SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell><Input type="number" step={0.0001} value={it.amountPerM3} onChange={(e) => updateVar(i, { amountPerM3: parseFloat(e.target.value) || 0 })} /></TableCell>
+                <TableCell><Button size="icon" variant="ghost" onClick={() => removeVar(i)}><Trash2 className="h-4 w-4"/></Button></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <Button size="sm" variant="outline" onClick={addVar} className="mt-3 gap-2"><Plus className="h-4 w-4"/>Add variable item</Button>
 
-      <Section title="SG&A, Depreciation, WC, Tax">
-        {F("headOfficeEgpMonth", "Head Office", "EGP/month")}
-        {F("headOfficeAllocPct", "HQ Allocation", "%", 0.01)}
-        {F("otherSgaEgpMonth", "Other SG&A", "EGP/month")}
-        {F("depreciationYears", "Depreciation Tenor", "years")}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+          <div className="flex items-center justify-between rounded border p-2 col-span-1">
+            <Label>Electricity Included</Label>
+            <Switch checked={inputs.electricityIncluded} onCheckedChange={(v) => set("electricityIncluded", v)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Electricity Currency</Label>
+            <Select value={inputs.electricityCurrency} onValueChange={(v) => set("electricityCurrency", v as Ccy)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="EGP">EGP</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent>
+            </Select>
+          </div>
+          {F("electricityPriceEgpKwh", `Electricity Price (${inputs.electricityCurrency}/kWh)`, undefined, 0.01)}
+          {F("electricityKwhPerM3", "Electricity Use", "kWh/m³", 0.1)}
+        </div>
+      </FullSection>
+
+      <FullSection title="OPEX — Fixed (per month)">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead className="w-24">Currency</TableHead>
+              <TableHead className="w-40">Per month</TableHead>
+              <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {inputs.opexFixedItems.map((it, i) => (
+              <TableRow key={i}>
+                <TableCell><Input value={it.label} onChange={(e) => updateFixed(i, { label: e.target.value })} /></TableCell>
+                <TableCell>
+                  <Select value={it.currency} onValueChange={(v) => updateFixed(i, { currency: v as Ccy })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="EGP">EGP</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell><Input type="number" step={100} value={it.amountPerMonth} onChange={(e) => updateFixed(i, { amountPerMonth: parseFloat(e.target.value) || 0 })} /></TableCell>
+                <TableCell><Button size="icon" variant="ghost" onClick={() => removeFixed(i)}><Trash2 className="h-4 w-4"/></Button></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <Button size="sm" variant="outline" onClick={addFixed} className="mt-3 gap-2"><Plus className="h-4 w-4"/>Add fixed item</Button>
+      </FullSection>
+
+      <Section title="SG&A, WC, Tax">
+        {F("headOfficeEgpMonth", "Head Office", "per month")}
+        {F("headOfficeAllocPct", "HQ Allocation", "decimal", 0.01)}
+        {F("otherSgaEgpMonth", "Other SG&A", "per month")}
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">SG&A Currency</Label>
+          <Select value={inputs.sgaCurrency} onValueChange={(v) => set("sgaCurrency", v as Ccy)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="EGP">EGP</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent>
+          </Select>
+        </div>
+        {F("depreciationYears", "Default Depreciation Tenor", "years")}
         {F("receivablesDays", "Receivables", "DOH")}
         {F("payablesDays", "Payables", "DOH")}
-        {F("taxRate", "Tax Rate", "%", 0.01)}
-        {F("discountRateProject", "Project Discount Rate", "%", 0.01)}
-        {F("discountRateEquity", "Equity Discount Rate", "%", 0.01)}
+        {F("taxRate", "Tax Rate", "decimal", 0.01)}
+        {F("discountRateProject", "Project Discount Rate", "decimal", 0.01)}
+        {F("discountRateEquity", "Equity Discount Rate", "decimal", 0.01)}
       </Section>
     </div>
   );
