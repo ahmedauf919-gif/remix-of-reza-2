@@ -124,11 +124,14 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
 
       <FullSection title="Plant Capacity & Take">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          {F("capacityM3Day", "Installed Capacity", "m³/day")}
+          {F("capacityM3Day", "Installed Capacity (scalar fallback)", "m³/day")}
           {F("minTakePct", "Min Take (scalar fallback)", "decimal", 0.01)}
           {F("realizedPctOfMinTake", "Realized % of Min Take", "decimal", 0.01)}
         </div>
-        <YearArrayEditor label="Min Take % per year" years={N} values={inputs.minTakePctPerYear} fallback={inputs.minTakePct} onChange={(a) => set("minTakePctPerYear", a)} step={0.5} asPct/>
+        <div className="space-y-4">
+          <YearArrayEditor label="Installed Capacity per year (m³/day)" years={N} values={inputs.capacityM3DayPerYear} fallback={inputs.capacityM3Day} onChange={(a) => set("capacityM3DayPerYear", a)} step={50}/>
+          <YearArrayEditor label="Min Take % per year" years={N} values={inputs.minTakePctPerYear} fallback={inputs.minTakePct} onChange={(a) => set("minTakePctPerYear", a)} step={0.5} asPct/>
+        </div>
       </FullSection>
 
       <Section title="Pricing">
