@@ -25,17 +25,22 @@ export const WaterCharts = ({ m }: { m: WaterOutputs }) => {
     FCFE: r.fcfe / 1000,
   }));
 
-  // PPA contribution: each major cost line / tariff (Y1 view)
+  // Per-line PPA tariff composition (Reza-style breakdown)
   const tariff = m.tariffEgpPerM3;
-  const ppaData = [
-    { name: "Fixed costs", value: m.fixedCostPerM3, pct: m.fixedCostPerM3 / tariff },
-    { name: "Variable (FX)", value: m.variableCostPerM3 - (m.inputs.wellsIncluded ? m.inputs.wellsCostEgpPerM3 : 0) - m.inputs.otherVarEgpPerM3, pct: 0 },
-    { name: "Wells & Other Var", value: (m.inputs.wellsIncluded ? m.inputs.wellsCostEgpPerM3 : 0) + m.inputs.otherVarEgpPerM3, pct: 0 },
-    { name: "Electricity", value: m.electricityCostPerM3, pct: m.electricityCostPerM3 / tariff },
-    { name: "Depreciation", value: m.depreciationPerM3, pct: m.depreciationPerM3 / tariff },
-  ].map(d => ({ ...d, pct: d.value / tariff, label: `${fmtPct(d.value / tariff)}` }));
-  const margin = Math.max(0, 1 - ppaData.reduce((s, d) => s + d.pct, 0));
-  ppaData.push({ name: "Margin / Profit", value: tariff * margin, pct: margin, label: fmtPct(margin) });
+  const groupColor: Record<string, string> = {
+    "CAPEX": "hsl(var(--primary))",
+    "OPEX-Var": "hsl(var(--accent))",
+    "OPEX-Fixed": "hsl(var(--muted-foreground))",
+    "Electricity": "hsl(var(--destructive))",
+    "SG&A": "hsl(220 70% 50%)",
+    "Financing": "hsl(280 60% 55%)",
+    "Tax": "hsl(35 90% 50%)",
+    "Margin": "hsl(142 70% 45%)",
+  };
+  const compData = [...m.tariffComposition]
+    .filter(c => c.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .map(c => ({ ...c, label: fmtPct(c.pct) }));
 
   return (
     <div className="space-y-6">
