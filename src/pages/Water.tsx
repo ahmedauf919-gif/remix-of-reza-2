@@ -31,7 +31,24 @@ export default function Water() {
     } catch (e) { console.error(e); toast.error("Failed to generate memo", { id: "wmemo" }); }
   };
 
-  const reset = () => { setInputs(DEFAULT_WATER_INPUTS); toast.info("Reset to factory defaults"); };
+  const defaultKey = `water_default_inputs_1`;
+  const reset = () => {
+    try {
+      const stored = localStorage.getItem(defaultKey);
+      const base = stored ? { ...DEFAULT_WATER_INPUTS, ...JSON.parse(stored) } : DEFAULT_WATER_INPUTS;
+      setInputs(base);
+      toast.info(stored ? "Reset to your saved defaults" : "Reset to factory defaults");
+    } catch {
+      setInputs(DEFAULT_WATER_INPUTS);
+      toast.info("Reset to factory defaults");
+    }
+  };
+  const saveAsDefault = () => {
+    try {
+      localStorage.setItem(defaultKey, JSON.stringify(inputs));
+      toast.success("Current assumptions saved as your default");
+    } catch (e) { console.error(e); toast.error("Failed to save defaults"); }
+  };
 
   return (
     <div className="min-h-screen bg-background">
