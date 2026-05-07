@@ -402,6 +402,10 @@ export interface ProjectInputs {
 
   // Per-OPEX-item: basis = "perMW" → stored amount is USD/MW p.a.; else absolute USD '000 p.a.
   opexBasisPerMW?: Partial<Record<string, 0 | 1>>;
+  // Per-OPEX-item: VAT rate (decimal) added on top of the resolved amount.
+  opexVatPct?: Partial<Record<string, number>>;
+  // Contingency as a % (decimal) applied to total capex AFTER onshore + offshore taxes.
+  contingencyPct?: number;
 }
 
 // Phase 2 helpers ---------------------------------------------------------------
