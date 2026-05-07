@@ -8,7 +8,8 @@ export interface CapexItem {
   key: string;
   label: string;
   currency: Ccy;
-  amount: number;            // in its own currency
+  amount: number;            // in its own currency (pre-tax)
+  taxPct?: number;           // e.g. 0.14 for 14% VAT/duty applied on top of amount
   depreciationYears: number; // straight line; 0 = no depreciation
 }
 
