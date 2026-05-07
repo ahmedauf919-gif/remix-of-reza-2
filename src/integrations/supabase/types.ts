@@ -21,7 +21,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          id?: number
+          id: number
           inputs: Json
           updated_at?: string
         }

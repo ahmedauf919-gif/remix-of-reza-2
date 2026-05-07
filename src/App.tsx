@@ -19,7 +19,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/models/reza" element={<Index />} />
+            <Route path="/models/reza" element={<Index scenarioId={1} />} />
+            <Route path="/models/reza-2" element={<Index scenarioId={2} />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -14,9 +14,9 @@ const models = [
   {
     id: "reza-2",
     title: "REZA Project Finance Model (Copy)",
-    description: "Duplicate of the REZA project finance model for parallel scenarios and comparisons.",
+    description: "Independent duplicate with its own saved assumptions — run a parallel scenario for comparison.",
     icon: Wind,
-    href: "/models/reza",
+    href: "/models/reza-2",
     available: true,
   },
 ];

@@ -8,7 +8,7 @@ import { ProjectInputs, DEFAULT_INPUTS } from "@/lib/windModel";
  * - Every state change is debounced and upserted to row id=1.
  * - Realtime updates from other clients are merged in unless they echo our own write.
  */
-export function useSharedScenario() {
+export function useSharedScenario(scenarioId: number = 1) {
   const [inputs, setInputs] = useState<ProjectInputs>(DEFAULT_INPUTS);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -18,28 +18,32 @@ export function useSharedScenario() {
   // Initial load
   useEffect(() => {
     let cancelled = false;
+    setLoaded(false);
     (async () => {
       const { data, error } = await supabase
         .from("shared_scenario")
         .select("inputs")
-        .eq("id", 1)
+        .eq("id", scenarioId)
         .maybeSingle();
       if (cancelled) return;
       if (!error && data?.inputs) {
         setInputs({ ...DEFAULT_INPUTS, ...(data.inputs as Partial<ProjectInputs>) });
         lastWrittenJson.current = JSON.stringify(data.inputs);
+      } else {
+        setInputs(DEFAULT_INPUTS);
+        lastWrittenJson.current = "";
       }
       setLoaded(true);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [scenarioId]);
 
   // Realtime sync from other browsers
   useEffect(() => {
     const ch = supabase
-      .channel("shared_scenario_sync")
+      .channel(`shared_scenario_sync_${scenarioId}`)
       .on("postgres_changes",
-        { event: "*", schema: "public", table: "shared_scenario", filter: "id=eq.1" },
+        { event: "*", schema: "public", table: "shared_scenario", filter: `id=eq.${scenarioId}` },
         (payload: any) => {
           const next = payload.new?.inputs;
           if (!next) return;
@@ -50,7 +54,7 @@ export function useSharedScenario() {
         })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [scenarioId]);
 
   // Debounced autosave
   useEffect(() => {
@@ -61,11 +65,11 @@ export function useSharedScenario() {
       const j = JSON.stringify(inputs);
       lastWrittenJson.current = j;
       await supabase.from("shared_scenario")
-        .upsert({ id: 1, inputs: inputs as any, updated_at: new Date().toISOString() });
+        .upsert({ id: scenarioId, inputs: inputs as any, updated_at: new Date().toISOString() });
       setSaving(false);
     }, 500);
     return () => { if (writeTimer.current) window.clearTimeout(writeTimer.current); };
-  }, [inputs, loaded]);
+  }, [inputs, loaded, scenarioId]);
 
   return { inputs, setInputs, loaded, saving };
 }
