@@ -448,7 +448,9 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   // ── Financing — IDC capitalised onto debt ──
   const constYears = I.constructionMonths / 12;
   const principalDebt = totalRoCapex * I.debtToEquity;
-  const equityAmount = totalRoCapex * (1 - I.debtToEquity);
+  const equityBucket = totalRoCapex * (1 - I.debtToEquity);
+  const shlAmount = equityBucket * Math.max(0, Math.min(1, I.shareholderLoanPct));
+  const equityAmount = equityBucket - shlAmount;
   const idc = principalDebt * I.debtRateYr1 * constYears * 0.596;
   const debtAmount = principalDebt + idc;
   const totalCapexWithIdc = totalRoCapex + idc;
@@ -481,19 +483,75 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   const depreciationPerM3 = soldVolumeY1 > 0 ? annualDepreciation / soldVolumeY1 : 0;
   const totalCostPerM3 = fixedCostPerM3 + electricityCostPerM3 + variableCostPerM3 + depreciationPerM3;
 
-  // ── Debt amortisation (equal principal, per-year rate) ──
-  const tenor = I.loanTenorYears;
-  const principalPerYear = debtAmount / tenor;
-  let outstanding = debtAmount;
-  const debtSchedule = Array.from({ length: tenor }, (_, y) => {
-    const open = outstanding;
-    const rate = debtRateAt(I, y);
-    const interest = open * rate;
-    const principal = Math.min(principalPerYear, open);
-    const close = open - principal;
-    outstanding = close;
-    return { open, rate, principal, interest, close };
+  // ── Maintenance reserve schedule (EGP per operating year) ──
+  const mmSchedule = Array.from({ length: I.contractYears }, (_, y) => {
+    const pct = at(I.mmSchedulePctOfCapex, y, I.mmAnnualPctOfCapex);
+    return totalCapexWithIdc * pct;
   });
+
+  // ── Senior debt amortisation (per-year rate, with grace + repayment mode) ──
+  const tenor = I.loanTenorYears;
+  const grace = Math.max(0, Math.min(tenor - 1, I.debtGraceYears));
+  const amortYears = tenor - grace;
+  const buildSeniorSchedule = (cfadsForSculpt?: number[]) => {
+    let outstanding = debtAmount;
+    const rows: { open: number; rate: number; principal: number; interest: number; close: number }[] = [];
+    for (let y = 0; y < tenor; y++) {
+      const open = outstanding;
+      const rate = debtRateAt(I, y);
+      const interest = open * rate;
+      let principal = 0;
+      if (y >= grace && open > 1e-6) {
+        const remainingYears = tenor - y;
+        if (I.debtRepaymentMode === "equal") {
+          principal = debtAmount / amortYears;
+        } else if (I.debtRepaymentMode === "annuity") {
+          // annuity recomputed on remaining balance & remaining years using current rate
+          const r = rate;
+          principal = r > 0
+            ? open * r / (1 - Math.pow(1 + r, -remainingYears)) - interest
+            : open / remainingYears;
+        } else { // sculpted
+          if (cfadsForSculpt && I.targetDSCR > 0) {
+            const cfads = cfadsForSculpt[y] ?? 0;
+            principal = Math.max(0, cfads / I.targetDSCR - interest);
+          } else {
+            principal = debtAmount / amortYears;
+          }
+        }
+        principal = Math.min(principal, open);
+        if (y === tenor - 1) principal = open; // bullet remainder
+      }
+      const close = open - principal;
+      outstanding = close;
+      rows.push({ open, rate, principal, interest, close });
+    }
+    return rows;
+  };
+  let debtSchedule = buildSeniorSchedule();
+
+  // ── Shareholder loan amortisation (annuity-style, per-year rate flat) ──
+  const shlTenor = Math.max(1, I.shareholderLoanTenorYears);
+  const shlGrace = Math.max(0, Math.min(shlTenor - 1, I.shareholderLoanGraceYears));
+  const shlAmort = shlTenor - shlGrace;
+  const buildShlSchedule = () => {
+    let out = shlAmount;
+    return Array.from({ length: shlTenor }, (_, y) => {
+      const open = out;
+      const rate = I.shareholderLoanRate;
+      const interest = open * rate;
+      let principal = 0;
+      if (y >= shlGrace && open > 1e-6) {
+        principal = shlAmount / shlAmort;
+        principal = Math.min(principal, open);
+        if (y === shlTenor - 1) principal = open;
+      }
+      const close = open - principal;
+      out = close;
+      return { open, rate, principal, interest, close };
+    });
+  };
+  const shlSchedule = buildShlSchedule();
 
   // ── Year-by-year rows ──
   const rows: YearRow[] = [];
