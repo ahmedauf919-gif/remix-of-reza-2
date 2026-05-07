@@ -311,7 +311,6 @@ export function runWaterModel(I: WaterInputs): WaterOutputs {
   const idc = principalDebt * I.debtRateYr1 * constYears * 0.596;
   const debtAmount = principalDebt + idc;
   const totalCapexWithIdc = totalRoCapex + idc;
-  const equityAmount = totalCapexWithIdc - debtAmount;
 
   const capexPerM3Egp = totalCapexWithIdc / I.capacityM3Day;
   const capexPerM3Usd = capexPerM3Egp / fx;
