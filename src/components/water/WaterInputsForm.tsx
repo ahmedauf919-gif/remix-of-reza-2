@@ -182,15 +182,46 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
 
       <FullSection title="Financing — interest rate per year">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          {F("debtToEquity", "Debt %", "of total", 0.01)}
+          <Field label="Debt %" value={inputs.debtToEquity * 100} onChange={(n) => set("debtToEquity", Math.max(0, Math.min(100, n)) / 100)} step={1} suffix="enter 80 for 80%"/>
           {F("loanTenorYears", "Loan Tenor", "years")}
-          {F("debtRateYr1", "Yr-1 Rate (fallback)", "decimal", 0.005)}
-          {F("debtRateStepDown", "Annual Step-down (fallback)", "pp", 0.005)}
-          {F("debtRateFloor", "Rate Floor (fallback)", "decimal", 0.005)}
           {F("bankSpread", "Bank Spread", "decimal", 0.005)}
         </div>
         <YearArrayEditor label="Interest rate per loan year (%)" years={Tenor} values={inputs.debtRatePerYear} fallback={inputs.debtRateYr1} onChange={(a) => set("debtRatePerYear", a)} step={0.1} asPct/>
       </FullSection>
+
+      <FullSection title="OPEX — Variable (per m³)">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead className="w-24">Currency</TableHead>
+              <TableHead className="w-32">Per m³</TableHead>
+              <TableHead className="w-24">Tax %</TableHead>
+              <TableHead className="w-32">EGP/m³ (Y1)</TableHead>
+              <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {inputs.opexVariableItems.map((it, i) => {
+              const gross = it.amountPerM3 * (1 + (it.taxPct ?? 0));
+              const egpEq = it.currency === "USD" ? gross * inputs.fxRateEgpPerUsd : gross;
+              return (
+              <TableRow key={i}>
+                <TableCell><Input value={it.label} onChange={(e) => updateVar(i, { label: e.target.value })} /></TableCell>
+                <TableCell>
+                  <Select value={it.currency} onValueChange={(v) => updateVar(i, { currency: v as Ccy })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="EGP">EGP</SelectItem></SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell><Input type="number" step={0.0001} value={it.amountPerM3} onChange={(e) => updateVar(i, { amountPerM3: parseFloat(e.target.value) || 0 })} /></TableCell>
+                <TableCell><Input type="number" step={0.5} value={+(((it.taxPct ?? 0) * 100).toFixed(4))} onChange={(e) => { const r = parseFloat(e.target.value); updateVar(i, { taxPct: isFinite(r) ? r / 100 : 0 }); }} /></TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">{egpEq.toLocaleString("en-US", { maximumFractionDigits: 4 })}</TableCell>
+                <TableCell><Button size="icon" variant="ghost" onClick={() => removeVar(i)}><Trash2 className="h-4 w-4"/></Button></TableCell>
+              </TableRow>
+            );})}
+          </TableBody>
+        </Table>
 
       <FullSection title="OPEX — Variable (per m³)">
         <Table>
