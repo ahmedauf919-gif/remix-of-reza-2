@@ -12,6 +12,7 @@ import { useSharedPvScenario } from "@/hooks/useSharedPvScenario";
 const PvCharts = lazy(() => import("@/components/pv/PvCharts").then(m => ({ default: m.PvCharts })));
 const PvSensitivity = lazy(() => import("@/components/pv/PvSensitivity").then(m => ({ default: m.PvSensitivity })));
 const PvOutput = lazy(() => import("@/components/pv/PvOutput").then(m => ({ default: m.PvOutput })));
+const PvRecommendations = lazy(() => import("@/components/pv/PvRecommendations").then(m => ({ default: m.PvRecommendations })));
 
 const Fallback = () => <div className="flex items-center justify-center py-16 text-muted-foreground text-sm"><Loader2 className="h-4 w-4 mr-2 animate-spin"/> Loading…</div>;
 
@@ -68,12 +69,14 @@ export default function PvPage() {
             <TabsTrigger value="output">Output</TabsTrigger>
             <TabsTrigger value="charts">Charts</TabsTrigger>
             <TabsTrigger value="sensitivity">Sensitivity</TabsTrigger>
+            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           </TabsList>
           <TabsContent value="summary" className="m-0 pt-6"><PvSummary m={model}/></TabsContent>
           <TabsContent value="inputs" className="m-0 pt-6"><PvInputsForm inputs={inputs} onChange={setInputs}/></TabsContent>
           <TabsContent value="output" className="m-0 pt-6"><Suspense fallback={<Fallback/>}><PvOutput m={model}/></Suspense></TabsContent>
           <TabsContent value="charts" className="m-0 pt-6"><Suspense fallback={<Fallback/>}><PvCharts m={model}/></Suspense></TabsContent>
           <TabsContent value="sensitivity" className="m-0 pt-6"><Suspense fallback={<Fallback/>}><PvSensitivity inputs={deferred}/></Suspense></TabsContent>
+          <TabsContent value="recommendations" className="m-0 pt-6"><Suspense fallback={<Fallback/>}><PvRecommendations m={model}/></Suspense></TabsContent>
         </Tabs>
       </main>
     </div>
