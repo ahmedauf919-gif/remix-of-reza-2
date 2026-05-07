@@ -424,17 +424,17 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   // ── OPEX per m³ (steady state, Year-1 FX) ──
   const variableEgpFromUsd_y1 = I.opexVariableItems
     .filter(it => it.currency === "USD")
-    .reduce((s, it) => s + it.amountPerM3, 0) * fx0;
+    .reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0) * fx0;
   const variableEgp_y1 = I.opexVariableItems
     .filter(it => it.currency === "EGP")
-    .reduce((s, it) => s + it.amountPerM3, 0);
+    .reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
   const wellsCost = I.wellsIncluded ? I.wellsCostEgpPerM3 : 0;
   const variableCostPerM3 = variableEgpFromUsd_y1 + variableEgp_y1 + wellsCost + I.otherVarEgpPerM3;
   const elecPriceEgp_y1 = I.electricityCurrency === "USD" ? I.electricityPriceEgpKwh * fx0 : I.electricityPriceEgpKwh;
   const electricityCostPerM3 = I.electricityIncluded ? I.electricityKwhPerM3 * elecPriceEgp_y1 : 0;
 
   const annualFixedEgp_y1 = I.opexFixedItems.reduce((s, it) => {
-    const v = it.amountPerMonth * 12;
+    const v = it.amountPerMonth * (it.employees ?? 1) * (1 + (it.taxPct ?? 0)) * 12;
     return s + (it.currency === "USD" ? v * fx0 : v);
   }, 0);
   const fixedCostPerM3 = soldVolumeY1 > 0 ? annualFixedEgp_y1 / soldVolumeY1 : 0;
