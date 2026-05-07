@@ -45,6 +45,9 @@ export function useSharedScenario(scenarioId: number = 1) {
       .on("postgres_changes",
         { event: "*", schema: "public", table: "shared_scenario", filter: `id=eq.${scenarioId}` },
         (payload: any) => {
+          // Hard guard: ignore any payload not matching this scenario id
+          const incomingId = payload.new?.id ?? payload.old?.id;
+          if (incomingId !== scenarioId) return;
           const next = payload.new?.inputs;
           if (!next) return;
           const j = JSON.stringify(next);
