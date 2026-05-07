@@ -171,13 +171,15 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
               <>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Voltage Level</Label>
-                  <Select value={inputs.voltageLevel} onValueChange={(v) => set("voltageLevel", v as VoltageLevel)}>
+                  <Select value={inputs.voltageLevel} onValueChange={(v) => {
+                    const lvl = v as VoltageLevel;
+                    onChange({ ...inputs, voltageLevel: lvl, govtBaseTariffEgp: GOVT_TARIFF_BY_VOLTAGE[lvl] });
+                  }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Extra High Voltage">Extra High Voltage</SelectItem>
-                      <SelectItem value="High Voltage">High Voltage</SelectItem>
-                      <SelectItem value="Medium Voltage">Medium Voltage</SelectItem>
-                      <SelectItem value="Low Voltage">Low Voltage</SelectItem>
+                      {(Object.keys(GOVT_TARIFF_BY_VOLTAGE) as VoltageLevel[]).map(lvl => (
+                        <SelectItem key={lvl} value={lvl}>{lvl} — {GOVT_TARIFF_BY_VOLTAGE[lvl].toFixed(3)} EGP/kWh</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -187,20 +189,36 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
             )}
           </Section>
 
-          <div className="mt-4">
-            <FullSection title="Tariff Schedule (EGP/kWh per year)">
-              <div className="mb-3 flex items-center gap-2">
-                <Button size="sm" variant="outline"
-                  onClick={() => set("tariffPerYear",
-                    Array.from({ length: N }, (_, i) => inputs.govtBaseTariffEgp * Math.pow(1 + inputs.govtEscalationPct, i)))}>
-                  Generate from base × escalation
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => set("tariffPerYear", [])}>Clear (use formula)</Button>
-              </div>
-              <YearArrayEditor label="Tariff (EGP/kWh)" years={N} values={inputs.tariffPerYear} fallback={inputs.govtBaseTariffEgp}
-                onChange={(a) => set("tariffPerYear", a)} step={0.01} />
-            </FullSection>
-          </div>
+          {inputs.tariffSource === "Government" ? (
+            <div className="mt-4">
+              <FullSection title="Tariff Inflation per year (%)">
+                <div className="mb-3 flex items-center gap-2">
+                  <Button size="sm" variant="outline"
+                    onClick={() => set("tariffEscalationPerYear", Array.from({ length: N }, () => inputs.govtEscalationPct))}>
+                    Fill from default escalation
+                  </Button>
+                  <span className="text-xs text-muted-foreground ml-auto">Tariff(Y) = Tariff(Y-1) × (1 + inflation%). Y1 = base tariff.</span>
+                </div>
+                <YearArrayEditor label="Inflation %" years={N} values={inputs.tariffEscalationPerYear} fallback={inputs.govtEscalationPct}
+                  onChange={(a) => set("tariffEscalationPerYear", a)} step={0.5} asPct />
+              </FullSection>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <FullSection title="Custom Tariff Schedule (EGP/kWh per year)">
+                <div className="mb-3 flex items-center gap-2">
+                  <Button size="sm" variant="outline"
+                    onClick={() => set("tariffPerYear",
+                      Array.from({ length: N }, (_, i) => inputs.govtBaseTariffEgp * Math.pow(1 + inputs.govtEscalationPct, i)))}>
+                    Generate from base × escalation
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => set("tariffPerYear", [])}>Clear</Button>
+                </div>
+                <YearArrayEditor label="Tariff (EGP/kWh)" years={N} values={inputs.tariffPerYear} fallback={inputs.govtBaseTariffEgp}
+                  onChange={(a) => set("tariffPerYear", a)} step={0.01} />
+              </FullSection>
+            </div>
+          )}
 
           <div className="mt-4">
             <FullSection title="Annual Savings vs Tariff (%)">
