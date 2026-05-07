@@ -77,7 +77,7 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
     const next = inputs.capexItems.map((it, i) => i === idx ? { ...it, ...patch } : it);
     set("capexItems", next);
   };
-  const addCapex = () => set("capexItems", [...inputs.capexItems, { key: `item${Date.now()}`, label: "New Item", currency: "USD", amount: 0, depreciationYears: inputs.depreciationYears }]);
+  const addCapex = () => set("capexItems", [...inputs.capexItems, { key: `item${Date.now()}`, label: "New Item", currency: "USD", amount: 0, taxPct: 0, depreciationYears: inputs.depreciationYears }]);
   const removeCapex = (idx: number) => set("capexItems", inputs.capexItems.filter((_, i) => i !== idx));
 
   const updateVar = (idx: number, patch: Partial<OpexVarItem>) => {
