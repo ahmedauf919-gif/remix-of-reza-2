@@ -758,6 +758,8 @@ export const DEFAULT_INPUTS: ProjectInputs = {
   capexTaxable: {},
   capexOnshorePct: {},
   opexBasisPerMW: {},
+  opexVatPct: {},
+  contingencyPct: 0.04,
 };
 
 export interface AnnualRow {
