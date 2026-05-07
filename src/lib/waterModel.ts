@@ -442,7 +442,7 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   // ── Capacity (Year 1 reference for OPEX/m³ display only) ──
   const installedCapacityM3Year = I.capacityM3Day * 365;
   const actualCapacityM3Year = installedCapacityM3Year * minTakeAt(I, 0);
-  const soldVolumeY1 = actualCapacityM3Year * I.realizedPctOfMinTake;
+  const soldVolumeY1 = actualCapacityM3Year * (I.realizedPctOfMinTake ?? 1);
   const unutilisedCapacityM3Year = installedCapacityM3Year - actualCapacityM3Year;
   const utilisationPct = actualCapacityM3Year / installedCapacityM3Year;
 
