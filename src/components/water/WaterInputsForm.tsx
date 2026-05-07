@@ -295,7 +295,7 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
             <SelectContent><SelectItem value="EGP">EGP</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent>
           </Select>
         </div>
-        {F("depreciationYears", "Default Depreciation Tenor", "years")}
+        
         {F("receivablesDays", "Receivables", "DOH")}
         {F("payablesDays", "Payables", "DOH")}
         {F("taxRate", "Tax Rate", "decimal", 0.01)}
