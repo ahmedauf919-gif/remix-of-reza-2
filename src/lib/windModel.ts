@@ -411,7 +411,7 @@ export interface ProjectInputs {
 // Phase 2 helpers ---------------------------------------------------------------
 // Items that should NEVER be auto-taxed (financing/reserves/already-tax line itself).
 export const CAPEX_TAX_EXCLUDED = new Set<string>([
-  "loanRepayment", "taxesCapex",
+  "loanRepayment", "taxesCapex", "contingency",
 ]);
 // Default taxable items (EPC + BoP/civil/grid + everything physical). Financing items default off.
 export const CAPEX_TAXABLE_DEFAULT: Record<string, boolean> = {
