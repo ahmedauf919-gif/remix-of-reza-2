@@ -1,6 +1,7 @@
 import { PvOutputs, fmtNum, fmtPct, fmtEgp } from "@/lib/pvModel";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { Banknote, TrendingUp, Activity, Calendar, Gauge, Zap, Shield, Layers, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from "recharts";
 
 export const PvSummary = ({ m }: { m: PvOutputs }) => {
   const I = m.inputs;
