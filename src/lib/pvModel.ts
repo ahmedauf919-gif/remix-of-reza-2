@@ -47,9 +47,10 @@ export interface PvInputs {
   // Tariff (schedule per year)
   tariffSource: TariffSource;
   voltageLevel: VoltageLevel;
-  govtBaseTariffEgp: number;     // seed for default schedule
-  govtEscalationPct: number;     // seed for default schedule
-  tariffPerYear: number[];       // EGP/kWh per year (Y1..Yn) — overrides if length>0
+  govtBaseTariffEgp: number;     // seed for default schedule (used for Government)
+  govtEscalationPct: number;     // seed escalation (used to fill schedule)
+  tariffEscalationPerYear: number[]; // % escalation per year (cumulative). Y0 is base.
+  tariffPerYear: number[];       // EGP/kWh per year — Custom override
   savingsPctPerYear: number[];   // % discount vs tariff per year
 
   // CAPEX
@@ -108,6 +109,14 @@ export const DEFAULT_PV_CAPEX: PvCapexItem[] = [
   { key: "leveling",    label: "Land Leveling",         currency: "EGP", units: 0,     costPerUnit: 0,     vatPct: 0,    customsPct: 0,    usefulLife: 25, depMethod: "StraightLine" },
 ];
 
+// Government tariff presets (EGP/kWh) by voltage level
+export const GOVT_TARIFF_BY_VOLTAGE: Record<VoltageLevel, number> = {
+  "Extra High Voltage": 2.296,
+  "High Voltage": 2.508,
+  "Medium Voltage": 2.716,
+  "Low Voltage": 2.928,
+};
+
 const M = (v: number, n: number) => Array.from({ length: n }, () => v);
 const linearDrawdown = (months: number) => Array.from({ length: months }, () => 1 / Math.max(1, months));
 
@@ -135,6 +144,7 @@ export const DEFAULT_PV_INPUTS: PvInputs = {
   voltageLevel: "Medium Voltage",
   govtBaseTariffEgp: 2.716,
   govtEscalationPct: 0.10,
+  tariffEscalationPerYear: M(0.10, 25),
   tariffPerYear: [],
   savingsPctPerYear: M(0.20, 25),
 
@@ -278,11 +288,19 @@ function tariffScheduleEgp(I: PvInputs): number[] {
   if (I.tariffSource === "Custom" && I.tariffPerYear && I.tariffPerYear.length > 0) {
     return Array.from({ length: N }, (_, i) => I.tariffPerYear[i] ?? I.tariffPerYear[I.tariffPerYear.length - 1] ?? 0);
   }
-  if (I.tariffSource === "Government" && I.tariffPerYear && I.tariffPerYear.length > 0) {
-    return Array.from({ length: N }, (_, i) => I.tariffPerYear[i] ?? I.tariffPerYear[I.tariffPerYear.length - 1] ?? 0);
+  // Government: base × cumulative escalation per year (Y1 = base; Y(i) = Y(i-1) × (1+esc[i]))
+  const out: number[] = [];
+  let cur = I.govtBaseTariffEgp;
+  for (let i = 0; i < N; i++) {
+    if (i > 0) {
+      const esc = (I.tariffEscalationPerYear && I.tariffEscalationPerYear.length > 0)
+        ? (I.tariffEscalationPerYear[i] ?? I.tariffEscalationPerYear[I.tariffEscalationPerYear.length - 1] ?? I.govtEscalationPct)
+        : I.govtEscalationPct;
+      cur = cur * (1 + esc);
+    }
+    out.push(cur);
   }
-  // default: govt base × escalation
-  return Array.from({ length: N }, (_, i) => I.govtBaseTariffEgp * Math.pow(1 + I.govtEscalationPct, i));
+  return out;
 }
 
 export function runPvModel(I: PvInputs): PvOutputs {
