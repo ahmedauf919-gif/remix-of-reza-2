@@ -244,6 +244,9 @@ export const DEFAULT_WATER_INPUTS: WaterInputs = {
 // Migrate legacy scenarios that lack itemized arrays
 export function migrateInputs(raw: Partial<WaterInputs>): WaterInputs {
   const m: WaterInputs = { ...DEFAULT_WATER_INPUTS, ...raw };
+  // UI removed HQ Allocation & SG&A currency — always treat HO as 100% allocated and SG&A as EGP.
+  m.headOfficeAllocPct = 1;
+  m.sgaCurrency = "EGP";
   if (!m.capexItems || m.capexItems.length === 0) {
     m.capexItems = [
       { key: "feedSys",      label: "Feed System",     currency: "USD", amount: raw.feedSysUsd      ?? 45954.1,   depreciationYears: 25 },
