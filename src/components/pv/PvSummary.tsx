@@ -113,6 +113,23 @@ export const PvSummary = ({ m }: { m: PvOutputs }) => {
           </div>
         </div>
       </section>
+
+      <section className="rounded-xl border bg-card p-5 shadow-sm">
+        <h3 className="font-semibold mb-3">DSCR profile</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={m.rows.filter(r => r.yearIdx >= 0).map(r => ({ year: r.year, DSCR: (r.principalRepay > 0 || r.interest > 0) ? +r.dscr.toFixed(3) : null }))}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
+              <XAxis dataKey="year" tick={{ fontSize: 11 }}/>
+              <YAxis domain={[0, 'auto']} tick={{ fontSize: 11 }}/>
+              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}/>
+              <ReferenceLine y={1.3} stroke="hsl(var(--accent))" strokeDasharray="4 4" label={{ value: "Target 1.30x", fontSize: 10, fill: "hsl(var(--accent))" }}/>
+              <ReferenceLine y={1} stroke="hsl(var(--destructive))" strokeDasharray="2 2"/>
+              <Line type="monotone" dataKey="DSCR" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 2 }} connectNulls/>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
     </div>
   );
 };
