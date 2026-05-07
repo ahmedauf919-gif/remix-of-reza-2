@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wind, Sun, Droplets, Plus } from "lucide-react";
+import { Wind, Sun, Droplets, Plus, SunMedium } from "lucide-react";
 
 const models = [
   {
@@ -25,6 +25,14 @@ const models = [
     description: "Seawater RO desalination model: CAPEX, debt sizing, DSCR, LCOM³, equity IRR, tariff allocation and sensitivities.",
     icon: Droplets,
     href: "/models/water",
+    available: true,
+  },
+  {
+    id: "pv",
+    title: "PV (Solar) Project Finance Model",
+    description: "Utility-scale solar PV model: yield (P50/P90), CAPEX, debt sculpting, DSCR, LCOE, equity IRR and tariff composition.",
+    icon: SunMedium,
+    href: "/models/pv",
     available: true,
   },
 ];
