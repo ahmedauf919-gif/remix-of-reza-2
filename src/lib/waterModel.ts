@@ -394,7 +394,8 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   // ── CAPEX ──
   const c = 1 + I.contingencyPct;
   const capexResolved: CapexItemResolved[] = I.capexItems.map(it => {
-    const egp = (it.currency === "USD" ? it.amount * fx0 : it.amount) * c;
+    const grossOwnCcy = it.amount * (1 + (it.taxPct ?? 0));
+    const egp = (it.currency === "USD" ? grossOwnCcy * fx0 : grossOwnCcy) * c;
     const dy = it.depreciationYears > 0 ? it.depreciationYears : 0;
     return { ...it, amountEgp: egp, annualDepreciation: dy > 0 ? egp / dy : 0 };
   });
