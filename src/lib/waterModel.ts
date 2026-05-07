@@ -51,6 +51,7 @@ export interface WaterInputs {
 
   // Plant
   capacityM3Day: number;
+  capacityM3DayPerYear?: number[]; // per-year override (length = contractYears)
   minTakePct: number;
   realizedPctOfMinTake: number;
   minTakePctPerYear?: number[]; // per-year override (length = contractYears)
