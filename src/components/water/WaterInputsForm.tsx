@@ -5,7 +5,16 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Trash2, Plus } from "lucide-react";
+
+/** Percent-display field — user enters 80 for 80% (stored as 0.80). */
+const PctField = ({ label, value, onChange, step = 0.5, suffix }: { label: string; value: number; onChange: (n: number) => void; step?: number; suffix?: string }) => (
+  <div className="space-y-1">
+    <Label className="text-xs text-muted-foreground">{label} (%) {suffix && <span className="opacity-60">({suffix})</span>}</Label>
+    <Input type="number" step={step} value={+(value * 100).toFixed(4)} onChange={(e) => { const r = parseFloat(e.target.value); onChange(isFinite(r) ? r / 100 : 0); }} />
+  </div>
+);
 
 const Field = ({ label, value, onChange, step = 1, suffix }: { label: string; value: number; onChange: (n: number) => void; step?: number; suffix?: string }) => (
   <div className="space-y-1">
