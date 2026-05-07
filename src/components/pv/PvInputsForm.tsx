@@ -395,10 +395,14 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
                     <SelectItem value="Equal">Equal Payments</SelectItem>
                     <SelectItem value="Customized">Customized</SelectItem>
                     <SelectItem value="Annuity">Annuity</SelectItem>
+                    <SelectItem value="Sculpted">Sculpted (DSCR target)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {F("graceYears", "Grace Period (interest-only)", "years")}
+              {inputs.repaymentMethod === "Sculpted" && (
+                <PctField label="Target DSCR (sculpting)" value={inputs.targetDSCR} onChange={(n) => set("targetDSCR", n)} step={5} suffix="enter 130 for 1.30x"/>
+              )}
             </div>
             {inputs.repaymentMethod === "Customized" && (
               <YearArrayEditor label="Customised principal % per year (sums to 100%)" years={Tenor} values={inputs.customizedSchedule} fallback={0} onChange={(a) => set("customizedSchedule", a)} step={0.5} asPct/>
@@ -417,6 +421,36 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
                 fallback={(inputs.corridorPctPerYear[0] ?? 0.0925) + inputs.spreadPct} onChange={(a) => set("bankInterestPerYear", a)} step={0.25} asPct/>
             </div>
           </FullSection>
+
+          <div className="mt-4">
+            <FullSection title="Shareholder Loan">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="flex items-center justify-between rounded border p-2 col-span-1">
+                  <Label>Enable Shareholder Loan</Label>
+                  <Switch checked={inputs.slEnabled} onCheckedChange={(v) => set("slEnabled", v)}/>
+                </div>
+                <PctField label="SL % of Equity" value={inputs.slPctOfEquity} onChange={(n) => set("slPctOfEquity", Math.max(0, Math.min(1, n)))} step={5}/>
+                <PctField label="SL Interest Rate" value={inputs.slRatePct} onChange={(n) => set("slRatePct", n)} step={0.5}/>
+                {F("slTenorYears", "SL Tenor", "years")}
+                {F("slGraceYears", "SL Grace", "years")}
+              </div>
+            </FullSection>
+          </div>
+
+          <div className="mt-4">
+            <FullSection title="Refinancing">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="flex items-center justify-between rounded border p-2 col-span-1">
+                  <Label>Enable Refinancing</Label>
+                  <Switch checked={inputs.refiEnabled} onCheckedChange={(v) => set("refiEnabled", v)}/>
+                </div>
+                {F("refiYear", "Refi Year (1 = first ops year)")}
+                <PctField label="New Interest Rate" value={inputs.refiNewRatePct} onChange={(n) => set("refiNewRatePct", n)} step={0.25}/>
+                {F("refiNewTenorYears", "New Tenor", "years")}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">At Refi Year, remaining principal is re-amortised over the new tenor at the new rate.</p>
+            </FullSection>
+          </div>
         </TabsContent>
 
         <TabsContent value="macro" className="m-0 pt-4">
