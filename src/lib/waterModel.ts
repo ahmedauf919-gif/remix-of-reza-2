@@ -329,13 +329,15 @@ export function runWaterModel(I: WaterInputs): WaterOutputs {
     : 0;
 
   const annualFixedEgp = (I.salariesEgpMonth + I.otherFixedEgpMonth) * 12;
-  const fixedCostPerM3 = actualCapacityM3Year > 0 ? annualFixedEgp / actualCapacityM3Year : 0;
+  const fixedCostPerM3 = soldVolumeM3Year > 0 ? annualFixedEgp / soldVolumeM3Year : 0;
 
   const annualSgaEgp =
     (I.headOfficeEgpMonth * I.headOfficeAllocPct + I.otherSgaEgpMonth) * 12;
 
-  const annualDepreciation = totalRoCapex / I.depreciationYears;
-  const depreciationPerM3 = actualCapacityM3Year > 0 ? annualDepreciation / actualCapacityM3Year : 0;
+  // Depreciation: equipment only (Excel excludes EGP installation from dep base)
+  const dpBase = feedSysEgp + pretreatmentEgp + roUnitEgp + bwCipEgp;
+  const annualDepreciation = dpBase / I.depreciationYears;
+  const depreciationPerM3 = soldVolumeM3Year > 0 ? annualDepreciation / soldVolumeM3Year : 0;
   const totalCostPerM3 =
     fixedCostPerM3 + electricityCostPerM3 + variableCostPerM3 + depreciationPerM3;
 
