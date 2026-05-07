@@ -47,9 +47,10 @@ export interface PvInputs {
   // Tariff (schedule per year)
   tariffSource: TariffSource;
   voltageLevel: VoltageLevel;
-  govtBaseTariffEgp: number;     // seed for default schedule
-  govtEscalationPct: number;     // seed for default schedule
-  tariffPerYear: number[];       // EGP/kWh per year (Y1..Yn) — overrides if length>0
+  govtBaseTariffEgp: number;     // seed for default schedule (used for Government)
+  govtEscalationPct: number;     // seed escalation (used to fill schedule)
+  tariffEscalationPerYear: number[]; // % escalation per year (cumulative). Y0 is base.
+  tariffPerYear: number[];       // EGP/kWh per year — Custom override
   savingsPctPerYear: number[];   // % discount vs tariff per year
 
   // CAPEX
