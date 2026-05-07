@@ -303,7 +303,7 @@ const CapexWithScheduleEditor = ({ inputs, onChange }: Props) => {
           f={{ label: "Construction period", unit: "months" }}
           onSet={(v) => onChange({ ...inputs, constructionMonths: Math.max(1, Math.min(36, Math.round(v))) })} />
         <NumberField obj={inputs} k={"capacityMWp" as keyof ProjectInputs}
-          f={{ label: "Capacity (used for USD/MW basis)", unit: "MW" }}
+          f={{ label: "Capacity (MW)", unit: "MW" }}
           onSet={(v) => onChange({ ...inputs, capacityMWp: v })} />
         <NumberField obj={inputs} k={"vatRate" as keyof ProjectInputs}
           f={{ label: "VAT rate (onshore supply)", pct: true, step: 0.001 }}
