@@ -1,100 +1,151 @@
 // Water (SWRO) Project Finance Model
-// Mirrors the structure of the uploaded Water.xlsm: Assumptions → Calculations → Dashboard
+// Mirrors the Excel "Water.xlsm": Assumptions → Calculations → Dashboard → Income Statement → Balance Sheet
 // All monetary outputs are in EGP unless suffixed _usd.
+
+export type Ccy = "EGP" | "USD";
+
+export interface CapexItem {
+  key: string;
+  label: string;
+  currency: Ccy;
+  amount: number;            // in its own currency
+  depreciationYears: number; // straight line; 0 = no depreciation
+}
+
+export interface OpexVarItem {
+  key: string;
+  label: string;
+  currency: Ccy;
+  amountPerM3: number;       // per m³ of sold volume
+}
+
+export interface OpexFixedItem {
+  key: string;
+  label: string;
+  currency: Ccy;
+  amountPerMonth: number;
+}
 
 export interface WaterInputs {
   projectName: string;
   scenario: string;
 
-  // ── Timing ────────────────────────────────────────────────────────────
-  startYear: number;            // operations start (e.g. 2028)
-  developmentMonths: number;    // 1
-  constructionMonths: number;   // 12
-  contractYears: number;        // 25
+  // Timing
+  startYear: number;
+  developmentMonths: number;
+  constructionMonths: number;
+  contractYears: number;
 
-  // ── FX & Inflation ────────────────────────────────────────────────────
-  fxRateEgpPerUsd: number;      // 53
-  egpInflation: number;         // 0
-  revenueInflation: number;     // 0
-  electricityInflation: number; // 0
-  usdInflation: number;         // 0
+  // FX & inflation — scalar defaults (used as fallback for any year not overridden)
+  fxRateEgpPerUsd: number;
+  egpInflation: number;
+  revenueInflation: number;
+  electricityInflation: number;
+  usdInflation: number;
+  // Per-year overrides (length up to contractYears). Empty array → use scalar.
+  fxRatePerYear?: number[];
+  egpInflationPerYear?: number[];
+  revenueInflationPerYear?: number[];
+  electricityInflationPerYear?: number[];
+  usdInflationPerYear?: number[];
 
-  // ── Plant ─────────────────────────────────────────────────────────────
-  capacityM3Day: number;        // 3500
-  minTakePct: number;           // 0.95 (Year 1 utilisation)
-  realizedPctOfMinTake: number; // 0.96
+  // Plant
+  capacityM3Day: number;
+  minTakePct: number;
+  realizedPctOfMinTake: number;
+  minTakePctPerYear?: number[]; // per-year override (length = contractYears)
 
-  // Monthly seasonality (12 weights — normalised)
-  monthlySeasonality: number[]; // default flat
+  // Pricing
+  sellingPriceEgpPerM3: number;
+  pctPeggedToUsd: number;
 
-  // ── Pricing ───────────────────────────────────────────────────────────
-  sellingPriceEgpPerM3: number; // 23
-  pctPeggedToUsd: number;       // 0..1
+  // CAPEX — itemized (Reza style)
+  capexItems: CapexItem[];
+  contingencyPct: number;
 
-  // ── CAPEX (USD per station, then × FX × (1+contingency)) ──────────────
-  feedSysUsd: number;           // 45,954.1
-  pretreatmentUsd: number;      // 74,464.8
-  roUnitUsd: number;            // 779,112.58
-  bwCipUsd: number;             // 17,763.48
-  installationEgp: number;      // 5,000,000
-  drillingUsd: number;          // 0 (wells)
-  contingencyPct: number;       // 0.05
+  // Financing
+  debtToEquity: number;
+  bankSpread: number;
+  loanTenorYears: number;
+  debtRateYr1: number;
+  debtRateStepDown: number;
+  debtRateFloor: number;
+  debtRatePerYear?: number[]; // override per loan year (length = loanTenor)
 
-  // ── Financing ─────────────────────────────────────────────────────────
-  debtToEquity: number;         // 0.8 (debt share of total capex+IDC)
-  bankSpread: number;           // 0.02 (informational)
-  loanTenorYears: number;       // 10
-  // declining-rate path used in the Excel: yr1=20%, then -2pp, then floor 10%
-  debtRateYr1: number;          // 0.20
-  debtRateStepDown: number;     // 0.02
-  debtRateFloor: number;        // 0.10
-
-  // ── OPEX ──────────────────────────────────────────────────────────────
+  // OPEX
   electricityIncluded: boolean;
-  electricityPriceEgpKwh: number; // 2.34
-  electricityKwhPerM3: number;    // 3
+  electricityPriceEgpKwh: number;
+  electricityKwhPerM3: number;
+  electricityCurrency: Ccy;        // currency of electricity price (default EGP)
   wellsIncluded: boolean;
-  wellsCostEgpPerM3: number;      // 0
-  otherVarEgpPerM3: number;       // 0
-  // Variable USD/m3 components (chemicals + RO consumables)
-  chemicalsUsdPerM3: number;      // 0.0363
-  smbsUsdPerM3: number;           // 0
-  hppUsdPerM3: number;            // 0.0030
-  feedUsdPerM3: number;           // 0.000846
-  mmfUsdPerM3: number;            // 0.001032
-  dosingUsdPerM3: number;         // 0.001066
-  boosterUsdPerM3: number;        // 0.0025
-  vfdUsdPerM3: number;            // 0.001456
-  pxUsdPerM3: number;             // 0.0035
-  pressureVesselUsdPerM3: number; // 0.002643
-  cfsUsdPerM3: number;            // 0.0016
-  instrumentationUsdPerM3: number;// 0.001032
-  cipPumpsUsdPerM3: number;       // 0.000705
-  pvcUsdPerM3: number;            // 0.000791
+  wellsCostEgpPerM3: number;       // legacy fallback (EGP)
+  otherVarEgpPerM3: number;        // legacy fallback (EGP)
+  opexVariableItems: OpexVarItem[];
+  opexFixedItems: OpexFixedItem[];
 
-  // Fixed monthly salaries (EGP/month)
-  salariesEgpMonth: number;       // 17,000
-  otherFixedEgpMonth: number;     // 0
+  // SG&A
+  headOfficeEgpMonth: number;
+  headOfficeAllocPct: number;
+  otherSgaEgpMonth: number;
+  sgaCurrency: Ccy;
 
-  // ── SG&A ──────────────────────────────────────────────────────────────
-  headOfficeEgpMonth: number;     // 500,000
-  headOfficeAllocPct: number;     // 0 (share allocated to project)
-  otherSgaEgpMonth: number;       // 0
+  // Depreciation (legacy single-tenor — used only as default for items missing dep years)
+  depreciationYears: number;
 
-  // ── Depreciation ──────────────────────────────────────────────────────
-  depreciationYears: number;      // 25 (linear, on full CAPEX in EGP)
+  // Working Capital
+  receivablesDays: number;
+  payablesDays: number;
 
-  // ── Working Capital ───────────────────────────────────────────────────
-  receivablesDays: number;        // 30
-  payablesDays: number;           // 0
+  // Tax
+  taxRate: number;
 
-  // ── Tax ───────────────────────────────────────────────────────────────
-  taxRate: number;                // 0.225
+  // Discount rates
+  discountRateProject: number;
+  discountRateEquity: number;
 
-  // ── Discount rates for valuation ──────────────────────────────────────
-  discountRateProject: number;    // 0.12 default
-  discountRateEquity: number;     // 0.18
+  // Legacy scalar CAPEX fields (kept for back-compat with old scenarios in DB)
+  feedSysUsd?: number; pretreatmentUsd?: number; roUnitUsd?: number; bwCipUsd?: number;
+  installationEgp?: number; drillingUsd?: number;
+  // Legacy scalar variable-OPEX USD/m3 fields
+  chemicalsUsdPerM3?: number; smbsUsdPerM3?: number; hppUsdPerM3?: number; feedUsdPerM3?: number;
+  mmfUsdPerM3?: number; dosingUsdPerM3?: number; boosterUsdPerM3?: number; vfdUsdPerM3?: number;
+  pxUsdPerM3?: number; pressureVesselUsdPerM3?: number; cfsUsdPerM3?: number;
+  instrumentationUsdPerM3?: number; cipPumpsUsdPerM3?: number; pvcUsdPerM3?: number;
+  // Legacy fixed
+  salariesEgpMonth?: number; otherFixedEgpMonth?: number;
+  monthlySeasonality?: number[];
 }
+
+const DEFAULT_CAPEX: CapexItem[] = [
+  { key: "feedSys",       label: "Feed System",      currency: "USD", amount: 45954.1,    depreciationYears: 25 },
+  { key: "pretreatment",  label: "Pretreatment",     currency: "USD", amount: 74464.8,    depreciationYears: 25 },
+  { key: "roUnit",        label: "RO Unit",          currency: "USD", amount: 779112.58,  depreciationYears: 25 },
+  { key: "bwCip",         label: "BW/CIP",           currency: "USD", amount: 17763.48,   depreciationYears: 25 },
+  { key: "installation",  label: "Installation",     currency: "EGP", amount: 5_000_000,  depreciationYears: 0 },
+  { key: "drilling",      label: "Drilling/Wells",   currency: "USD", amount: 0,          depreciationYears: 25 },
+];
+
+const DEFAULT_OPEX_VAR: OpexVarItem[] = [
+  { key: "chemicals",       label: "Chemicals",       currency: "USD", amountPerM3: 0.036322580645161286 },
+  { key: "smbs",            label: "SMBS",            currency: "USD", amountPerM3: 0 },
+  { key: "hpp",             label: "HPP",             currency: "USD", amountPerM3: 0.00302941400304414 },
+  { key: "feed",            label: "Feed",            currency: "USD", amountPerM3: 0.0008458862465753423 },
+  { key: "mmf",             label: "MMF",             currency: "USD", amountPerM3: 0.0010319342465753424 },
+  { key: "dosing",          label: "Dosing Pumps",    currency: "USD", amountPerM3: 0.001065505008219178 },
+  { key: "booster",         label: "Booster/Turbo",   currency: "USD", amountPerM3: 0.0025 },
+  { key: "vfd",             label: "VFD",             currency: "USD", amountPerM3: 0.001456 },
+  { key: "px",              label: "PX",              currency: "USD", amountPerM3: 0.0035 },
+  { key: "pressureVessel",  label: "Pressure Vessel", currency: "USD", amountPerM3: 0.0026426598173515986 },
+  { key: "cfs",             label: "CF's",            currency: "USD", amountPerM3: 0.0016 },
+  { key: "instrumentation", label: "Instrumentation", currency: "USD", amountPerM3: 0.0010315872146118722 },
+  { key: "cipPumps",        label: "CIP Pumps",       currency: "USD", amountPerM3: 0.000704905205479452 },
+  { key: "pvc",             label: "PVC",             currency: "USD", amountPerM3: 0.0007912328767123285 },
+];
+
+const DEFAULT_OPEX_FIXED: OpexFixedItem[] = [
+  { key: "salaries",   label: "Salaries",     currency: "EGP", amountPerMonth: 17_000 },
+  { key: "otherFixed", label: "Other Fixed",  currency: "EGP", amountPerMonth: 0 },
+];
 
 export const DEFAULT_WATER_INPUTS: WaterInputs = {
   projectName: "SWRO Water Plant",
@@ -108,18 +159,18 @@ export const DEFAULT_WATER_INPUTS: WaterInputs = {
   revenueInflation: 0,
   electricityInflation: 0,
   usdInflation: 0,
+  fxRatePerYear: [],
+  egpInflationPerYear: [],
+  revenueInflationPerYear: [],
+  electricityInflationPerYear: [],
+  usdInflationPerYear: [],
   capacityM3Day: 3500,
   minTakePct: 0.95,
   realizedPctOfMinTake: 0.96,
-  monthlySeasonality: Array(12).fill(1),
+  minTakePctPerYear: [],
   sellingPriceEgpPerM3: 23,
   pctPeggedToUsd: 0,
-  feedSysUsd: 45954.1,
-  pretreatmentUsd: 74464.8,
-  roUnitUsd: 779112.58,
-  bwCipUsd: 17763.48,
-  installationEgp: 5_000_000,
-  drillingUsd: 0,
+  capexItems: DEFAULT_CAPEX,
   contingencyPct: 0.05,
   debtToEquity: 0.8,
   bankSpread: 0.02,
@@ -127,31 +178,20 @@ export const DEFAULT_WATER_INPUTS: WaterInputs = {
   debtRateYr1: 0.20,
   debtRateStepDown: 0.02,
   debtRateFloor: 0.10,
+  debtRatePerYear: [],
   electricityIncluded: true,
   electricityPriceEgpKwh: 2.34,
   electricityKwhPerM3: 3,
+  electricityCurrency: "EGP",
   wellsIncluded: true,
   wellsCostEgpPerM3: 0,
   otherVarEgpPerM3: 0,
-  chemicalsUsdPerM3: 0.036322580645161286,
-  smbsUsdPerM3: 0,
-  hppUsdPerM3: 0.00302941400304414,
-  feedUsdPerM3: 0.0008458862465753423,
-  mmfUsdPerM3: 0.0010319342465753424,
-  dosingUsdPerM3: 0.001065505008219178,
-  boosterUsdPerM3: 0.0025,
-  vfdUsdPerM3: 0.001456,
-  pxUsdPerM3: 0.0035,
-  pressureVesselUsdPerM3: 0.0026426598173515986,
-  cfsUsdPerM3: 0.0016,
-  instrumentationUsdPerM3: 0.0010315872146118722,
-  cipPumpsUsdPerM3: 0.000704905205479452,
-  pvcUsdPerM3: 0.0007912328767123285,
-  salariesEgpMonth: 17_000,
-  otherFixedEgpMonth: 0,
+  opexVariableItems: DEFAULT_OPEX_VAR,
+  opexFixedItems: DEFAULT_OPEX_FIXED,
   headOfficeEgpMonth: 500_000,
   headOfficeAllocPct: 0,
   otherSgaEgpMonth: 0,
+  sgaCurrency: "EGP",
   depreciationYears: 25,
   receivablesDays: 30,
   payablesDays: 0,
@@ -159,6 +199,48 @@ export const DEFAULT_WATER_INPUTS: WaterInputs = {
   discountRateProject: 0.12,
   discountRateEquity: 0.18,
 };
+
+// Migrate legacy scenarios that lack itemized arrays
+export function migrateInputs(raw: Partial<WaterInputs>): WaterInputs {
+  const m: WaterInputs = { ...DEFAULT_WATER_INPUTS, ...raw };
+  if (!m.capexItems || m.capexItems.length === 0) {
+    m.capexItems = [
+      { key: "feedSys",      label: "Feed System",     currency: "USD", amount: raw.feedSysUsd      ?? 45954.1,   depreciationYears: 25 },
+      { key: "pretreatment", label: "Pretreatment",    currency: "USD", amount: raw.pretreatmentUsd ?? 74464.8,   depreciationYears: 25 },
+      { key: "roUnit",       label: "RO Unit",         currency: "USD", amount: raw.roUnitUsd       ?? 779112.58, depreciationYears: 25 },
+      { key: "bwCip",        label: "BW/CIP",          currency: "USD", amount: raw.bwCipUsd        ?? 17763.48,  depreciationYears: 25 },
+      { key: "installation", label: "Installation",    currency: "EGP", amount: raw.installationEgp ?? 5_000_000, depreciationYears: 0 },
+      { key: "drilling",     label: "Drilling/Wells",  currency: "USD", amount: raw.drillingUsd     ?? 0,         depreciationYears: 25 },
+    ];
+  }
+  if (!m.opexVariableItems || m.opexVariableItems.length === 0) {
+    const k = (key: keyof WaterInputs, label: string, def: number) =>
+      ({ key, label, currency: "USD" as Ccy, amountPerM3: (raw[key] as number | undefined) ?? def });
+    m.opexVariableItems = [
+      k("chemicalsUsdPerM3","Chemicals",0.0363),
+      k("smbsUsdPerM3","SMBS",0),
+      k("hppUsdPerM3","HPP",0.003),
+      k("feedUsdPerM3","Feed",0.000846),
+      k("mmfUsdPerM3","MMF",0.001032),
+      k("dosingUsdPerM3","Dosing Pumps",0.001066),
+      k("boosterUsdPerM3","Booster/Turbo",0.0025),
+      k("vfdUsdPerM3","VFD",0.001456),
+      k("pxUsdPerM3","PX",0.0035),
+      k("pressureVesselUsdPerM3","Pressure Vessel",0.002643),
+      k("cfsUsdPerM3","CF's",0.0016),
+      k("instrumentationUsdPerM3","Instrumentation",0.001032),
+      k("cipPumpsUsdPerM3","CIP Pumps",0.000705),
+      k("pvcUsdPerM3","PVC",0.000791),
+    ];
+  }
+  if (!m.opexFixedItems || m.opexFixedItems.length === 0) {
+    m.opexFixedItems = [
+      { key: "salaries",   label: "Salaries",    currency: "EGP", amountPerMonth: raw.salariesEgpMonth   ?? 17_000 },
+      { key: "otherFixed", label: "Other Fixed", currency: "EGP", amountPerMonth: raw.otherFixedEgpMonth ?? 0 },
+    ];
+  }
+  return m;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 export const fmtNum = (v: number, d = 0) =>
@@ -169,13 +251,29 @@ export const fmtPct = (v: number, d = 1) =>
   isFinite(v) ? `${(v * 100).toFixed(d)}%` : "—";
 export const fmtEgp = (v: number, d = 0) => `EGP ${fmtNum(v, d)}`;
 
+const at = (arr: number[] | undefined, y: number, fallback: number): number => {
+  if (!arr || arr.length === 0) return fallback;
+  const v = arr[y];
+  return (v === undefined || v === null || !isFinite(v)) ? fallback : v;
+};
+
+export const fxAt = (I: WaterInputs, y: number) => at(I.fxRatePerYear, y, I.fxRateEgpPerUsd);
+export const inflEgpAt = (I: WaterInputs, y: number) => at(I.egpInflationPerYear, y, I.egpInflation);
+export const inflRevAt = (I: WaterInputs, y: number) => at(I.revenueInflationPerYear, y, I.revenueInflation);
+export const inflElecAt = (I: WaterInputs, y: number) => at(I.electricityInflationPerYear, y, I.electricityInflation);
+export const inflUsdAt = (I: WaterInputs, y: number) => at(I.usdInflationPerYear, y, I.usdInflation);
+export const minTakeAt = (I: WaterInputs, y: number) => at(I.minTakePctPerYear, y, I.minTakePct);
+export const debtRateAt = (I: WaterInputs, y: number) => {
+  const fallback = Math.max(I.debtRateYr1 - I.debtRateStepDown * y, I.debtRateFloor);
+  return at(I.debtRatePerYear, y, fallback);
+};
+
 function npv(rate: number, cf: number[]): number {
   let r = 0;
   for (let i = 0; i < cf.length; i++) r += cf[i] / Math.pow(1 + rate, i);
   return r;
 }
 function irr(cf: number[], guess = 0.1): number {
-  // Newton-Raphson then bisection fallback
   let x = guess;
   for (let i = 0; i < 60; i++) {
     let f = 0, df = 0;
@@ -189,7 +287,6 @@ function irr(cf: number[], guess = 0.1): number {
     x = x - f / df;
     if (x < -0.99) x = -0.5;
   }
-  // bisection
   let lo = -0.99, hi = 5;
   const fn = (r: number) => npv(r, cf);
   let flo = fn(lo), fhi = fn(hi);
@@ -206,10 +303,11 @@ function irr(cf: number[], guess = 0.1): number {
 // ─── Outputs ──────────────────────────────────────────────────────────────
 export interface YearRow {
   year: number;
-  yearIdx: number; // 0 = first operations year
+  yearIdx: number;
+  fx: number;
   volumeM3: number;
   pricePerM3: number;
-  revenue: number;          // EGP
+  revenue: number;
   fixedCost: number;
   variableCost: number;
   electricityCost: number;
@@ -222,153 +320,152 @@ export interface YearRow {
   ebt: number;
   tax: number;
   netProfit: number;
-  // Cash flow
-  capex: number;            // negative outflow
-  debtDraw: number;         // +
-  principalRepay: number;   // -
+  capex: number;
+  debtDraw: number;
+  principalRepay: number;
   workingCapDelta: number;
   fcff: number;
   fcfe: number;
-  // Debt
   debtOpening: number;
   debtClosing: number;
   rate: number;
   dscr: number;
+  // Balance sheet items
+  ppeGross: number;
+  accumDep: number;
+  ppeNet: number;
+  accountsReceivable: number;
+  cash: number;
+  totalAssets: number;
+  paidInEquity: number;
+  retainedEarnings: number;
+  totalEquity: number;
+  totalLiabAndEquity: number;
+}
+
+export interface CapexItemResolved extends CapexItem {
+  amountEgp: number;          // (amount × fx if USD) × (1+contingency)
+  annualDepreciation: number; // EGP
 }
 
 export interface WaterOutputs {
   inputs: WaterInputs;
-  // CAPEX
-  feedSysEgp: number;
-  pretreatmentEgp: number;
-  roUnitEgp: number;
-  bwCipEgp: number;
-  installationEgpAll: number;
-  drillingEgp: number;
-  totalRoCapex: number;     // EGP, includes contingency
-  idc: number;              // EGP
+  capexResolved: CapexItemResolved[];
+  totalRoCapex: number;
+  idc: number;
   totalCapexWithIdc: number;
   capexPerM3Egp: number;
   capexPerM3Usd: number;
-  // Funding
   debtAmount: number;
   equityAmount: number;
-  // Capacity
   installedCapacityM3Year: number;
   actualCapacityM3Year: number;
   unutilisedCapacityM3Year: number;
   utilisationPct: number;
-  // OPEX per m3
   fixedCostPerM3: number;
   variableCostPerM3: number;
   electricityCostPerM3: number;
   depreciationPerM3: number;
   totalCostPerM3: number;
-  lcom3: number;            // levelized cost (EGP/m3)
-  // Returns
+  lcom3: number;
   rows: YearRow[];
   projectIRR: number;
   equityIRR: number;
   equityPaybackYears: number;
   npvProject: number;
   npvEquity: number;
-  // DSCR
   minDSCR: number;
   avgDSCR: number;
-  // Tariff allocation (Dashboard K-block)
   tariffEgpPerM3: number;
-  tariffAllocCbeInflation: number;     // % of tariff
+  tariffAllocCbeInflation: number;
   tariffAllocElectricity: number;
   tariffAllocFx: number;
   tariffAllocFixedUsd: number;
 }
 
-export function runWaterModel(I: WaterInputs): WaterOutputs {
-  // ── CAPEX ───────────────────────────────────────────────────────────
-  const c = 1 + I.contingencyPct;
-  const fx = I.fxRateEgpPerUsd;
-  const feedSysEgp = I.feedSysUsd * fx * c;
-  const pretreatmentEgp = I.pretreatmentUsd * fx * c;
-  const roUnitEgp = I.roUnitUsd * fx * c;
-  const bwCipEgp = I.bwCipUsd * fx * c;
-  const installationEgpAll = I.installationEgp * c;
-  const drillingEgp = I.drillingUsd * fx * c;
-  const totalRoCapex =
-    feedSysEgp + pretreatmentEgp + roUnitEgp + bwCipEgp + installationEgpAll + drillingEgp;
+export function runWaterModel(rawI: WaterInputs): WaterOutputs {
+  const I = migrateInputs(rawI);
+  const fx0 = fxAt(I, 0);
 
-  // ── Capacity (Excel: actual = installed × minTake) ─────────────────
+  // ── CAPEX ──
+  const c = 1 + I.contingencyPct;
+  const capexResolved: CapexItemResolved[] = I.capexItems.map(it => {
+    const egp = (it.currency === "USD" ? it.amount * fx0 : it.amount) * c;
+    const dy = it.depreciationYears > 0 ? it.depreciationYears : 0;
+    return { ...it, amountEgp: egp, annualDepreciation: dy > 0 ? egp / dy : 0 };
+  });
+  const totalRoCapex = capexResolved.reduce((s, x) => s + x.amountEgp, 0);
+
+  // ── Capacity (Year 1 reference for OPEX/m³ display only) ──
   const installedCapacityM3Year = I.capacityM3Day * 365;
-  const actualCapacityM3Year = installedCapacityM3Year * I.minTakePct;
-  const soldVolumeM3Year = actualCapacityM3Year * I.realizedPctOfMinTake;
+  const actualCapacityM3Year = installedCapacityM3Year * minTakeAt(I, 0);
+  const soldVolumeY1 = actualCapacityM3Year * I.realizedPctOfMinTake;
   const unutilisedCapacityM3Year = installedCapacityM3Year - actualCapacityM3Year;
   const utilisationPct = actualCapacityM3Year / installedCapacityM3Year;
 
-  // ── Financing (Excel: principal debt = ROCapex × gearing; IDC capitalised onto debt) ─
+  // ── Financing — IDC capitalised onto debt ──
   const constYears = I.constructionMonths / 12;
   const principalDebt = totalRoCapex * I.debtToEquity;
   const equityAmount = totalRoCapex * (1 - I.debtToEquity);
-  // IDC ≈ principal × yr1Rate × constructionYears × avg-drawdown factor (~0.596)
   const idc = principalDebt * I.debtRateYr1 * constYears * 0.596;
   const debtAmount = principalDebt + idc;
   const totalCapexWithIdc = totalRoCapex + idc;
-
   const capexPerM3Egp = totalCapexWithIdc / I.capacityM3Day;
-  const capexPerM3Usd = capexPerM3Egp / fx;
+  const capexPerM3Usd = capexPerM3Egp / fx0;
 
-  // ── OPEX per m3 (steady state) ──────────────────────────────────────
-  const variableUsdPerM3 =
-    I.chemicalsUsdPerM3 + I.smbsUsdPerM3 + I.hppUsdPerM3 + I.feedUsdPerM3 +
-    I.mmfUsdPerM3 + I.dosingUsdPerM3 + I.boosterUsdPerM3 + I.vfdUsdPerM3 +
-    I.pxUsdPerM3 + I.pressureVesselUsdPerM3 + I.cfsUsdPerM3 +
-    I.instrumentationUsdPerM3 + I.cipPumpsUsdPerM3 + I.pvcUsdPerM3;
-  const variableEgpFromUsd = variableUsdPerM3 * fx;
+  // ── OPEX per m³ (steady state, Year-1 FX) ──
+  const variableEgpFromUsd_y1 = I.opexVariableItems
+    .filter(it => it.currency === "USD")
+    .reduce((s, it) => s + it.amountPerM3, 0) * fx0;
+  const variableEgp_y1 = I.opexVariableItems
+    .filter(it => it.currency === "EGP")
+    .reduce((s, it) => s + it.amountPerM3, 0);
   const wellsCost = I.wellsIncluded ? I.wellsCostEgpPerM3 : 0;
-  const variableCostPerM3 = variableEgpFromUsd + wellsCost + I.otherVarEgpPerM3;
-  const electricityCostPerM3 = I.electricityIncluded
-    ? I.electricityKwhPerM3 * I.electricityPriceEgpKwh
-    : 0;
+  const variableCostPerM3 = variableEgpFromUsd_y1 + variableEgp_y1 + wellsCost + I.otherVarEgpPerM3;
+  const elecPriceEgp_y1 = I.electricityCurrency === "USD" ? I.electricityPriceEgpKwh * fx0 : I.electricityPriceEgpKwh;
+  const electricityCostPerM3 = I.electricityIncluded ? I.electricityKwhPerM3 * elecPriceEgp_y1 : 0;
 
-  const annualFixedEgp = (I.salariesEgpMonth + I.otherFixedEgpMonth) * 12;
-  const fixedCostPerM3 = soldVolumeM3Year > 0 ? annualFixedEgp / soldVolumeM3Year : 0;
+  const annualFixedEgp_y1 = I.opexFixedItems.reduce((s, it) => {
+    const v = it.amountPerMonth * 12;
+    return s + (it.currency === "USD" ? v * fx0 : v);
+  }, 0);
+  const fixedCostPerM3 = soldVolumeY1 > 0 ? annualFixedEgp_y1 / soldVolumeY1 : 0;
 
-  const annualSgaEgp =
-    (I.headOfficeEgpMonth * I.headOfficeAllocPct + I.otherSgaEgpMonth) * 12;
+  const sgaMonthlyOwn = I.headOfficeEgpMonth * I.headOfficeAllocPct + I.otherSgaEgpMonth;
+  const annualSgaEgp_y1 = sgaMonthlyOwn * 12 * (I.sgaCurrency === "USD" ? fx0 : 1);
 
-  // Depreciation: equipment only (Excel excludes EGP installation from dep base)
-  const dpBase = feedSysEgp + pretreatmentEgp + roUnitEgp + bwCipEgp;
-  const annualDepreciation = dpBase / I.depreciationYears;
-  const depreciationPerM3 = soldVolumeM3Year > 0 ? annualDepreciation / soldVolumeM3Year : 0;
-  const totalCostPerM3 =
-    fixedCostPerM3 + electricityCostPerM3 + variableCostPerM3 + depreciationPerM3;
+  // Aggregate annual depreciation from itemized capex
+  const annualDepreciation = capexResolved.reduce((s, it) => s + it.annualDepreciation, 0);
+  const depreciationPerM3 = soldVolumeY1 > 0 ? annualDepreciation / soldVolumeY1 : 0;
+  const totalCostPerM3 = fixedCostPerM3 + electricityCostPerM3 + variableCostPerM3 + depreciationPerM3;
 
-  // ── Debt amortisation (annuity with declining rate path) ─────────────
+  // ── Debt amortisation (equal principal, per-year rate) ──
   const tenor = I.loanTenorYears;
-  const ratePath: number[] = Array.from({ length: tenor }, (_, i) => {
-    const r = I.debtRateYr1 - I.debtRateStepDown * i;
-    return Math.max(r, I.debtRateFloor);
-  });
-  // Equal-principal payment for simplicity (matches typical sculpted profiles)
   const principalPerYear = debtAmount / tenor;
   let outstanding = debtAmount;
-  const debtSchedule: { open: number; rate: number; principal: number; interest: number; close: number }[] = [];
-  for (let y = 0; y < tenor; y++) {
+  const debtSchedule = Array.from({ length: tenor }, (_, y) => {
     const open = outstanding;
-    const rate = ratePath[y];
+    const rate = debtRateAt(I, y);
     const interest = open * rate;
     const principal = Math.min(principalPerYear, open);
     const close = open - principal;
-    debtSchedule.push({ open, rate, principal, interest, close });
     outstanding = close;
-  }
+    return { open, rate, principal, interest, close };
+  });
 
-  // ── Annual rows ──────────────────────────────────────────────────────
+  // ── Year-by-year rows ──
   const rows: YearRow[] = [];
   const N = I.contractYears;
   let prevAR = 0;
-  // Year 0 = construction year (CAPEX outflow, debt draw)
-  const constructionRow: YearRow = {
-    year: I.startYear - 1,
-    yearIdx: -1,
+  let cumDep = 0;
+  let cash = 0;
+  let retained = 0;
+  const ppeGross = totalCapexWithIdc;
+  const paidInEquity = equityAmount;
+
+  // Construction (yearIdx = -1)
+  rows.push({
+    year: I.startYear - 1, yearIdx: -1, fx: fx0,
     volumeM3: 0, pricePerM3: 0,
     revenue: 0, fixedCost: 0, variableCost: 0, electricityCost: 0,
     operatingCost: 0, sga: 0, ebitda: 0, depreciation: 0, ebit: 0,
@@ -378,45 +475,66 @@ export function runWaterModel(I: WaterInputs): WaterOutputs {
     fcff: -totalCapexWithIdc,
     fcfe: -totalCapexWithIdc + debtAmount,
     debtOpening: 0, debtClosing: debtAmount, rate: 0, dscr: NaN,
-  };
-  rows.push(constructionRow);
+    ppeGross, accumDep: 0, ppeNet: ppeGross,
+    accountsReceivable: 0, cash: 0,
+    totalAssets: ppeGross,
+    paidInEquity, retainedEarnings: 0, totalEquity: paidInEquity,
+    totalLiabAndEquity: paidInEquity + debtAmount,
+  });
 
   for (let y = 0; y < N; y++) {
-    const inflRev = Math.pow(1 + I.revenueInflation, y);
-    const inflCost = Math.pow(1 + I.egpInflation, y);
-    const inflElec = Math.pow(1 + I.electricityInflation, y);
-    const inflUsd = Math.pow(1 + I.usdInflation, y);
+    const fx = fxAt(I, y);
+    const inflRev = Math.pow(1 + inflRevAt(I, y), y);
+    const inflEgp = Math.pow(1 + inflEgpAt(I, y), y);
+    const inflElec = Math.pow(1 + inflElecAt(I, y), y);
+    const inflUsd = Math.pow(1 + inflUsdAt(I, y), y);
 
-    const volume = soldVolumeM3Year;
+    const minTake = minTakeAt(I, y);
+    const volume = installedCapacityM3Year * minTake * I.realizedPctOfMinTake;
     const price = I.sellingPriceEgpPerM3 * inflRev;
     const revenue = volume * price;
 
-    const fixedCost = annualFixedEgp * inflCost;
-    const variableCost = volume * (variableEgpFromUsd * inflUsd + (wellsCost + I.otherVarEgpPerM3) * inflCost);
-    const electricityCost = volume * electricityCostPerM3 * inflElec;
-    const operatingCost = fixedCost + variableCost + electricityCost;
-    const sga = annualSgaEgp * inflCost;
-    const ebitda = revenue - operatingCost - sga;
-    const depreciation = y < I.depreciationYears ? annualDepreciation : 0;
-    const ebit = ebitda - depreciation;
+    // OPEX — variable: USD items × inflUsd × fx_y; EGP items × inflEgp
+    const varUsd = I.opexVariableItems.filter(it => it.currency === "USD")
+      .reduce((s, it) => s + it.amountPerM3, 0);
+    const varEgp = I.opexVariableItems.filter(it => it.currency === "EGP")
+      .reduce((s, it) => s + it.amountPerM3, 0);
+    const variableCost = volume * (varUsd * inflUsd * fx + (varEgp + wellsCost + I.otherVarEgpPerM3) * inflEgp);
 
+    const elecPrice = (I.electricityCurrency === "USD" ? I.electricityPriceEgpKwh * fx : I.electricityPriceEgpKwh) * inflElec;
+    const electricityCost = I.electricityIncluded ? volume * I.electricityKwhPerM3 * elecPrice : 0;
+
+    const fixedCost = I.opexFixedItems.reduce((s, it) => {
+      const annual = it.amountPerMonth * 12;
+      return s + (it.currency === "USD" ? annual * fx * inflUsd : annual * inflEgp);
+    }, 0);
+
+    const operatingCost = fixedCost + variableCost + electricityCost;
+
+    const sgaBase = sgaMonthlyOwn * 12;
+    const sga = I.sgaCurrency === "USD" ? sgaBase * fx * inflUsd : sgaBase * inflEgp;
+
+    const ebitda = revenue - operatingCost - sga;
+
+    // Per-item depreciation respects each item's depreciation tenor
+    const depreciation = capexResolved.reduce((s, it) =>
+      s + (it.depreciationYears > 0 && y < it.depreciationYears ? it.annualDepreciation : 0), 0);
+
+    const ebit = ebitda - depreciation;
     const ds = y < tenor ? debtSchedule[y] : null;
     const interest = ds ? ds.interest : 0;
     const principalRepay = ds ? ds.principal : 0;
     const debtOpen = ds ? ds.open : 0;
     const debtClose = ds ? ds.close : 0;
     const rate = ds ? ds.rate : 0;
-
     const ebt = ebit - interest;
     const tax = Math.max(0, ebt) * I.taxRate;
     const netProfit = ebt - tax;
 
-    // working capital
     const ar = revenue * (I.receivablesDays / 365);
     const wcDelta = -(ar - prevAR);
     prevAR = ar;
 
-    // CAPEX = 0 in operations; FCFF/FCFE
     const taxAdjUnlev = Math.max(0, ebit) * I.taxRate;
     const fcff = ebit - taxAdjUnlev + depreciation + wcDelta;
     const fcfe = netProfit + depreciation + wcDelta - principalRepay;
@@ -424,22 +542,31 @@ export function runWaterModel(I: WaterInputs): WaterOutputs {
     const debtService = interest + principalRepay;
     const dscr = debtService > 0 ? cfads / debtService : NaN;
 
+    cumDep += depreciation;
+    cash += fcfe; // simple: cash builds with FCFE (pre-distributions)
+    retained += netProfit;
+
+    const ppeNet = Math.max(0, ppeGross - cumDep);
+    const totalAssets = ppeNet + ar + cash;
+    const totalEquity = paidInEquity + retained;
+
     rows.push({
-      year: I.startYear + y,
-      yearIdx: y,
-      volumeM3: volume,
-      pricePerM3: price,
+      year: I.startYear + y, yearIdx: y, fx,
+      volumeM3: volume, pricePerM3: price,
       revenue, fixedCost, variableCost, electricityCost,
       operatingCost, sga, ebitda, depreciation, ebit,
       interest, ebt, tax, netProfit,
       capex: 0, debtDraw: 0, principalRepay,
-      workingCapDelta: wcDelta,
-      fcff, fcfe,
+      workingCapDelta: wcDelta, fcff, fcfe,
       debtOpening: debtOpen, debtClosing: debtClose, rate, dscr,
+      ppeGross, accumDep: cumDep, ppeNet,
+      accountsReceivable: ar, cash,
+      totalAssets,
+      paidInEquity, retainedEarnings: retained, totalEquity,
+      totalLiabAndEquity: totalEquity + debtClose,
     });
   }
 
-  // ── Returns ──────────────────────────────────────────────────────────
   const fcffArr = rows.map(r => r.fcff);
   const fcfeArr = rows.map(r => r.fcfe);
   const projectIRR = irr(fcffArr);
@@ -447,47 +574,38 @@ export function runWaterModel(I: WaterInputs): WaterOutputs {
   const npvProject = npv(I.discountRateProject, fcffArr);
   const npvEquity = npv(I.discountRateEquity, fcfeArr);
 
-  // Equity payback (cumulative undiscounted FCFE crosses 0)
   let cum = 0; let payback = NaN;
   for (let i = 0; i < fcfeArr.length; i++) {
     const next = cum + fcfeArr[i];
-    if (cum < 0 && next >= 0) {
-      payback = i + (-cum) / fcfeArr[i];
-      break;
-    }
+    if (cum < 0 && next >= 0) { payback = i + (-cum) / fcfeArr[i]; break; }
     cum = next;
   }
 
-  // DSCR stats over operating years where debt service exists
   const dscrs = rows.filter(r => r.yearIdx >= 0 && isFinite(r.dscr)).map(r => r.dscr);
   const minDSCR = dscrs.length ? Math.min(...dscrs) : NaN;
   const avgDSCR = dscrs.length ? dscrs.reduce((a, b) => a + b, 0) / dscrs.length : NaN;
 
-  // LCOM3 = NPV(total cost) / NPV(volume) at project discount
   const opRows = rows.filter(r => r.yearIdx >= 0);
   const costsPv = opRows.reduce((a, r, i) => a + (r.operatingCost + r.sga + r.depreciation + r.interest + r.tax) / Math.pow(1 + I.discountRateProject, i + 1), 0);
   const volsPv = opRows.reduce((a, r, i) => a + r.volumeM3 / Math.pow(1 + I.discountRateProject, i + 1), 0);
   const lcom3 = volsPv > 0 ? costsPv / volsPv : NaN;
 
-  // Tariff allocation (Dashboard K block) — share of tariff covering each cost driver
   const tariff = I.sellingPriceEgpPerM3;
   const tariffAllocCbeInflation = (fixedCostPerM3 + depreciationPerM3) / tariff;
   const tariffAllocElectricity = electricityCostPerM3 / tariff;
-  const tariffAllocFx = (variableEgpFromUsd) / tariff;
+  const tariffAllocFx = variableEgpFromUsd_y1 / tariff;
   const tariffAllocFixedUsd = Math.max(0, 1 - tariffAllocCbeInflation - tariffAllocElectricity - tariffAllocFx);
 
   return {
     inputs: I,
-    feedSysEgp, pretreatmentEgp, roUnitEgp, bwCipEgp, installationEgpAll, drillingEgp,
+    capexResolved,
     totalRoCapex, idc, totalCapexWithIdc, capexPerM3Egp, capexPerM3Usd,
     debtAmount, equityAmount,
     installedCapacityM3Year, actualCapacityM3Year, unutilisedCapacityM3Year, utilisationPct,
     fixedCostPerM3, variableCostPerM3, electricityCostPerM3, depreciationPerM3, totalCostPerM3,
-    lcom3,
-    rows,
+    lcom3, rows,
     projectIRR, equityIRR, equityPaybackYears: payback,
-    npvProject, npvEquity,
-    minDSCR, avgDSCR,
+    npvProject, npvEquity, minDSCR, avgDSCR,
     tariffEgpPerM3: tariff,
     tariffAllocCbeInflation, tariffAllocElectricity, tariffAllocFx, tariffAllocFixedUsd,
   };

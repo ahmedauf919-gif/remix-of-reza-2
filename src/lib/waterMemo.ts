@@ -49,12 +49,7 @@ export async function generateWaterMemo(I: WaterInputs, m: WaterOutputs) {
     startY: 60, theme: "grid",
     head: [["Item", "EGP", "% Total"]],
     body: [
-      ["Feed System", fmtEgp(m.feedSysEgp), fmtPct(m.feedSysEgp / m.totalCapexWithIdc)],
-      ["Pretreatment", fmtEgp(m.pretreatmentEgp), fmtPct(m.pretreatmentEgp / m.totalCapexWithIdc)],
-      ["RO Unit", fmtEgp(m.roUnitEgp), fmtPct(m.roUnitEgp / m.totalCapexWithIdc)],
-      ["BW/CIP", fmtEgp(m.bwCipEgp), fmtPct(m.bwCipEgp / m.totalCapexWithIdc)],
-      ["Installation", fmtEgp(m.installationEgpAll), fmtPct(m.installationEgpAll / m.totalCapexWithIdc)],
-      ["Drilling", fmtEgp(m.drillingEgp), fmtPct(m.drillingEgp / m.totalCapexWithIdc)],
+      ...m.capexResolved.map(it => [it.label, fmtEgp(it.amountEgp), fmtPct(it.amountEgp / m.totalCapexWithIdc)]),
       ["IDC", fmtEgp(m.idc), fmtPct(m.idc / m.totalCapexWithIdc)],
       ["Total", fmtEgp(m.totalCapexWithIdc), "100%"],
     ],
