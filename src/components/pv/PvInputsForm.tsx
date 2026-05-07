@@ -1,4 +1,4 @@
-import { PvInputs, PvCapexItem, Ccy, VoltageLevel, RepaymentMethod, Periodicity, DepMethod, YieldCase, TariffSource } from "@/lib/pvModel";
+import { PvInputs, PvCapexItem, Ccy, VoltageLevel, RepaymentMethod, Periodicity, DepMethod, YieldCase, TariffSource, GOVT_TARIFF_BY_VOLTAGE } from "@/lib/pvModel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
