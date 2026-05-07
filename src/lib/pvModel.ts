@@ -136,6 +136,7 @@ export const DEFAULT_PV_INPUTS: PvInputs = {
   voltageLevel: "Medium Voltage",
   govtBaseTariffEgp: 2.716,
   govtEscalationPct: 0.10,
+  tariffEscalationPerYear: M(0.10, 25),
   tariffPerYear: [],
   savingsPctPerYear: M(0.20, 25),
 
