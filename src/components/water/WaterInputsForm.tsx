@@ -38,9 +38,14 @@ function YearArrayEditor({
   };
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <Label className="text-xs">{label}</Label>
-        <Button size="sm" variant="ghost" onClick={() => onChange([])}>Reset to scalar</Button>
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="outline" onClick={() => onChange(Array.from({ length: years }, () => arr[0] ?? fallback))}>
+            Fill Y1 → all
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => onChange([])}>Reset to scalar</Button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="text-xs">
