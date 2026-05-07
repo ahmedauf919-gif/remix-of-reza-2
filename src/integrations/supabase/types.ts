@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      shared_pv_scenario: {
+        Row: {
+          id: number
+          inputs: Json
+          updated_at: string
+        }
+        Insert: {
+          id: number
+          inputs: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          inputs?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shared_scenario: {
         Row: {
           id: number
