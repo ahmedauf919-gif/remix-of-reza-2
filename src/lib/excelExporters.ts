@@ -58,11 +58,11 @@ export async function exportPvExcel(m: PvOutputs) {
     initialDebt: m.debtAmount,
     inputs: [
       ...inputsFromObject({
-        projectName: I.projectName, capacityMWp: I.capacityMWp, contractYears: I.contractYears,
+        projectName: I.projectName, capacityKwp: I.capacityKwp, contractYears: I.contractYears,
         constructionMonths: I.constructionMonths, voltageLevel: I.voltageLevel,
         govtBaseTariffEgp: I.govtBaseTariffEgp, govtEscalationPct: I.govtEscalationPct,
-        contingencyPct: I.contingencyPct, taxRate: I.taxRate, debtRatio: I.debtRatio,
-        loanTenorYears: I.loanTenorYears, debtGraceYears: I.debtGraceYears,
+        contingencyPct: I.contingencyPct, taxRate: I.taxRatePct,
+        loanTenorYears: I.loanTenorYears, graceYears: I.graceYears,
         spreadPct: I.spreadPct,
       }, "Project & Financing"),
       { label: "── Outputs (computed) ──", value: "", group: "Headline Results" },
@@ -118,9 +118,9 @@ export async function exportCngExcel(m: CngOutputs) {
     inputs: [
       ...inputsFromObject({
         projectName: I.projectName, contractYears: I.contractYears,
-        constructionMonths: I.constructionMonths, taxRate: I.taxRate,
-        debtRatio: I.debtRatio, loanTenorYears: I.loanTenorYears,
-        debtGraceYears: I.debtGraceYears, spreadPct: I.spreadPct,
+        constructionMonths: I.constructionMonths,
+        loanTenorYears: I.loanTenorYears,
+        graceYears: I.graceYears, spreadPct: I.spreadPct,
         contingencyPct: I.contingencyPct,
       }, "Project & Financing"),
       { label: "Total CAPEX", value: m.totalCapexEgp, group: "Headline Results", fmt: FMT_NUM0 },
