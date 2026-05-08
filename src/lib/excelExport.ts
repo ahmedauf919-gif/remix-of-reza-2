@@ -35,7 +35,7 @@ export interface AssumptionRow {
 }
 
 export interface ScalarInput {
-  key: string;
+  key?: string;
   label: string;
   value: number | string;
   group?: string;
