@@ -1,11 +1,12 @@
 import { useMemo, useDeferredValue, lazy, Suspense } from "react";
-import { FileText, RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon, Save } from "lucide-react";
+import { FileText, RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon, Save, FileSpreadsheet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DEFAULT_INPUTS, runModel } from "@/lib/windModel";
 import { generateInvestmentMemo } from "@/lib/investmentMemo";
+import { exportWindExcel } from "@/lib/excelExporters";
 import { InputsForm } from "@/components/wind/InputsForm";
 import { SummaryView } from "@/components/wind/SummaryView";
 import { useSharedScenario } from "@/hooks/useSharedScenario";
@@ -89,6 +90,7 @@ const Index = ({ scenarioId = 1 }: { scenarioId?: number }) => {
             <Button variant="secondary" onClick={saveAsDefault} className="gap-2"><Save className="h-4 w-4"/>Save as default</Button>
             <Button variant="secondary" onClick={reset} className="gap-2"><RotateCcw className="h-4 w-4"/>Reset</Button>
             <Button onClick={exportMemo} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"><FileText className="h-4 w-4"/>Export Investment Memo</Button>
+            <Button onClick={async () => { try { toast.loading("Building Excel model…", { id: "xlsx" }); await exportWindExcel(model); toast.success("Excel model downloaded", { id: "xlsx" }); } catch (e) { console.error(e); toast.error("Failed to export Excel", { id: "xlsx" }); } }} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"><FileSpreadsheet className="h-4 w-4"/>Export Excel Model</Button>
           </div>
         </div>
       </header>

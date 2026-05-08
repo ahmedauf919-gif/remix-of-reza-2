@@ -1,10 +1,11 @@
 import { useMemo, useDeferredValue, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon, Save } from "lucide-react";
+import { RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon, Save, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DEFAULT_CNG_INPUTS, runCngModel } from "@/lib/cngModel";
+import { exportCngExcel } from "@/lib/excelExporters";
 import { CngInputsForm } from "@/components/cng/CngInputsForm";
 import { CngSummary } from "@/components/cng/CngSummary";
 import { useSharedCngScenario } from "@/hooks/useSharedCngScenario";
@@ -35,6 +36,10 @@ export default function CngPage() {
     try { localStorage.setItem(defaultKey, JSON.stringify(inputs)); toast.success("Current assumptions saved as your default"); }
     catch (e) { console.error(e); toast.error("Failed to save defaults"); }
   };
+  const exportExcel = async () => {
+    try { toast.loading("Building Excel model…", { id: "xlsx" }); await exportCngExcel(model); toast.success("Excel model downloaded", { id: "xlsx" }); }
+    catch (e) { console.error(e); toast.error("Failed to export Excel", { id: "xlsx" }); }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,6 +58,7 @@ export default function CngPage() {
               {!loaded ? "Loading…" : isStale ? "Recalculating…" : saving ? "Saving…" : "All changes saved"}
             </div>
             <Button variant="secondary" onClick={saveAsDefault} className="gap-2"><Save className="h-4 w-4"/>Save as default</Button>
+            <Button onClick={exportExcel} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"><FileSpreadsheet className="h-4 w-4"/>Export Excel Model</Button>
             <Button variant="secondary" onClick={reset} className="gap-2"><RotateCcw className="h-4 w-4"/>Reset</Button>
           </div>
         </div>
