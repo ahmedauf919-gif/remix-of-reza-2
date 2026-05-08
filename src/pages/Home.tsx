@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wind, Sun, Droplets, Plus, SunMedium } from "lucide-react";
+import { Wind, Sun, Droplets, Plus, SunMedium, Truck } from "lucide-react";
 
 const models = [
   {
@@ -33,6 +33,14 @@ const models = [
     description: "Utility-scale solar PV model: yield (P50/P90), CAPEX, debt sculpting, DSCR, LCOE, equity IRR and tariff composition.",
     icon: SunMedium,
     href: "/models/pv",
+    available: true,
+  },
+  {
+    id: "cng",
+    title: "Mobile CNG Project Finance Model",
+    description: "Mobile compressed natural gas model: mother station CAPEX, trailer fleet, transport fees, gas commissions, debt sculpting, DSCR and equity IRR.",
+    icon: Truck,
+    href: "/models/cng",
     available: true,
   },
 ];
