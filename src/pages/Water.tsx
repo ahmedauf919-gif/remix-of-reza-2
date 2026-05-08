@@ -1,11 +1,12 @@
 import { useMemo, useDeferredValue, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { FileText, RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon, Save } from "lucide-react";
+import { FileText, RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon, Save, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DEFAULT_WATER_INPUTS, runWaterModel } from "@/lib/waterModel";
 import { generateWaterMemo } from "@/lib/waterMemo";
+import { exportWaterExcel } from "@/lib/excelExporters";
 import { WaterInputsForm } from "@/components/water/WaterInputsForm";
 import { WaterSummary } from "@/components/water/WaterSummary";
 import { useSharedWaterScenario } from "@/hooks/useSharedWaterScenario";
@@ -48,6 +49,10 @@ export default function Water() {
       localStorage.setItem(defaultKey, JSON.stringify(inputs));
       toast.success("Current assumptions saved as your default");
     } catch (e) { console.error(e); toast.error("Failed to save defaults"); }
+  };
+  const exportExcel = async () => {
+    try { toast.loading("Building Excel model…", { id: "xlsx" }); await exportWaterExcel(model); toast.success("Excel model downloaded", { id: "xlsx" }); }
+    catch (e) { console.error(e); toast.error("Failed to export Excel", { id: "xlsx" }); }
   };
 
   return (
