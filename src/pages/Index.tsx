@@ -1,11 +1,12 @@
 import { useMemo, useDeferredValue, lazy, Suspense } from "react";
-import { FileText, RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon, Save } from "lucide-react";
+import { FileText, RotateCcw, Check, UploadCloud, Loader2, Home as HomeIcon, Save, FileSpreadsheet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DEFAULT_INPUTS, runModel } from "@/lib/windModel";
 import { generateInvestmentMemo } from "@/lib/investmentMemo";
+import { exportWindExcel } from "@/lib/excelExporters";
 import { InputsForm } from "@/components/wind/InputsForm";
 import { SummaryView } from "@/components/wind/SummaryView";
 import { useSharedScenario } from "@/hooks/useSharedScenario";
