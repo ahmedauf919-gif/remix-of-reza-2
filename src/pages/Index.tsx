@@ -90,6 +90,7 @@ const Index = ({ scenarioId = 1 }: { scenarioId?: number }) => {
             <Button variant="secondary" onClick={saveAsDefault} className="gap-2"><Save className="h-4 w-4"/>Save as default</Button>
             <Button variant="secondary" onClick={reset} className="gap-2"><RotateCcw className="h-4 w-4"/>Reset</Button>
             <Button onClick={exportMemo} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"><FileText className="h-4 w-4"/>Export Investment Memo</Button>
+            <Button onClick={async () => { try { toast.loading("Building Excel model…", { id: "xlsx" }); await exportWindExcel(model); toast.success("Excel model downloaded", { id: "xlsx" }); } catch (e) { console.error(e); toast.error("Failed to export Excel", { id: "xlsx" }); } }} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"><FileSpreadsheet className="h-4 w-4"/>Export Excel Model</Button>
           </div>
         </div>
       </header>
