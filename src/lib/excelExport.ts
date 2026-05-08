@@ -363,7 +363,6 @@ export function buildStandardRows(seed: StandardRowSeed): RowDef[] {
     { key: "capex", label: "CAPEX (replacement / MM)", section: "CASH FLOW", kind: "input", value: y => -Math.abs(seed.capex(y)) },
     { key: "workingCapDelta", label: "Δ Working Capital", kind: "input", value: y => -Math.abs(seed.workingCapDelta(y)) },
     { key: "cfads", label: "CFADS (EBITDA − Tax − ΔWC)", kind: "formula", formula: (y, ref) => `${ref("ebitda")}+${ref("tax")}+${ref("workingCapDelta")}`, bold: true },
-    { key: "debtService", label: "Debt Service (Interest + Principal)", kind: "formula", formula: (y, ref) => `-(${ref("interest")}+(-${"PrincipalRepayBelow"}))`.replace("(-PrincipalRepayBelow)", "") + "" },
 
     { key: "debtDraw", label: "Senior Debt Drawdown", section: "FINANCING", kind: "input", value: seed.debtDraw },
     { key: "principalRepay", label: "Senior Principal Repayment", kind: "input", value: y => -Math.abs(seed.principalRepay(y)) },
