@@ -1,0 +1,265 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* TAQA Arabia brand palette: navy #005298, gold #FFC10E, green #009045, deep navy #002060 */
+    --background: 210 30% 98%;
+    --foreground: 217 70% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 217 70% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 217 70% 14%;
+
+    --primary: 209 100% 30%;            /* TAQA navy #005298 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 30% 94%;
+    --secondary-foreground: 217 70% 18%;
+
+    --muted: 210 25% 95%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 45 99% 53%;               /* TAQA gold #FFC10E */
+    --accent-foreground: 221 100% 14%;
+
+    --success: 142 100% 28%;            /* TAQA green #009045 */
+    --warning: 45 99% 53%;
+
+    --chart-1: 209 100% 30%;
+    --chart-2: 45 99% 53%;
+    --chart-3: 142 100% 28%;
+    --chart-4: 0 75% 50%;
+    --chart-5: 215 16% 47%;
+
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 25% 88%;
+    --input: 214 25% 88%;
+    --ring: 209 100% 30%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 221 60% 7%;
+    --foreground: 210 40% 96%;
+    --card: 221 60% 9%;
+    --card-foreground: 210 40% 96%;
+    --popover: 221 60% 9%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 45 99% 53%;
+    --primary-foreground: 221 100% 10%;
+    --secondary: 217 40% 15%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 217 40% 15%;
+    --muted-foreground: 215 20% 58%;
+    --accent: 209 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 210 40% 96%;
+    --border: 217 35% 16%;
+    --input: 217 35% 16%;
+    --ring: 45 99% 53%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.35);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.6);
+  }
+}
+
+/* ─── Keyframes ─────────────────────────────────────────── */
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-20px) scale(1.04); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(45 99% 53% / 0.45); }
+  50%       { box-shadow: 0 0 18px 5px hsl(45 99% 53% / 0.18); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ─── Utility Classes ────────────────────────────────────── */
+
+@layer utilities {
+  /* Animations */
+  .animate-fade-in-up      { animation: fade-in-up 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+  .animate-fade-in         { animation: fade-in 0.4s ease-out both; }
+  .animate-slide-in-right  { animation: slide-in-right 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+  .animate-float           { animation: float 3.5s ease-in-out infinite; }
+  .animate-float-slow      { animation: float-slow 6s ease-in-out infinite; }
+  .animate-shimmer         { animation: shimmer 1.8s linear infinite; }
+  .animate-pulse-gold      { animation: pulse-gold 2.5s ease-in-out infinite; }
+  .animate-spin-slow       { animation: spin-slow 8s linear infinite; }
+
+  /* TAQA brand gradients */
+  .bg-taqa-hero {
+    background: linear-gradient(135deg, #001845 0%, #002060 35%, #004080 70%, #005298 100%);
+  }
+  .bg-taqa-hero-animated {
+    background: linear-gradient(270deg, #001845, #002060, #005298, #003d7a);
+    background-size: 300% 300%;
+    animation: gradient-shift 8s ease infinite;
+  }
+  .bg-taqa-card-hover {
+    background: linear-gradient(145deg, hsl(209 100% 30% / 0.04), hsl(45 99% 53% / 0.05));
+  }
+
+  /* Glass effects */
+  .glass {
+    background: hsl(0 0% 100% / 0.08);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid hsl(0 0% 100% / 0.12);
+  }
+  .glass-dark {
+    background: hsl(221 80% 8% / 0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid hsl(209 100% 50% / 0.12);
+  }
+
+  /* Glow effects */
+  .glow-navy { box-shadow: 0 0 32px hsl(209 100% 30% / 0.3); }
+  .glow-gold  { box-shadow: 0 0 28px hsl(45 99% 53% / 0.35); }
+  .shadow-taqa { box-shadow: 0 4px 24px -4px hsl(209 100% 30% / 0.2), 0 1px 3px hsl(217 70% 14% / 0.06); }
+
+  /* Text gradients */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #FFC10E 0%, #e6a800 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-navy {
+    background: linear-gradient(135deg, #005298 0%, #002060 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gold bar accent */
+  .gold-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #FFC10E, #FFC10E80, transparent);
+    border-radius: 99px;
+  }
+
+  /* Shimmer loading skeleton */
+  .shimmer-bg {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.08) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+
+  /* Interactive card base */
+  .card-interactive {
+    @apply transition-all duration-300 cursor-pointer;
+  }
+  .card-interactive:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
+
+  /* ── NABQ dashboard utilities ───────────────────── */
+  .glass-card {
+    @apply rounded-xl border border-border bg-card p-6 shadow-sm;
+  }
+  .kpi-label {
+    @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
+  }
+  .kpi-value {
+    @apply text-3xl font-bold text-foreground;
+  }
+  .glow-primary {
+    box-shadow: 0 0 24px hsl(var(--primary) / 0.15);
+  }
+  .glow-accent {
+    box-shadow: 0 0 24px hsl(var(--accent) / 0.15);
+  }
+}
