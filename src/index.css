@@ -263,3 +263,67 @@
     box-shadow: 0 0 24px hsl(var(--accent) / 0.15);
   }
 }
+
+@media print {
+  /* Hide navigation, headers, tabs bar, action buttons */
+  nav,
+  footer,
+  [data-print-hide],
+  .tabs-list,
+  [role="tablist"] {
+    display: none !important;
+  }
+
+  /* Show only the active tab content */
+  [role="tabpanel"][data-state="inactive"] {
+    display: none !important;
+  }
+
+  /* Full width for print */
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Avoid page breaks inside tables */
+  table, .rounded-xl {
+    page-break-inside: avoid;
+  }
+
+  /* Make tables full width */
+  .overflow-auto {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11px;
+  }
+}
+
+/* Mobile responsiveness improvements */
+@media (max-width: 640px) {
+  /* Horizontal scroll for all data tables */
+  .overflow-auto table {
+    min-width: 600px;
+  }
+
+  /* Stack model page header on mobile */
+  .model-header-actions {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  /* Reduce container padding */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Make KPI cards 2-column on mobile */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}

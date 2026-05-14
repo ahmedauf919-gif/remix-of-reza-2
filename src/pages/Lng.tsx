@@ -1,14 +1,16 @@
 import { useMemo, useDeferredValue, useState, useCallback } from "react";
-import { RotateCcw, Save, Loader2, BookMarked } from "lucide-react";
+import { RotateCcw, Save, Loader2, BookMarked, FileSpreadsheet } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DEFAULT_LNG_INPUTS, runLngModel, LngInputs } from "@/lib/lngModel";
+import { exportLngExcel } from "@/lib/excelExporters";
 import { LngInputsForm } from "@/components/lng/LngInputsForm";
 import { LngSummary } from "@/components/lng/LngSummary";
 import { LngOutput } from "@/components/lng/LngOutput";
 import { LngCharts } from "@/components/lng/LngCharts";
 import { LngRecommendations } from "@/components/lng/LngRecommendations";
-import { ModelPageHeader, headerBtnGhost } from "@/components/ModelPageHeader";
+import { LngSensitivity } from "@/components/lng/LngSensitivity";
+import { ModelPageHeader, headerBtnGhost, headerBtnGold } from "@/components/ModelPageHeader";
 import { takePendingLoad } from "@/lib/directoryStore";
 import { SaveToDirectoryDialog } from "@/components/directory/SaveToDirectoryDialog";
 
@@ -35,6 +37,7 @@ export default function LngPage() {
   const [inputs, setInputsRaw] = useState<LngInputs>(loadInputs);
   const [saving, setSaving] = useState(false);
   const [dirDialogOpen, setDirDialogOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const setInputs = useCallback((next: LngInputs | ((prev: LngInputs) => LngInputs)) => {
     setInputsRaw(prev => {
@@ -51,6 +54,11 @@ export default function LngPage() {
   const deferred = useDeferredValue(inputs);
   const model = useMemo(() => runLngModel(deferred), [deferred]);
   const isStale = inputs !== deferred;
+
+  const exportExcel = async () => {
+    setExporting(true);
+    try { await exportLngExcel(model); } finally { setExporting(false); }
+  };
 
   const reset = () => {
     const stored = localStorage.getItem("lng_tz_default_v1");
@@ -79,6 +87,9 @@ export default function LngPage() {
         loaded={true}
         actions={
           <>
+            <button onClick={exportExcel} disabled={exporting} className={headerBtnGold}>
+              <FileSpreadsheet className="h-3.5 w-3.5" /> {exporting ? "Exporting…" : "Excel"}
+            </button>
             <button onClick={() => setDirDialogOpen(true)} className={headerBtnGhost}>
               <BookMarked className="h-3.5 w-3.5" /> Save to Directory
             </button>
@@ -108,6 +119,7 @@ export default function LngPage() {
             <TabsTrigger value="output">Output</TabsTrigger>
             <TabsTrigger value="charts">Charts</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+            <TabsTrigger value="sensitivity">Sensitivity</TabsTrigger>
           </TabsList>
           <TabsContent value="summary" className="m-0 pt-6">
             <LngSummary m={model} />
@@ -123,6 +135,9 @@ export default function LngPage() {
           </TabsContent>
           <TabsContent value="recommendations" className="m-0 pt-6">
             <LngRecommendations m={model} />
+          </TabsContent>
+          <TabsContent value="sensitivity" className="m-0 pt-6">
+            <LngSensitivity inputs={inputs} baseModel={model} />
           </TabsContent>
         </Tabs>
       </main>

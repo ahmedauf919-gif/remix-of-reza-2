@@ -23,11 +23,15 @@ const ScheduleTable = ({ title, years, sections }: { title: string; years: numbe
               {sec.rows.map((r, ri) => (
                 <tr key={ri} className={`border-t border-border/40 hover:bg-secondary/30 ${r.bold ? "font-semibold bg-muted/30" : ""}`}>
                   <td className={`sticky left-0 bg-card px-3 py-1.5 ${r.indent ? "pl-6 text-muted-foreground" : ""}`}>{r.label}</td>
-                  {r.values.map((v, vi) => (
-                    <td key={vi} className="px-2 py-1.5 text-right font-mono tabular-nums">
-                      {v == null ? "-" : r.xfmt ? r.xfmt(v) : r.pct ? `${fmtNum(v, 2)}x` : fmtNum(v, r.d ?? 0)}
-                    </td>
-                  ))}
+                  {r.values.map((v, vi) => {
+                    const formatted = v == null ? "—" : r.xfmt ? r.xfmt(v) : r.pct ? `${fmtNum(v, 2)}x` : fmtNum(v, r.d ?? 0);
+                    const isRepaid = formatted === "Repaid";
+                    return (
+                      <td key={vi} className={`px-2 py-1.5 text-right font-mono tabular-nums${isRepaid ? " text-green-600/70" : ""}`}>
+                        {formatted}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </Fragment>
@@ -100,7 +104,16 @@ export const CngOutput = ({ m }: { m: CngOutputs }) => {
         { label: "Interest", values: v(r => -r.interest), indent: true },
         { label: "Closing balance", values: v(r => r.debtClosing), bold: true },
         { label: "All-in rate", values: v(r => r.rate * 100), xfmt: (x) => `${x.toFixed(2)}%`, indent: true },
-        { label: "DSCR (CFADS / DS)", values: v(r => isFinite(r.dscr) ? r.dscr : null), pct: true, bold: true },
+        {
+          label: "DSCR (CFADS / DS)",
+          values: m.rows.map(r => {
+            if (isFinite(r.dscr) && r.dscr > 0 && r.dscr < 50) return r.dscr;
+            if (r.debtClosing <= 0 && r.yearIdx >= 0) return -999; // sentinel: loan repaid
+            return null;
+          }),
+          xfmt: (v) => v === -999 ? "Repaid" : `${v.toFixed(2)}x`,
+          bold: true,
+        },
       ],
     },
     ...(m.shareholderLoan > 0 ? [{

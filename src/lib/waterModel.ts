@@ -427,6 +427,8 @@ export interface WaterOutputs {
   rows: YearRow[];
   projectIRR: number;
   equityIRR: number;
+  irrUsd: number;
+  irrProjectUsd: number;
   equityPaybackYears: number;
   npvProject: number;
   npvEquity: number;
@@ -776,6 +778,18 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   const fcfeArr = rows.map(r => r.fcfe);
   const projectIRR = irr(fcffArr);
   const equityIRR = irr(fcfeArr);
+
+  // USD IRR: convert each year's EGP cash flow to USD using per-year FX rate
+  const fcfeUsd = rows.map(r => {
+    const fx = fxAt(I, Math.max(0, r.yearIdx));
+    return r.fcfe / fx;
+  });
+  const fcffUsd = rows.map(r => {
+    const fx = fxAt(I, Math.max(0, r.yearIdx));
+    return r.fcff / fx;
+  });
+  const irrUsd = irr(fcfeUsd);
+  const irrProjectUsd = irr(fcffUsd);
   const npvProject = npv(I.discountRateProject, fcffArr);
   const npvEquity = npv(I.discountRateEquity, fcfeArr);
 
@@ -843,7 +857,7 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     installedCapacityM3Year, actualCapacityM3Year, unutilisedCapacityM3Year, utilisationPct,
     fixedCostPerM3, variableCostPerM3, electricityCostPerM3, depreciationPerM3, totalCostPerM3,
     lcom3, rows,
-    projectIRR, equityIRR, equityPaybackYears: payback,
+    projectIRR, equityIRR, irrUsd, irrProjectUsd, equityPaybackYears: payback,
     npvProject, npvEquity, minDSCR, avgDSCR,
     tariffEgpPerM3: tariff,
     tariffAllocCbeInflation, tariffAllocElectricity, tariffAllocFx, tariffAllocFixedUsd,

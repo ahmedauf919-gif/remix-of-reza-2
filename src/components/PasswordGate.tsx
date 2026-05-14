@@ -10,14 +10,31 @@ export const PasswordGate = ({ children }: { children: React.ReactNode }) => {
   const [pwd, setPwd] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number>(0);
+  const [countdown, setCountdown] = useState("");
+
+  const isLocked = Date.now() < lockedUntil;
 
   useEffect(() => {
     if (sessionStorage.getItem(STORAGE_KEY) === "1") setUnlocked(true);
   }, []);
 
+  useEffect(() => {
+    if (!isLocked) return;
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, lockedUntil - Date.now());
+      const m = Math.floor(remaining / 60000);
+      const s = Math.floor((remaining % 60000) / 1000);
+      setCountdown(`${m}:${s.toString().padStart(2, "0")}`);
+      if (remaining === 0) setLockedUntil(0);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isLocked, lockedUntil]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pwd) return;
+    if (!pwd || isLocked) return;
     setLoading(true);
     setError("");
     /* brief artificial delay so the spinner is visible */
@@ -26,7 +43,16 @@ export const PasswordGate = ({ children }: { children: React.ReactNode }) => {
       sessionStorage.setItem(STORAGE_KEY, "1");
       setUnlocked(true);
     } else {
-      setError("Incorrect password. Please try again.");
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      if (newAttempts >= 5) {
+        const unlockAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+        setLockedUntil(unlockAt);
+        setAttempts(0);
+        setError("Too many failed attempts. Locked for 5 minutes.");
+      } else {
+        setError(`Incorrect password. ${5 - newAttempts} attempt${5 - newAttempts === 1 ? "" : "s"} remaining.`);
+      }
       setLoading(false);
     }
   };
@@ -109,26 +135,32 @@ export const PasswordGate = ({ children }: { children: React.ReactNode }) => {
               type="password"
               autoFocus
               value={pwd}
-              onChange={(e) => { setPwd(e.target.value); setError(""); }}
+              onChange={(e) => { setPwd(e.target.value); if (!isLocked) setError(""); }}
               placeholder="Access password"
+              disabled={isLocked}
               className="w-full px-4 py-3 rounded-xl bg-white/[0.08] border border-white/10
                          text-white placeholder:text-white/25 text-sm
                          focus:outline-none focus:border-[#FFC10E]/50 focus:ring-2
-                         focus:ring-[#FFC10E]/20 transition-all"
+                         focus:ring-[#FFC10E]/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             />
 
-            {/* Error message */}
-            {error && (
+            {/* Error / lockout message */}
+            {isLocked ? (
+              <div className="flex items-center gap-2 text-amber-400 text-xs animate-fade-in">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                Account locked — try again in {countdown}
+              </div>
+            ) : error ? (
               <div className="flex items-center gap-2 text-red-400 text-xs animate-fade-in">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 {error}
               </div>
-            )}
+            ) : null}
 
             {/* Submit button */}
             <button
               type="submit"
-              disabled={loading || !pwd}
+              disabled={isLocked || loading || !pwd}
               className="w-full py-3 rounded-xl bg-[#FFC10E] text-[#002060] font-bold
                          text-sm tracking-wide transition-all hover:bg-[#ffd04e]
                          active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed

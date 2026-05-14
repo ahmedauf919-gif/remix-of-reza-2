@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { Check, UploadCloud, Loader2, ChevronRight } from "lucide-react";
+import { Check, UploadCloud, Loader2, ChevronRight, Printer } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.jpg";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface ModelPageHeaderProps {
   title: string;
@@ -44,7 +45,7 @@ export function ModelPageHeader({ title, subtitle, isStale, saving, loaded, acti
         </div>
 
         {/* Right: save status + action buttons */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap model-header-actions">
           {/* Auto-save indicator */}
           <div className="flex items-center gap-1.5 text-xs text-white/55 bg-white/5 rounded-full px-3 py-1.5 border border-white/10">
             {isStale ? (
@@ -60,6 +61,11 @@ export function ModelPageHeader({ title, subtitle, isStale, saving, loaded, acti
           </div>
 
           {actions}
+
+          <button onClick={() => window.print()} className={headerBtnGhost} data-print-hide>
+            <Printer className="h-3.5 w-3.5" /> Print
+          </button>
+          <ThemeToggle />
         </div>
       </div>
     </header>

@@ -209,6 +209,7 @@ export interface LngOutputs {
   avgDSCR: number;
   lcoe: number;             // USD/MMBTU levelised cost
   capexPerM3Day: number;    // total CAPEX USD / capacity m³/day
+  breakEvenPriceUsd: number; // selling price (USD/MMBTU) at which equityIRR = hurdle
 
   capexBreakdown: {
     label: string;
@@ -541,6 +542,9 @@ export function runLngModel(I: LngInputs): LngOutputs {
     return { label: it.label, amountUsd: baseWithContingency, vatUsd, totalUsd, units, annualDep };
   });
 
+  // ── Break-even price (binary search) ──
+  const breakEvenPriceUsd = solvePriceForIRR(I, I.discountRateEquity);
+
   return {
     inputs: I,
     rows,
@@ -559,7 +563,19 @@ export function runLngModel(I: LngInputs): LngOutputs {
     lcoe,
     capexPerM3Day,
     capexBreakdown,
+    breakEvenPriceUsd,
   };
+}
+
+function solvePriceForIRR(I: LngInputs, targetIRR: number): number {
+  let lo = 0.5, hi = 30;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    const trial = { ...I, sellingPriceUsdPerMmbtu: mid };
+    const trialIRR = runLngModel(trial).equityIRR;
+    if (trialIRR < targetIRR) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
 }
 
 // ─── Formatters ─────────────────────────────────────────────────────────────

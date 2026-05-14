@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.jpg";
 import { DirectoryPanel } from "@/components/directory/DirectoryPanel";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const investmentModels = [
   {
@@ -186,9 +187,12 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <span className="text-white/30 text-xs hidden md:block">
-            Confidential — Internal Use Only
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-white/30 text-xs hidden md:block">
+              Confidential — Internal Use Only
+            </span>
+            <ThemeToggle />
+          </div>
         </div>
       </nav>
 

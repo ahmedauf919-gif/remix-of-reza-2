@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, FolderOpen, Trash2, ChevronDown, ChevronRight, BookMarked } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -16,9 +16,11 @@ interface SectionProps {
   onDelete: (id: string) => void;
   confirmingId: string | null;
   setConfirmingId: (id: string | null) => void;
+  selected: string[];
+  onToggleSelect: (id: string, checked: boolean) => void;
 }
 
-function Section({ title, entries, onOpen, onDelete, confirmingId, setConfirmingId }: SectionProps) {
+function Section({ title, entries, onOpen, onDelete, confirmingId, setConfirmingId, selected, onToggleSelect }: SectionProps) {
   const [open, setOpen] = useState(true);
 
   return (
@@ -48,6 +50,13 @@ function Section({ title, entries, onOpen, onDelete, confirmingId, setConfirming
                 key={entry.id}
                 className="flex items-start gap-3 rounded-lg border border-border bg-white px-4 py-3 shadow-sm hover:border-[#005298]/30 transition-colors"
               >
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-border accent-[#005298] shrink-0 mt-0.5 cursor-pointer"
+                  checked={selected.includes(entry.id)}
+                  onChange={e => onToggleSelect(entry.id, e.target.checked)}
+                  disabled={!selected.includes(entry.id) && selected.length >= 2}
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-sm text-[#002060] truncate">{entry.name}</span>
@@ -115,6 +124,8 @@ export function DirectoryPanel() {
   const [entries, setEntries] = useState<DirectoryEntry[]>(() => loadEntries());
   const [search, setSearch] = useState("");
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
 
   const filtered = search.trim()
     ? entries.filter(e =>
@@ -135,6 +146,11 @@ export function DirectoryPanel() {
   const handleDelete = (id: string) => {
     removeEntry(id);
     setEntries(loadEntries());
+  };
+
+  const handleToggleSelect = (id: string, checked: boolean) => {
+    if (checked && selected.length < 2) setSelected(s => [...s, id]);
+    else if (!checked) setSelected(s => s.filter(sid => sid !== id));
   };
 
   return (
@@ -172,6 +188,8 @@ export function DirectoryPanel() {
           onDelete={handleDelete}
           confirmingId={confirmingId}
           setConfirmingId={setConfirmingId}
+          selected={selected}
+          onToggleSelect={handleToggleSelect}
         />
         <Section
           title="Sizing Models"
@@ -180,6 +198,8 @@ export function DirectoryPanel() {
           onDelete={handleDelete}
           confirmingId={confirmingId}
           setConfirmingId={setConfirmingId}
+          selected={selected}
+          onToggleSelect={handleToggleSelect}
         />
         <Section
           title="Client Presentations"
@@ -188,6 +208,8 @@ export function DirectoryPanel() {
           onDelete={handleDelete}
           confirmingId={confirmingId}
           setConfirmingId={setConfirmingId}
+          selected={selected}
+          onToggleSelect={handleToggleSelect}
         />
 
         {filtered.length === 0 && search.trim() && (
@@ -196,6 +218,56 @@ export function DirectoryPanel() {
           </p>
         )}
       </div>
+
+      {/* Comparison bar */}
+      {selected.length === 2 && (
+        <div className="sticky bottom-0 border-t border-border bg-white px-6 py-3 flex items-center justify-between gap-4">
+          <span className="text-sm text-muted-foreground">2 scenarios selected</span>
+          <div className="flex gap-2">
+            <button onClick={() => setSelected([])} className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-muted/50">Clear</button>
+            <button onClick={() => setShowComparison(true)} className="text-xs bg-[#002060] text-white px-3 py-1.5 rounded-lg hover:bg-[#002060]/90 font-medium">Compare</button>
+          </div>
+        </div>
+      )}
+
+      {/* Comparison modal */}
+      {showComparison && selected.length === 2 && (() => {
+        const [a, b] = entries.filter(e => selected.includes(e.id));
+        if (!a || !b) return null;
+        const rows = [
+          { label: "Model", va: a.modelLabel, vb: b.modelLabel },
+          { label: "Saved", va: formatDate(a.createdAt), vb: formatDate(b.createdAt) },
+          { label: "Notes", va: a.notes || "—", vb: b.notes || "—" },
+        ];
+        return (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+              <div className="flex items-center justify-between p-5 border-b border-border">
+                <h3 className="font-bold text-[#002060]">Scenario Comparison</h3>
+                <button onClick={() => setShowComparison(false)} className="text-muted-foreground hover:text-foreground">✕</button>
+              </div>
+              <div className="p-5">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Attribute</div>
+                  <div className="font-semibold text-sm text-[#002060] truncate">{a.name}</div>
+                  <div className="font-semibold text-sm text-[#002060] truncate">{b.name}</div>
+                  {rows.map((r, i) => (
+                    <React.Fragment key={i}>
+                      <div className="text-xs text-muted-foreground py-1.5 border-t border-border/40">{r.label}</div>
+                      <div className="text-sm py-1.5 border-t border-border/40">{r.va}</div>
+                      <div className="text-sm py-1.5 border-t border-border/40">{r.vb}</div>
+                    </React.Fragment>
+                  ))}
+                </div>
+                <div className="mt-5 flex justify-end gap-2">
+                  <button onClick={() => { handleOpen(a); }} className="text-xs bg-[#005298]/10 text-[#005298] px-4 py-2 rounded-lg hover:bg-[#005298]/20 font-medium">Open {a.name}</button>
+                  <button onClick={() => { handleOpen(b); }} className="text-xs bg-[#005298]/10 text-[#005298] px-4 py-2 rounded-lg hover:bg-[#005298]/20 font-medium">Open {b.name}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

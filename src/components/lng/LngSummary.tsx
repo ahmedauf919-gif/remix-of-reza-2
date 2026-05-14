@@ -2,7 +2,7 @@ import { LngOutputs, fmtUsd, fmtNum, fmtPct } from "@/lib/lngModel";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import {
   TrendingUp, Activity, Banknote, Gauge, Zap, Layers,
-  Shield, CheckCircle2, AlertTriangle, Calendar,
+  Shield, CheckCircle2, AlertTriangle, Calendar, Target,
 } from "lucide-react";
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis,
@@ -55,7 +55,7 @@ export function LngSummary({ m }: { m: LngOutputs }) {
         <KpiCard label="DSCR Cushion"   value={`${dscrCushion >= 0 ? "+" : ""}${fmtNum(dscrCushion, 2)}x`} hint="vs 1.30x covenant" icon={<Shield className="h-5 w-5"/>} accent={dscrCushion >= 0 ? "success" : "accent"}/>
         <KpiCard label="Y1 Revenue"     value={fmtUsd(revenueY1)}        hint={`EBITDA margin ${fmtPct(ebitdaMargin)}`}        icon={<Banknote className="h-5 w-5"/>}   accent="primary"/>
         <KpiCard label="Capacity"       value={`${fmtNum(I.capacityM3LngPerDay, 0)} m³/day`} hint={`${I.numSemiTrailers} semi-trailers`} icon={<Activity className="h-5 w-5"/>} accent="accent"/>
-        <KpiCard label="Y1 Volume"      value={`${fmtNum((y1?.volumeMmbtu ?? 0) / 1e3, 1)}K MMBTU`} hint={`${fmtNum(y1?.volumeM3Lng ?? 0, 0)} m³ LNG`} icon={<Calendar className="h-5 w-5"/>} accent="success"/>
+        <KpiCard label="Break-even Price" value={`$${fmtNum(m.breakEvenPriceUsd, 2)}/MMBTU`} hint={`vs $${fmtNum(I.sellingPriceUsdPerMmbtu, 2)} base`} icon={<Target className="h-5 w-5"/>} accent={I.sellingPriceUsdPerMmbtu > m.breakEvenPriceUsd ? "success" : "accent"}/>
         <KpiCard label="CAPEX/m³·day"  value={`$${fmtNum(m.capexPerM3Day, 0)}`} hint="USD per m³/day capacity" icon={<Layers className="h-5 w-5"/>} accent="accent"/>
       </section>
 

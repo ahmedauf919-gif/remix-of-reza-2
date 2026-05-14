@@ -136,7 +136,7 @@ export const WaterOutput = ({ m }: { m: WaterOutputs }) => {
 
       {/* Project IRR Build */}
       <div className="rounded-xl border bg-card p-5 shadow-sm overflow-x-auto">
-        <h3 className="font-semibold mb-3">Project IRR Build — {fmtPct(m.projectIRR)} (Unlevered FCFF, EGP '000)</h3>
+        <h3 className="font-semibold mb-3">Project IRR Build — {fmtPct(m.projectIRR)} EGP · {fmtPct(m.irrProjectUsd)} USD (Unlevered FCFF, EGP '000)</h3>
         <table className="text-xs min-w-full">
           <thead><tr className="border-b">
             <th className="text-left py-1 px-2">Item</th>
@@ -162,7 +162,7 @@ export const WaterOutput = ({ m }: { m: WaterOutputs }) => {
 
       {/* Equity IRR Build */}
       <div className="rounded-xl border bg-card p-5 shadow-sm overflow-x-auto">
-        <h3 className="font-semibold mb-3">Equity IRR Build — {fmtPct(m.equityIRR)} (Levered FCFE, EGP '000)</h3>
+        <h3 className="font-semibold mb-3">Equity IRR Build — {fmtPct(m.equityIRR)} EGP · {fmtPct(m.irrUsd)} USD (Levered FCFE, EGP '000)</h3>
         <table className="text-xs min-w-full">
           <thead><tr className="border-b">
             <th className="text-left py-1 px-2">Item</th>
