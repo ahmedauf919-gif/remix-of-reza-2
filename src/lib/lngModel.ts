@@ -302,7 +302,8 @@ export const DEFAULT_LNG_INPUTS: LngInputs = {
 
 // ─── Model Engine ───────────────────────────────────────────────────────────
 
-export function runLngModel(I: LngInputs): LngOutputs {
+// Internal core — does NOT compute breakEvenPriceUsd (avoids infinite recursion)
+function _runLngCore(I: LngInputs): Omit<LngOutputs, "breakEvenPriceUsd"> {
   const N = I.projectDurationYears;
 
   // Resolve per-year inflation arrays (fall back to legacy single-value arrays)
@@ -542,9 +543,6 @@ export function runLngModel(I: LngInputs): LngOutputs {
     return { label: it.label, amountUsd: baseWithContingency, vatUsd, totalUsd, units, annualDep };
   });
 
-  // ── Break-even price (binary search) ──
-  const breakEvenPriceUsd = solvePriceForIRR(I, I.discountRateEquity);
-
   return {
     inputs: I,
     rows,
@@ -563,19 +561,25 @@ export function runLngModel(I: LngInputs): LngOutputs {
     lcoe,
     capexPerM3Day,
     capexBreakdown,
-    breakEvenPriceUsd,
   };
 }
 
+// Bisect over sellingPriceUsdPerMmbtu — calls _runLngCore to avoid recursion
 function solvePriceForIRR(I: LngInputs, targetIRR: number): number {
   let lo = 0.5, hi = 30;
   for (let i = 0; i < 60; i++) {
     const mid = (lo + hi) / 2;
-    const trial = { ...I, sellingPriceUsdPerMmbtu: mid };
-    const trialIRR = runLngModel(trial).equityIRR;
+    const trialIRR = _runLngCore({ ...I, sellingPriceUsdPerMmbtu: mid }).equityIRR;
     if (trialIRR < targetIRR) lo = mid; else hi = mid;
   }
   return (lo + hi) / 2;
+}
+
+// Public entry point — adds break-even on top of core
+export function runLngModel(I: LngInputs): LngOutputs {
+  const core = _runLngCore(I);
+  const breakEvenPriceUsd = solvePriceForIRR(I, I.discountRateEquity);
+  return { ...core, breakEvenPriceUsd };
 }
 
 // ─── Formatters ─────────────────────────────────────────────────────────────

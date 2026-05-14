@@ -4,6 +4,7 @@ import {
   Wind, SunMedium, Droplets, Truck, ArrowRight, Plus,
   TrendingUp, Layers, FileDown, Shield, Zap, Briefcase,
   Ruler, Presentation, ChevronRight, BarChart2, Flame, FolderOpen,
+  Gauge, Battery, Waves,
 } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.jpg";
 import { DirectoryPanel } from "@/components/directory/DirectoryPanel";
@@ -110,7 +111,7 @@ const categories = [
     label: "Sizing Models",
     description: "Technical sizing tools for capacity planning and equipment specification.",
     icon: Ruler,
-    count: 1,
+    count: 4,
     iconBg: "bg-emerald-700",
     iconColor: "text-white",
     accent: "border-emerald-300/40 hover:border-emerald-400/60",
@@ -468,11 +469,69 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* Coming soon slot */}
-              <div className="rounded-xl border-2 border-dashed border-border/50 flex items-center justify-center bg-muted/20 min-h-[220px] transition-colors hover:border-border hover:bg-muted/30">
-                <div className="text-center text-muted-foreground">
-                  <Plus className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm font-medium opacity-50">More tools coming</p>
+              {/* CNG Station Sizing */}
+              <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm overflow-hidden border-border opacity-80">
+                <div className="flex items-start justify-between mb-4">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-emerald-50 text-emerald-700">
+                    Gas
+                  </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-emerald-700">
+                      <Gauge className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Coming Soon</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#002060] text-base leading-snug">CNG Station Sizing</h3>
+                  <p className="text-[11px] text-emerald-700 font-medium mt-0.5 mb-2.5">Technical Sizing Tool</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Size compressors, cascade storage, dispensers and priority panels based on vehicle count, fill patterns and daily throughput targets.
+                  </p>
+                </div>
+              </div>
+
+              {/* SWRO Membrane Sizing */}
+              <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm overflow-hidden border-border opacity-80">
+                <div className="flex items-start justify-between mb-4">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-cyan-50 text-cyan-700">
+                    Water
+                  </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-cyan-700">
+                      <Waves className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Coming Soon</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#002060] text-base leading-snug">SWRO Membrane Sizing</h3>
+                  <p className="text-[11px] text-cyan-700 font-medium mt-0.5 mb-2.5">Technical Sizing Tool</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Determine membrane count, pressure vessels, HP pump sizing and specific energy (kWh/m³) from feed water quality and recovery rate targets.
+                  </p>
+                </div>
+              </div>
+
+              {/* BESS Sizing */}
+              <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm overflow-hidden border-border opacity-80">
+                <div className="flex items-start justify-between mb-4">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-violet-50 text-violet-700">
+                    Storage
+                  </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-violet-700">
+                      <Battery className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Coming Soon</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#002060] text-base leading-snug">BESS Sizing</h3>
+                  <p className="text-[11px] text-violet-700 font-medium mt-0.5 mb-2.5">Technical Sizing Tool</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Calculate battery capacity (MWh) and power (MW) from peak shaving targets, backup hours, depth of discharge and round-trip efficiency.
+                  </p>
                 </div>
               </div>
             </div>
