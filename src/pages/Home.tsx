@@ -89,9 +89,22 @@ const investmentModels = [
     tag: "LNG",
     tagColor: "bg-orange-50 text-orange-700",
   },
+  {
+    id: "rab-ksa",
+    title: "RAB Tariff Calculator",
+    subtitle: "Saudi Gas Distribution",
+    description:
+      "Regulated Asset Base tariff model for Saudi gas distribution concessions. 6 building blocks, ZATCA Zakat 2024, Income Tax Art. 21, 30-year financials.",
+    icon: Flame,
+    href: "/models/rab-ksa",
+    iconBg: "bg-green-50 text-green-700",
+    borderHover: "hover:border-green-400/40",
+    tag: "KSA",
+    tagColor: "bg-green-50 text-green-700",
+  },
 ];
 
-type CategoryId = "investment" | "sizing" | "presentations" | "directory";
+type CategoryId = "investment" | "sizing" | "presentations" | "directory" | "analytics";
 
 const categories = [
   {
@@ -129,6 +142,18 @@ const categories = [
     accent: "border-violet-300/40 hover:border-violet-400/60",
     activeAccent: "border-violet-500 ring-2 ring-violet-500/20",
     badgeBg: "bg-violet-50 text-violet-700",
+  },
+  {
+    id: "analytics" as CategoryId,
+    label: "TAQA Analytics",
+    description: "Internal business intelligence — client portfolio maps, sector breakdowns and operational dashboards.",
+    icon: TrendingUp,
+    count: 1,
+    iconBg: "bg-[#E8A020]",
+    iconColor: "text-white",
+    accent: "border-amber-300/40 hover:border-amber-400/60",
+    activeAccent: "border-amber-500 ring-2 ring-amber-500/20",
+    badgeBg: "bg-amber-50 text-amber-700",
   },
   {
     id: "directory" as CategoryId,
@@ -558,6 +583,35 @@ export default function Home() {
                   Presentation templates and executive summary generators will appear here.
                 </p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Panel: TAQA Analytics ── */}
+        {activeCategory === "analytics" && (
+          <div className="animate-fade-in-up">
+            <div className="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
+              <TrendingUp className="h-4 w-4 text-amber-600" />
+              <span className="font-medium text-[#002060]">TAQA Analytics</span>
+              <span className="text-border">·</span>
+              <span>Internal business intelligence and client portfolio dashboards.</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <Link to="/analytics/taqa" className="block group">
+                <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm overflow-hidden hover:shadow-md hover:border-amber-400/40 transition-all">
+                  <div className="flex items-start justify-between mb-4">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-amber-50 text-amber-700">Analytics</span>
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-[#E8A020]">
+                      <TrendingUp className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-[#002060] text-base leading-snug">TAQA Arabia Dashboard</h3>
+                  <p className="text-[11px] text-amber-700 font-medium mt-0.5 mb-2.5">Business Intelligence</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Client portfolio maps across Gas, Master Gas, Petroleum, Electricity and Water. Geographic distribution, sector breakdown and client analytics.
+                  </p>
+                </div>
+              </Link>
             </div>
           </div>
         )}
