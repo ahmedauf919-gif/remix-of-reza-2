@@ -44,6 +44,9 @@
 
     --radius: 0.75rem;
 
+    /* TAQA Analytics tab theme — default cyan */
+    --tab-theme: 195 90% 48%;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -248,7 +251,7 @@
 
   /* ── NABQ dashboard utilities ───────────────────── */
   .glass-card {
-    @apply rounded-xl border border-border bg-card p-6 shadow-sm;
+    @apply rounded-xl border border-border bg-card shadow-sm;
   }
   .kpi-label {
     @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
@@ -261,6 +264,29 @@
   }
   .glow-accent {
     box-shadow: 0 0 24px hsl(var(--accent) / 0.15);
+  }
+
+  /* TAQA Analytics: per-tab theme colors */
+  .theme-consolidated { --tab-theme: 195 90% 48%; }
+  .theme-taqa         { --tab-theme: 145 70% 42%; }
+  .theme-master       { --tab-theme: 155 65% 40%; }
+  .theme-petroleum    { --tab-theme: 220 10% 55%; }
+  .theme-electricity  { --tab-theme:  45 90% 50%; }
+  .theme-water        { --tab-theme: 210 85% 55%; }
+  .theme-clients      { --tab-theme: 195 90% 48%; }
+
+  /* TAQA Analytics: glow on stat cards */
+  .stat-glow {
+    box-shadow: 0 0 30px -5px hsl(var(--tab-theme) / 0.15);
+  }
+
+  /* TAQA Analytics: dark glass card override (scoped to avoid NABQ conflicts) */
+  .taqa-analytics .glass-card {
+    background: linear-gradient(135deg, hsl(220 20% 12% / 0.9), hsl(220 20% 8% / 0.95));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(220 15% 20% / 0.5);
+    box-shadow: none;
   }
 }
 

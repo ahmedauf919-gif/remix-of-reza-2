@@ -113,7 +113,7 @@ export function ServiceEgyptMap({ records, title }: { records: ClientRecord[]; t
         </svg>
 
         {selected && selectedInfo && (
-          <div className="absolute top-2 right-2 w-72 bg-popover border border-border rounded-xl p-4 shadow-xl z-10 max-h-[480px] overflow-y-auto scrollbar-thin">
+          <div className="absolute top-2 right-2 w-72 rounded-xl p-4 shadow-xl z-10 max-h-[480px] overflow-y-auto scrollbar-thin" style={{ background: "hsl(220 20% 14%)", border: "1px solid hsl(220 15% 22%)" }}>
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-white font-bold text-sm">{selected}</h4>
               <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
@@ -133,7 +133,7 @@ export function ServiceEgyptMap({ records, title }: { records: ClientRecord[]; t
                 </ul>
               </div>
             ))}
-            <button onClick={() => openGoogleMaps(selected)} className="mt-2 w-full text-xs py-1.5 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors">
+            <button onClick={() => openGoogleMaps(selected)} className="mt-2 w-full text-xs py-1.5 rounded-lg text-white/80 hover:text-white transition-colors" style={{ background: "hsl(220 20% 22%)" }}>
               Open in Google Maps ↗
             </button>
           </div>

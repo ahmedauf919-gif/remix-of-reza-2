@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Home as HomeIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { taqaGasData } from "@/data/taqa/taqaGas";
 import { masterGasData, mobileCNGData, cngStationsData } from "@/data/taqa/masterGas";
 import { petroleumData } from "@/data/taqa/petroleum";
@@ -204,15 +207,15 @@ function ConsolidatedTab() {
       <div className="glass-card rounded-xl p-5">
         <h3 className="text-white font-semibold mb-4">Filters</h3>
         <div className="flex flex-wrap gap-4">
-          <select value={companyFilter} onChange={e => setCompanyFilter(e.target.value)} className="bg-secondary text-black rounded-lg px-3 py-2 text-sm border border-border outline-none">
+          <select value={companyFilter} onChange={e => setCompanyFilter(e.target.value)} className="rounded-lg px-3 py-2 text-sm outline-none" style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", color: "#fff" }}>
             <option value="">All Companies</option>
             {companies.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select value={govFilter} onChange={e => setGovFilter(e.target.value)} className="bg-secondary text-black rounded-lg px-3 py-2 text-sm border border-border outline-none">
+          <select value={govFilter} onChange={e => setGovFilter(e.target.value)} className="rounded-lg px-3 py-2 text-sm outline-none" style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", color: "#fff" }}>
             <option value="">All Governorates</option>
             {governorates.map(g => <option key={g} value={g}>{g}</option>)}
           </select>
-          <select value={actFilter} onChange={e => setActFilter(e.target.value)} className="bg-secondary text-black rounded-lg px-3 py-2 text-sm border border-border outline-none">
+          <select value={actFilter} onChange={e => setActFilter(e.target.value)} className="rounded-lg px-3 py-2 text-sm outline-none" style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", color: "#fff" }}>
             <option value="">All Activities</option>
             {activities.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
@@ -226,12 +229,13 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState("consolidated");
 
   return (
-    <div className={`min-h-screen bg-background theme-${activeTab}`}>
-      <header className="border-b border-border px-6 py-4">
+    <div className={`taqa-analytics min-h-screen theme-${activeTab}`} style={{ background: "hsl(222 47% 11%)" }}>
+      <header className="border-b border-white/10 px-6 py-4 flex items-center gap-4">
+        <Link to="/"><Button variant="secondary" size="sm" className="gap-2 shrink-0"><HomeIcon className="h-4 w-4"/>Home</Button></Link>
         <h1 className="text-2xl font-bold" style={{ color: "hsl(var(--tab-theme))" }}>TAQA Arabia: Leading Integrated Energy Solutions</h1>
       </header>
 
-      <nav className="border-b border-border px-4 overflow-x-auto scrollbar-thin">
+      <nav className="border-b border-white/10 px-4 overflow-x-auto scrollbar-thin">
         <div className="flex gap-1">
           {tabs.map(tab => (
             <button
@@ -240,7 +244,7 @@ export default function Index() {
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                 activeTab === tab.id
                   ? "border-current"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  : "border-transparent text-white/50 hover:text-white"
               }`}
               style={activeTab === tab.id ? { color: "hsl(var(--tab-theme))", borderColor: "hsl(var(--tab-theme))" } : undefined}
             >

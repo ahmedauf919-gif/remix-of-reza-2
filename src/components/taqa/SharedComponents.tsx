@@ -251,7 +251,7 @@ export function ConsolidatedEgyptMap({ data, allRecords, title }: {
 
         {/* Detail panel */}
         {selected && selectedInfo && (
-          <div className="absolute top-2 right-2 w-72 bg-popover border border-border rounded-xl p-4 shadow-xl z-10 max-h-[480px] overflow-y-auto scrollbar-thin">
+          <div className="absolute top-2 right-2 w-72 rounded-xl p-4 shadow-xl z-10 max-h-[480px] overflow-y-auto scrollbar-thin" style={{ background: "hsl(220 20% 14%)", border: "1px solid hsl(220 15% 22%)" }}>
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-white font-bold text-sm">{selected}</h4>
               <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
@@ -273,7 +273,8 @@ export function ConsolidatedEgyptMap({ data, allRecords, title }: {
             ))}
             <button
               onClick={() => openGoogleMaps(selected)}
-              className="mt-2 w-full text-xs py-1.5 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+              className="mt-2 w-full text-xs py-1.5 rounded-lg text-white/80 hover:text-white transition-colors"
+              style={{ background: "hsl(220 20% 22%)" }}
             >
               Open in Google Maps ↗
             </button>
@@ -329,7 +330,8 @@ export function RecordsTable({ records, columns }: { records: ClientRecord[]; co
           <select
             value={govFilter}
             onChange={e => { setGovFilter(e.target.value); setPage(0); }}
-            className="bg-popover text-black rounded-lg px-3 py-1.5 text-sm border border-border outline-none z-10"
+            className="rounded-lg px-3 py-1.5 text-sm outline-none z-10"
+            style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", color: "#fff" }}
           >
             <option value="">All Governorates</option>
             {governorates.map(g => <option key={g} value={g}>{g}</option>)}
@@ -337,7 +339,8 @@ export function RecordsTable({ records, columns }: { records: ClientRecord[]; co
           <select
             value={actFilter}
             onChange={e => { setActFilter(e.target.value); setPage(0); }}
-            className="bg-popover text-black rounded-lg px-3 py-1.5 text-sm border border-border outline-none z-10"
+            className="rounded-lg px-3 py-1.5 text-sm outline-none z-10"
+            style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", color: "#fff" }}
           >
             <option value="">All Activities</option>
             {activities.map(a => <option key={a} value={a}>{a}</option>)}
@@ -346,7 +349,8 @@ export function RecordsTable({ records, columns }: { records: ClientRecord[]; co
             <select
               value={serviceFilter}
               onChange={e => { setServiceFilter(e.target.value); setPage(0); }}
-              className="bg-popover text-black rounded-lg px-3 py-1.5 text-sm border border-border outline-none z-10"
+              className="rounded-lg px-3 py-1.5 text-sm outline-none z-10"
+              style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", color: "#fff" }}
             >
               <option value="">All Services</option>
               {services.map(s => <option key={s} value={s}>{s}</option>)}
@@ -355,8 +359,8 @@ export function RecordsTable({ records, columns }: { records: ClientRecord[]; co
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
-              className="pl-9 pr-3 py-1.5 bg-secondary rounded-lg text-sm text-white border border-border outline-none focus:ring-1"
-              style={{ "--tw-ring-color": "hsl(var(--tab-theme))" } as React.CSSProperties}
+              className="pl-9 pr-3 py-1.5 rounded-lg text-sm text-white outline-none focus:ring-1"
+              style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", "--tw-ring-color": "hsl(var(--tab-theme))" } as React.CSSProperties}
               placeholder="Search..."
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(0); }}
@@ -388,9 +392,9 @@ export function RecordsTable({ records, columns }: { records: ClientRecord[]; co
       </div>
       {pages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-4">
-          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="px-3 py-1 rounded bg-secondary text-secondary-foreground text-sm disabled:opacity-40">Prev</button>
-          <span className="text-muted-foreground text-sm">{page + 1} / {pages}</span>
-          <button onClick={() => setPage(p => Math.min(pages - 1, p + 1))} disabled={page >= pages - 1} className="px-3 py-1 rounded bg-secondary text-secondary-foreground text-sm disabled:opacity-40">Next</button>
+          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="px-3 py-1 rounded text-white text-sm disabled:opacity-40" style={{ background: "hsl(220 20% 18%)" }}>Prev</button>
+          <span className="text-white/60 text-sm">{page + 1} / {pages}</span>
+          <button onClick={() => setPage(p => Math.min(pages - 1, p + 1))} disabled={page >= pages - 1} className="px-3 py-1 rounded text-white text-sm disabled:opacity-40" style={{ background: "hsl(220 20% 18%)" }}>Next</button>
         </div>
       )}
     </div>
