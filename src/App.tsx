@@ -12,6 +12,7 @@ import Cng from "./pages/Cng.tsx";
 import Lng from "./pages/Lng.tsx";
 import RabKsa from "./pages/RabKsa.tsx";
 import TaqaAnalytics from "./pages/TaqaAnalytics.tsx";
+import ResidentialCustomers from "./pages/presentations/ResidentialCustomers.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { PasswordGate } from "./components/PasswordGate";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/models/lngtz" element={<Lng />} />
             <Route path="/models/rab-ksa" element={<RabKsa />} />
             <Route path="/analytics/taqa" element={<TaqaAnalytics />} />
+            <Route path="/presentations/residential-customers" element={<ResidentialCustomers />} />
             {/* NABQ Routes — lazy loaded with error boundary */}
             <Route path="/sizing/nabq" element={<ErrorBoundary label="NABQ Diesel"><NabqDashboardProvider><Suspense fallback={<div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>}><NabqDiesel /></Suspense></NabqDashboardProvider></ErrorBoundary>} />
             <Route path="/sizing/nabq/battery" element={<ErrorBoundary label="NABQ Battery"><NabqDashboardProvider><Suspense fallback={<div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>}><NabqBattery /></Suspense></NabqDashboardProvider></ErrorBoundary>} />
