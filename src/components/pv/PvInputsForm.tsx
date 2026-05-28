@@ -222,7 +222,7 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
                     onClick={() => set("tariffEscalationPerYear", Array.from({ length: N }, () => inputs.govtEscalationPct))}>
                     Fill from default escalation
                   </Button>
-                  <span className="text-xs text-muted-foreground ml-auto">Tariff(Y) = Tariff(Y-1) × (1 + inflation%). Y1 = base tariff.</span>
+                  <span className="text-xs text-muted-foreground ml-auto">Escalation starts from signing (construction Y0). First {Math.ceil((inputs.constructionMonths||12)/12)} entries cover construction; remaining entries apply to ops years. Ops Y1 tariff already reflects construction-period inflation.</span>
                 </div>
                 <YearArrayEditor label="Inflation %" years={N} values={inputs.tariffEscalationPerYear} fallback={inputs.govtEscalationPct}
                   onChange={(a) => set("tariffEscalationPerYear", a)} step={0.5} asPct />
@@ -246,8 +246,9 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
           )}
 
           <div className="mt-4">
-            <FullSection title="Annual Savings vs Tariff (%)">
-              <YearArrayEditor label="Savings %" years={N} values={inputs.savingsPctPerYear} fallback={0.20}
+            <FullSection title="Discount (%)">
+              <p className="text-xs text-muted-foreground mb-3">Applied as a discount off the tariff — e.g. 20% on 2.500 EGP/kWh → effective price of 2.000 EGP/kWh.</p>
+              <YearArrayEditor label="Discount %" years={N} values={inputs.savingsPctPerYear} fallback={0.20}
                 onChange={(a) => set("savingsPctPerYear", a)} step={0.5} asPct />
             </FullSection>
           </div>
@@ -279,7 +280,11 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
                         <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="EGP">EGP</SelectItem></SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell><Input type="number" step={1} value={it.units} onChange={(e) => updateCapex(i, { units: parseFloat(e.target.value) || 0 })} /></TableCell>
+                    <TableCell>
+                      {(it.key === "modules" || it.key === "epc")
+                        ? <span className="text-xs text-muted-foreground px-2">= {inputs.capacityKwp.toLocaleString()} kWp (auto)</span>
+                        : <Input type="number" step={1} value={it.units} onChange={(e) => updateCapex(i, { units: parseFloat(e.target.value) || 0 })} />}
+                    </TableCell>
                     <TableCell><Input type="number" step={1} value={it.costPerUnit} onChange={(e) => updateCapex(i, { costPerUnit: parseFloat(e.target.value) || 0 })} /></TableCell>
                     <TableCell><Input type="number" step={0.5} value={+((it.vatPct * 100).toFixed(2))} onChange={(e) => updateCapex(i, { vatPct: (parseFloat(e.target.value) || 0) / 100 })} /></TableCell>
                     <TableCell><Input type="number" step={0.5} value={+(((it.customsPct ?? 0) * 100).toFixed(2))} onChange={(e) => updateCapex(i, { customsPct: (parseFloat(e.target.value) || 0) / 100 })} /></TableCell>
@@ -336,20 +341,8 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
           </div>
 
           <div className="mt-4">
-            <Section title="MMRA (Major Maintenance Reserve)">
-              <PctField label="MMRA % of Revenue" value={inputs.mmraPctOfRevenue} onChange={(n) => set("mmraPctOfRevenue", n)} step={0.25}/>
-            </Section>
-            <div className="mt-2">
-              <FullSection title="MMRA Inflation per year (%)">
-                <YearArrayEditor label="MMRA inflation %" years={N} values={inputs.mmraInflationPerYear} fallback={0.05}
-                  onChange={(a) => set("mmraInflationPerYear", a)} step={0.5} asPct/>
-              </FullSection>
-            </div>
-          </div>
-
-          <div className="mt-4">
             <Section title="Insurance">
-              <PctField label="Insurance % of CAPEX" value={inputs.insurancePctOfCapex} onChange={(n) => set("insurancePctOfCapex", n)} step={0.05}/>
+              <PctField label="Insurance % of prior-year PP&E" value={inputs.insurancePctOfCapex} onChange={(n) => set("insurancePctOfCapex", n)} step={0.05}/>
             </Section>
             <div className="mt-2">
               <FullSection title="Insurance Inflation per year (%)">
@@ -366,6 +359,18 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
               <PctField label="Usufruct % of Revenue" value={inputs.usufructPctOfRevenue} onChange={(n) => set("usufructPctOfRevenue", n)} step={0.5}/>
               <PctField label="Usufruct YoY (also escalates Rent)" value={inputs.usufructYoYPct} onChange={(n) => set("usufructYoYPct", n)} step={0.5}/>
             </Section>
+          </div>
+
+          <div className="mt-4">
+            <Section title="MMRA (Major Maintenance Reserve)">
+              <PctField label="MMRA % of Revenue" value={inputs.mmraPctOfRevenue} onChange={(n) => set("mmraPctOfRevenue", n)} step={0.25}/>
+            </Section>
+            <div className="mt-2">
+              <FullSection title="MMRA Inflation per year (%)">
+                <YearArrayEditor label="MMRA inflation %" years={N} values={inputs.mmraInflationPerYear} fallback={0.05}
+                  onChange={(a) => set("mmraInflationPerYear", a)} step={0.5} asPct/>
+              </FullSection>
+            </div>
           </div>
         </TabsContent>
 
@@ -409,16 +414,11 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
             )}
             <div className="mt-4">
               <div className="mb-2 flex items-center gap-2">
-                <Button size="sm" variant="outline"
-                  onClick={() => set("bankInterestPerYear",
-                    Array.from({ length: N }, (_, i) => (inputs.corridorPctPerYear[i] ?? inputs.corridorPctPerYear[inputs.corridorPctPerYear.length - 1] ?? 0.0925) + inputs.spreadPct))}>
-                  Seed from Corridor + Spread
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => set("bankInterestPerYear", [])}>Clear (use Corridor + Spread)</Button>
-                <span className="text-xs text-muted-foreground ml-auto">When set, overrides Corridor + Spread per year.</span>
+                <Button size="sm" variant="ghost" onClick={() => set("bankInterestPerYear", [])}>Clear (use 10% flat)</Button>
+                <span className="text-xs text-muted-foreground ml-auto">Base rate per year — Bank Spread is added on top by the model. Effective rate = this + Spread.</span>
               </div>
-              <YearArrayEditor label="Bank All-in Interest Rate per year (%)" years={N} values={inputs.bankInterestPerYear}
-                fallback={(inputs.corridorPctPerYear[0] ?? 0.0925) + inputs.spreadPct} onChange={(a) => set("bankInterestPerYear", a)} step={0.25} asPct/>
+              <YearArrayEditor label="Bank Base Interest Rate per year (%)" years={N} values={inputs.bankInterestPerYear}
+                fallback={0.10} onChange={(a) => set("bankInterestPerYear", a)} step={0.25} asPct/>
             </div>
           </FullSection>
 
@@ -458,7 +458,6 @@ export const PvInputsForm = ({ inputs, onChange }: { inputs: PvInputs; onChange:
             <div className="space-y-4">
               <YearArrayEditor label="EGP Inflation per year (%)" years={N} values={inputs.egpInflationPerYear} fallback={0.15} onChange={(a) => set("egpInflationPerYear", a)} step={0.5} asPct/>
               <YearArrayEditor label="USD Inflation per year (%)" years={N} values={inputs.usdInflationPerYear} fallback={0.03} onChange={(a) => set("usdInflationPerYear", a)} step={0.25} asPct/>
-              <YearArrayEditor label="CBE Corridor per year (%)" years={N} values={inputs.corridorPctPerYear} fallback={0.0925} onChange={(a) => set("corridorPctPerYear", a)} step={0.25} asPct/>
               <YearArrayEditor label="EGP / USD per year" years={N} values={inputs.fxEgpPerUsdPerYear} fallback={50} onChange={(a) => set("fxEgpPerUsdPerYear", a)} step={1}/>
             </div>
           </FullSection>

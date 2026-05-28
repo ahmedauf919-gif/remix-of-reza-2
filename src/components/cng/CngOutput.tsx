@@ -23,11 +23,15 @@ const ScheduleTable = ({ title, years, sections }: { title: string; years: numbe
               {sec.rows.map((r, ri) => (
                 <tr key={ri} className={`border-t border-border/40 hover:bg-secondary/30 ${r.bold ? "font-semibold bg-muted/30" : ""}`}>
                   <td className={`sticky left-0 bg-card px-3 py-1.5 ${r.indent ? "pl-6 text-muted-foreground" : ""}`}>{r.label}</td>
-                  {r.values.map((v, vi) => (
-                    <td key={vi} className="px-2 py-1.5 text-right font-mono tabular-nums">
-                      {v == null ? "-" : r.xfmt ? r.xfmt(v) : r.pct ? `${fmtNum(v, 2)}x` : fmtNum(v, r.d ?? 0)}
-                    </td>
-                  ))}
+                  {r.values.map((v, vi) => {
+                    const formatted = v == null ? "—" : r.xfmt ? r.xfmt(v) : r.pct ? `${fmtNum(v, 2)}x` : fmtNum(v, r.d ?? 0);
+                    const isRepaid = formatted === "Repaid";
+                    return (
+                      <td key={vi} className={`px-2 py-1.5 text-right font-mono tabular-nums${isRepaid ? " text-green-600/70" : ""}`}>
+                        {formatted}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </Fragment>
@@ -60,10 +64,12 @@ export const CngOutput = ({ m }: { m: CngOutputs }) => {
         { label: "Electricity (compression)", values: v(r => -r.electricity), indent: true },
         { label: "Site rent", values: v(r => -r.msRent), indent: true },
         { label: "Mother station OPEX", values: v(r => -r.msOpex), bold: true },
+        { label: "  VAT on Mother Station OPEX", values: v(r => -r.msVat), indent: true },
         { label: "Transport — fixed/trip", values: v(r => -r.transportFixed), indent: true },
         { label: "Transport — variable/km", values: v(r => -r.transportVariable), indent: true },
         { label: "Tires", values: v(r => -r.tires), indent: true },
         { label: "Trailer / transport OPEX", values: v(r => -r.trailerOpex), bold: true },
+        { label: "  VAT on Trailer/Transport OPEX", values: v(r => -r.trailerVat), indent: true },
         { label: "Toll", values: v(r => -r.toll), indent: true },
         { label: "Insurance", values: v(r => -r.insurance), indent: true },
         { label: "Misc.", values: v(r => -r.misc), indent: true },
@@ -98,7 +104,16 @@ export const CngOutput = ({ m }: { m: CngOutputs }) => {
         { label: "Interest", values: v(r => -r.interest), indent: true },
         { label: "Closing balance", values: v(r => r.debtClosing), bold: true },
         { label: "All-in rate", values: v(r => r.rate * 100), xfmt: (x) => `${x.toFixed(2)}%`, indent: true },
-        { label: "DSCR (CFADS / DS)", values: v(r => isFinite(r.dscr) ? r.dscr : null), pct: true, bold: true },
+        {
+          label: "DSCR (CFADS / DS)",
+          values: m.rows.map(r => {
+            if (isFinite(r.dscr) && r.dscr > 0 && r.dscr < 50) return r.dscr;
+            if (r.debtClosing <= 0 && r.yearIdx >= 0) return -999; // sentinel: loan repaid
+            return null;
+          }),
+          xfmt: (v) => v === -999 ? "Repaid" : `${v.toFixed(2)}x`,
+          bold: true,
+        },
       ],
     },
     ...(m.shareholderLoan > 0 ? [{
@@ -158,6 +173,31 @@ export const CngOutput = ({ m }: { m: CngOutputs }) => {
     ]},
   ];
 
+  const cashFlow: Section[] = [
+    { title: "Operating Activities", rows: [
+        { label: "Net Profit", values: v(r => r.netProfit) },
+        { label: "(+) Depreciation", values: v(r => r.depreciation), indent: true },
+        { label: "(+/−) Working Capital Δ", values: v(r => r.workingCapDelta), indent: true },
+        { label: "Cash from Operations", values: v(r => r.netProfit + r.depreciation + r.workingCapDelta), bold: true },
+    ]},
+    { title: "Investing Activities", rows: [
+        { label: "(−) CAPEX", values: v(r => r.capex), indent: true },
+        { label: "Cash from Investing", values: v(r => r.capex), bold: true },
+    ]},
+    { title: "Financing Activities", rows: [
+        { label: "(+) Debt Draw", values: v(r => r.debtDraw), indent: true },
+        { label: "(−) Principal Repayment", values: v(r => -r.principalRepay), indent: true },
+        { label: "(−) Senior Interest", values: v(r => -r.interest), indent: true },
+        { label: "(+) SL Draw", values: v(r => r.slDraw), indent: true },
+        { label: "(−) SL Principal Repaid", values: v(r => -r.slPrincipalRepay), indent: true },
+        { label: "(−) SL Interest", values: v(r => -r.slInterest), indent: true },
+        { label: "Cash from Financing", values: v(r => r.debtDraw - r.principalRepay - r.interest + r.slDraw - r.slPrincipalRepay - r.slInterest), bold: true },
+    ]},
+    { title: "Net Cash", rows: [
+        { label: "Cumulative Cash Balance", values: v(r => r.cash), bold: true },
+    ]},
+  ];
+
   return (
     <div className="space-y-6">
       <ScheduleTable title="Income statement (EGP)" years={years} sections={incomeStmt}/>
@@ -165,6 +205,7 @@ export const CngOutput = ({ m }: { m: CngOutputs }) => {
       <ScheduleTable title="Balance sheet (EGP)" years={years} sections={bs}/>
       <ScheduleTable title="Project IRR build" years={years} sections={projectIrr}/>
       <ScheduleTable title="Equity IRR build" years={years} sections={equityIrr}/>
+      <ScheduleTable title="Cash Flow Statement (EGP)" years={years} sections={cashFlow}/>
     </div>
   );
 };

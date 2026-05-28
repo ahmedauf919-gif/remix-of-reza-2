@@ -87,20 +87,71 @@ export const WaterCharts = ({ m }: { m: WaterOutputs }) => {
         </Card>
       </div>
 
+      {/* Revised PPA composition showing CAPEX/OPEX/DebtService/Tax/Margin as % of tariff */}
       <div className="rounded-xl border bg-card p-5 shadow-sm">
-        <h3 className="font-semibold mb-3">PPA Tariff Composition — {fmtNum(tariff, 2)} EGP/m³ (per-line contribution)</h3>
-        <div style={{ height: Math.max(320, compData.length * 28) }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={compData} layout="vertical" margin={{ left: 140, right: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
-              <XAxis type="number" tickFormatter={(v) => fmtNum(v, 2)} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={140}/>
-              <Tooltip {...tooltipStyle} formatter={(v: number, _n, p: any) => [`${fmtNum(v, 3)} EGP/m³ (${fmtPct(p.payload.pct)}) — ${p.payload.group}`, "Contribution"]}/>
-              <Bar dataKey="value" label={{ position: "right", formatter: (v: any) => v.label, fontSize: 11 }}>
-                {compData.map((c, i) => <Cell key={i} fill={groupColor[c.group] || "hsl(var(--primary))"}/>)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+        <h3 className="font-semibold mb-3">PPA Tariff Composition — {fmtNum(tariff, 2)} EGP/m³</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Stacked composition bar */}
+          <div className="h-72">
+            {(() => {
+              const groups = [
+                { name: "CAPEX (Depreciation)", pct: m.tariffComposition.filter(c => c.group === "CAPEX").reduce((s, c) => s + c.pct, 0), color: "hsl(var(--primary))" },
+                { name: "OPEX (Variable)", pct: m.tariffComposition.filter(c => c.group === "OPEX-Var").reduce((s, c) => s + c.pct, 0), color: "hsl(var(--accent))" },
+                { name: "OPEX (Fixed + Electricity + SG&A)", pct: m.tariffComposition.filter(c => ["OPEX-Fixed", "Electricity", "SG&A"].includes(c.group)).reduce((s, c) => s + c.pct, 0), color: "hsl(200 70% 50%)" },
+                { name: "Debt Service (Interest)", pct: m.tariffComposition.filter(c => c.group === "Financing").reduce((s, c) => s + c.pct, 0), color: "hsl(280 60% 55%)" },
+                { name: "Income Tax", pct: m.tariffComposition.filter(c => c.group === "Tax").reduce((s, c) => s + c.pct, 0), color: "hsl(35 90% 50%)" },
+                { name: "Equity Margin", pct: m.tariffComposition.filter(c => c.group === "Margin").reduce((s, c) => s + c.pct, 0), color: "hsl(142 70% 45%)" },
+              ].filter(g => g.pct > 0);
+              return (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={groups} layout="vertical" margin={{ left: 200, right: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
+                    <XAxis type="number" tickFormatter={(v) => fmtPct(v)} domain={[0, 1]}/>
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={200}/>
+                    <Tooltip {...tooltipStyle} formatter={(v: number) => [fmtPct(v), "% of Tariff"]}/>
+                    <Bar dataKey="pct" label={{ position: "right", formatter: (v: any) => fmtPct(v), fontSize: 11 }}>
+                      {groups.map((g, i) => <Cell key={i} fill={g.color}/>)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              );
+            })()}
+          </div>
+          {/* Table summary */}
+          <div className="text-sm">
+            <table className="w-full">
+              <thead><tr className="text-xs text-muted-foreground border-b">
+                <th className="py-1.5 text-left">Component</th>
+                <th className="py-1.5 text-right">EGP/m³</th>
+                <th className="py-1.5 text-right">% of Tariff</th>
+              </tr></thead>
+              <tbody>
+                {[
+                  { name: "CAPEX (Depreciation)", group: ["CAPEX"] },
+                  { name: "OPEX — Variable", group: ["OPEX-Var"] },
+                  { name: "OPEX — Fixed & Electricity & SGA", group: ["OPEX-Fixed", "Electricity", "SG&A"] },
+                  { name: "Debt Service (Interest)", group: ["Financing"] },
+                  { name: "Income Tax", group: ["Tax"] },
+                  { name: "Equity Margin / Profit", group: ["Margin"] },
+                ].map((row, i) => {
+                  const total = m.tariffComposition.filter(c => row.group.includes(c.group)).reduce((s, c) => s + c.value, 0);
+                  const pct = m.tariffComposition.filter(c => row.group.includes(c.group)).reduce((s, c) => s + c.pct, 0);
+                  return (
+                    <tr key={i} className="border-b border-border/30">
+                      <td className="py-1.5">{row.name}</td>
+                      <td className="py-1.5 text-right font-mono">{fmtNum(total, 3)}</td>
+                      <td className="py-1.5 text-right font-mono">{fmtPct(pct)}</td>
+                    </tr>
+                  );
+                })}
+                <tr className="font-semibold border-t-2">
+                  <td className="py-2">Total Tariff</td>
+                  <td className="py-2 text-right font-mono">{fmtNum(tariff, 3)}</td>
+                  <td className="py-2 text-right font-mono">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

@@ -5,7 +5,9 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianG
 
 export const PvSummary = ({ m }: { m: PvOutputs }) => {
   const I = m.inputs;
-  const capexPerKwp = m.totalCapexEgp / Math.max(1, I.capacityKwp);
+  const fx0 = I.fxEgpPerUsdPerYear?.[0] ?? 50;
+  const kwp = Math.max(1, I.capacityKwp);
+  const capexPerKwp = m.totalCapexEgp / kwp;
   const tariffY1 = m.rows.find(r => r.yearIdx === 0)?.tariffEgp ?? 0;
   const energyY1 = m.rows.find(r => r.yearIdx === 0)?.energyKwh ?? 0;
   const dscrCushion = m.minDSCR - 1.3;
@@ -50,6 +52,7 @@ export const PvSummary = ({ m }: { m: PvOutputs }) => {
                 <th className="py-1.5 text-left font-medium">Item</th>
                 <th className="py-1.5 text-right font-medium">EGP</th>
                 <th className="py-1.5 text-right font-medium">EGP/kWp</th>
+                <th className="py-1.5 text-right font-medium">USD/kWp</th>
                 <th className="py-1.5 text-right font-medium w-16">% Total</th>
               </tr>
             </thead>
@@ -58,14 +61,16 @@ export const PvSummary = ({ m }: { m: PvOutputs }) => {
                 <tr key={u.label} className="border-t border-border/40">
                   <td className="py-1.5">{u.label}</td>
                   <td className="py-1.5 text-right font-mono">{fmtNum(u.v)}</td>
-                  <td className="py-1.5 text-right font-mono text-muted-foreground">{fmtNum(u.v / Math.max(1, I.capacityKwp))}</td>
+                  <td className="py-1.5 text-right font-mono text-muted-foreground">{fmtNum(u.v / kwp)}</td>
+                  <td className="py-1.5 text-right font-mono text-muted-foreground">{fmtNum(u.v / kwp / fx0, 0)}</td>
                   <td className="py-1.5 text-right text-xs text-muted-foreground w-16">{fmtPct(u.v / Math.max(1, totalUses), 1)}</td>
                 </tr>
               ))}
               <tr className="border-t-2 border-border font-semibold">
                 <td className="py-2">Total</td>
                 <td className="py-2 text-right font-mono">{fmtNum(totalUses)}</td>
-                <td className="py-2 text-right font-mono">{fmtNum(totalUses / Math.max(1, I.capacityKwp))}</td>
+                <td className="py-2 text-right font-mono">{fmtNum(totalUses / kwp)}</td>
+                <td className="py-2 text-right font-mono">{fmtNum(totalUses / kwp / fx0, 0)}</td>
                 <td className="py-2 text-right text-xs">100%</td>
               </tr>
             </tbody>
@@ -79,6 +84,7 @@ export const PvSummary = ({ m }: { m: PvOutputs }) => {
                 <th className="py-1.5 text-left font-medium">Item</th>
                 <th className="py-1.5 text-right font-medium">EGP</th>
                 <th className="py-1.5 text-right font-medium">EGP/kWp</th>
+                <th className="py-1.5 text-right font-medium">USD/kWp</th>
                 <th className="py-1.5 text-right font-medium w-16">% Total</th>
               </tr>
             </thead>
@@ -87,14 +93,16 @@ export const PvSummary = ({ m }: { m: PvOutputs }) => {
                 <tr key={u.label} className="border-t border-border/40">
                   <td className="py-1.5">{u.label}</td>
                   <td className="py-1.5 text-right font-mono">{fmtNum(u.v)}</td>
-                  <td className="py-1.5 text-right font-mono text-muted-foreground">{fmtNum(u.v / Math.max(1, I.capacityKwp))}</td>
+                  <td className="py-1.5 text-right font-mono text-muted-foreground">{fmtNum(u.v / kwp)}</td>
+                  <td className="py-1.5 text-right font-mono text-muted-foreground">{fmtNum(u.v / kwp / fx0, 0)}</td>
                   <td className="py-1.5 text-right text-xs text-muted-foreground w-16">{fmtPct(u.v / Math.max(1, totalSources), 1)}</td>
                 </tr>
               ))}
               <tr className="border-t-2 border-border font-semibold">
                 <td className="py-2">Total</td>
                 <td className="py-2 text-right font-mono">{fmtNum(totalSources)}</td>
-                <td className="py-2 text-right font-mono">{fmtNum(totalSources / Math.max(1, I.capacityKwp))}</td>
+                <td className="py-2 text-right font-mono">{fmtNum(totalSources / kwp)}</td>
+                <td className="py-2 text-right font-mono">{fmtNum(totalSources / kwp / fx0, 0)}</td>
                 <td className="py-2 text-right text-xs">100%</td>
               </tr>
             </tbody>

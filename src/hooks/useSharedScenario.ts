@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectInputs, DEFAULT_INPUTS } from "@/lib/windModel";
+import { takePendingLoad } from "@/lib/directoryStore";
 
 /**
  * Loads the singleton shared scenario row from Lovable Cloud and keeps it in sync.
@@ -19,6 +20,13 @@ export function useSharedScenario(scenarioId: number = 1) {
   useEffect(() => {
     let cancelled = false;
     setLoaded(false);
+    const pending = takePendingLoad(scenarioId === 1 ? "wind-a" : "wind-b");
+    if (pending) {
+      setInputs({ ...DEFAULT_INPUTS, ...(pending as Partial<ProjectInputs>) });
+      lastWrittenJson.current = JSON.stringify(pending);
+      setLoaded(true);
+      return;
+    }
     (async () => {
       const { data, error } = await supabase
         .from("shared_scenario")

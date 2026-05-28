@@ -11,8 +11,8 @@ export const WaterSummary = ({ m }: { m: WaterOutputs }) => {
         <KpiCard label="Total CAPEX" value={`EGP ${fmtNum(m.totalCapexWithIdc / 1e6, 1)}m`} hint={`${fmtNum(I.capacityM3Day)} m³/day`} icon={<Banknote className="h-5 w-5"/>} accent="primary"/>
         <KpiCard label="Debt %" value={fmtPct(I.debtToEquity)} hint={`Tenor ${I.loanTenorYears}y`} icon={<Layers className="h-5 w-5"/>} accent="accent"/>
         <KpiCard label="Min DSCR" value={fmtNum(m.minDSCR, 2)} hint={`Avg ${fmtNum(m.avgDSCR, 2)}`} icon={<Activity className="h-5 w-5"/>} accent="success"/>
-        <KpiCard label="Project IRR" value={fmtPct(m.projectIRR)} hint="Unlevered" icon={<TrendingUp className="h-5 w-5"/>} accent="primary"/>
-        <KpiCard label="Equity IRR" value={fmtPct(m.equityIRR)} hint={`Payback ${isFinite(m.equityPaybackYears) ? fmtNum(m.equityPaybackYears, 1) + " yrs" : "—"}`} icon={<TrendingUp className="h-5 w-5"/>} accent="success"/>
+        <KpiCard label="Project IRR" value={fmtPct(m.projectIRR)} hint={`EGP · USD: ${fmtPct(m.irrProjectUsd)}`} icon={<TrendingUp className="h-5 w-5"/>} accent="primary"/>
+        <KpiCard label="Equity IRR" value={fmtPct(m.equityIRR)} hint={`EGP · USD: ${fmtPct(m.irrUsd)} · Payback ${isFinite(m.equityPaybackYears) ? fmtNum(m.equityPaybackYears, 1) + " yrs" : "—"}`} icon={<TrendingUp className="h-5 w-5"/>} accent="success"/>
         <KpiCard label="LCOM³" value={`${fmtNum(m.lcom3, 2)} EGP/m³`} hint="Levelized" icon={<Droplets className="h-5 w-5"/>} accent="accent"/>
       </section>
 

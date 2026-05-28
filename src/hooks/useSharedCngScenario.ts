@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CngInputs, DEFAULT_CNG_INPUTS } from "@/lib/cngModel";
+import { takePendingLoad } from "@/lib/directoryStore";
 
 export function useSharedCngScenario(scenarioId = 1) {
   const [inputs, setInputs] = useState<CngInputs>(DEFAULT_CNG_INPUTS);
@@ -11,6 +12,12 @@ export function useSharedCngScenario(scenarioId = 1) {
   useEffect(() => {
     let cancelled = false;
     setLoaded(false);
+    const pending = takePendingLoad("cng");
+    if (pending) {
+      setInputs({ ...DEFAULT_CNG_INPUTS, ...(pending as Partial<CngInputs>) });
+      setLoaded(true);
+      return;
+    }
     (async () => {
       const { data } = await supabase
         .from("shared_cng_scenario" as any)

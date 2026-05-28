@@ -48,6 +48,7 @@ export interface WaterInputs {
   usdInflation: number;
   // Per-year overrides (length up to contractYears). Empty array → use scalar.
   fxRatePerYear?: number[];
+  fxRateConstructionPerMonth?: number[];
   egpInflationPerYear?: number[];
   revenueInflationPerYear?: number[];
   electricityInflationPerYear?: number[];
@@ -68,6 +69,7 @@ export interface WaterInputs {
   // CAPEX — itemized (Reza style)
   capexItems: CapexItem[];
   contingencyPct: number;
+  capexDrawScheduleMonthly?: number[];
 
   // Financing
   debtToEquity: number;
@@ -306,11 +308,19 @@ export const inflEgpAt = (I: WaterInputs, y: number) => at(I.egpInflationPerYear
 export const inflRevAt = (I: WaterInputs, y: number) => at(I.revenueInflationPerYear, y, I.revenueInflation);
 export const inflElecAt = (I: WaterInputs, y: number) => at(I.electricityInflationPerYear, y, I.electricityInflation);
 export const inflUsdAt = (I: WaterInputs, y: number) => at(I.usdInflationPerYear, y, I.usdInflation);
+const cumulInfl = (rateFn: (y: number) => number, y: number): number => {
+  let r = 1;
+  for (let i = 0; i < y; i++) r *= (1 + rateFn(i));
+  return r;
+};
 export const minTakeAt = (I: WaterInputs, y: number) => at(I.minTakePctPerYear, y, I.minTakePct);
 export const capacityM3DayAt = (I: WaterInputs, y: number) => at(I.capacityM3DayPerYear, y, I.capacityM3Day);
 export const debtRateAt = (I: WaterInputs, y: number) => {
-  const fallback = Math.max(I.debtRateYr1 - I.debtRateStepDown * y, I.debtRateFloor);
-  return at(I.debtRatePerYear, y, fallback);
+  const spread = I.bankSpread ?? 0;
+  const base = Math.max(I.debtRateYr1 - I.debtRateStepDown * y, I.debtRateFloor);
+  const perArr = I.debtRatePerYear && I.debtRatePerYear.length > 0 ? I.debtRatePerYear[Math.min(y, I.debtRatePerYear.length - 1)] : undefined;
+  const baseRate = (perArr !== undefined && perArr !== null && isFinite(perArr)) ? perArr : base;
+  return baseRate + spread;
 };
 
 function npv(rate: number, cf: number[]): number {
@@ -390,6 +400,7 @@ export interface YearRow {
 
 export interface CapexItemResolved extends CapexItem {
   amountEgp: number;          // (amount × fx if USD) × (1+contingency)
+  amountUsd: number;          // USD equivalent at construction FX (Y0)
   annualDepreciation: number; // EGP
 }
 
@@ -416,6 +427,8 @@ export interface WaterOutputs {
   rows: YearRow[];
   projectIRR: number;
   equityIRR: number;
+  irrUsd: number;
+  irrProjectUsd: number;
   equityPaybackYears: number;
   npvProject: number;
   npvEquity: number;
@@ -436,11 +449,18 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
 
   // ── CAPEX ──
   const c = 1 + I.contingencyPct;
+  // Use average of construction-period FX rates if provided, else fx0
+  const fxConstruction = (I.fxRateConstructionPerMonth && I.fxRateConstructionPerMonth.length > 0)
+    ? I.fxRateConstructionPerMonth.reduce((s, v) => s + v, 0) / I.fxRateConstructionPerMonth.length
+    : fx0;
   const capexResolved: CapexItemResolved[] = I.capexItems.map(it => {
     const grossOwnCcy = it.amount * (1 + (it.taxPct ?? 0));
-    const egp = (it.currency === "USD" ? grossOwnCcy * fx0 : grossOwnCcy) * c;
+    const egp = (it.currency === "USD" ? grossOwnCcy * fxConstruction : grossOwnCcy) * c;
+    const amountUsd = it.currency === "USD"
+      ? it.amount * (1 + (it.taxPct ?? 0)) * c
+      : egp / fxConstruction;
     const dy = it.depreciationYears > 0 ? it.depreciationYears : 0;
-    return { ...it, amountEgp: egp, annualDepreciation: dy > 0 ? egp / dy : 0 };
+    return { ...it, amountEgp: egp, amountUsd, annualDepreciation: dy > 0 ? egp / dy : 0 };
   });
   const totalRoCapex = capexResolved.reduce((s, x) => s + x.amountEgp, 0);
 
@@ -585,14 +605,16 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   const preEbitda: number[] = [];
   for (let y = 0; y < N; y++) {
     const fx = fxAt(I, y);
-    const inflRev = Math.pow(1 + inflRevAt(I, y), y);
-    const inflEgp = Math.pow(1 + inflEgpAt(I, y), y);
-    const inflElec = Math.pow(1 + inflElecAt(I, y), y);
-    const inflUsd = Math.pow(1 + inflUsdAt(I, y), y);
+    const inflRev = cumulInfl(y2 => inflRevAt(I, y2), y);
+    const inflEgp = cumulInfl(y2 => inflEgpAt(I, y2), y);
+    const inflElec = cumulInfl(y2 => inflElecAt(I, y2), y);
+    const inflUsd = cumulInfl(y2 => inflUsdAt(I, y2), y);
     const minTake = minTakeAt(I, y);
     const installedY = capacityM3DayAt(I, y) * 365;
     const volume = installedY * minTake;
-    const revenue = volume * I.sellingPriceEgpPerM3 * inflRev;
+    const peggedPct = Math.min(1, Math.max(0, I.pctPeggedToUsd || 0));
+    const pricePerM3 = I.sellingPriceEgpPerM3 * (peggedPct * (fx / fx0) + (1 - peggedPct) * inflRev);
+    const revenue = volume * pricePerM3;
     const varUsd = I.opexVariableItems.filter(it => it.currency === "USD").reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
     const varEgp = I.opexVariableItems.filter(it => it.currency === "EGP").reduce((s, it) => s + it.amountPerM3 * (1 + (it.taxPct ?? 0)), 0);
     const variableCost = volume * (varUsd * inflUsd * fx + (varEgp + wellsCost + I.otherVarEgpPerM3) * inflEgp);
@@ -647,15 +669,16 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
 
   for (let y = 0; y < N; y++) {
     const fx = fxAt(I, y);
-    const inflRev = Math.pow(1 + inflRevAt(I, y), y);
-    const inflEgp = Math.pow(1 + inflEgpAt(I, y), y);
-    const inflElec = Math.pow(1 + inflElecAt(I, y), y);
-    const inflUsd = Math.pow(1 + inflUsdAt(I, y), y);
+    const inflRev = cumulInfl(y2 => inflRevAt(I, y2), y);
+    const inflEgp = cumulInfl(y2 => inflEgpAt(I, y2), y);
+    const inflElec = cumulInfl(y2 => inflElecAt(I, y2), y);
+    const inflUsd = cumulInfl(y2 => inflUsdAt(I, y2), y);
 
     const minTake = minTakeAt(I, y);
     const installedY = capacityM3DayAt(I, y) * 365;
     const volume = installedY * minTake;
-    const price = I.sellingPriceEgpPerM3 * inflRev;
+    const peggedPct = Math.min(1, Math.max(0, I.pctPeggedToUsd || 0));
+    const price = I.sellingPriceEgpPerM3 * (peggedPct * (fx / fx0) + (1 - peggedPct) * inflRev);
     const revenue = volume * price;
 
     const varUsd = I.opexVariableItems.filter(it => it.currency === "USD")
@@ -755,6 +778,18 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   const fcfeArr = rows.map(r => r.fcfe);
   const projectIRR = irr(fcffArr);
   const equityIRR = irr(fcfeArr);
+
+  // USD IRR: convert each year's EGP cash flow to USD using per-year FX rate
+  const fcfeUsd = rows.map(r => {
+    const fx = fxAt(I, Math.max(0, r.yearIdx));
+    return r.fcfe / fx;
+  });
+  const fcffUsd = rows.map(r => {
+    const fx = fxAt(I, Math.max(0, r.yearIdx));
+    return r.fcff / fx;
+  });
+  const irrUsd = irr(fcfeUsd);
+  const irrProjectUsd = irr(fcffUsd);
   const npvProject = npv(I.discountRateProject, fcffArr);
   const npvEquity = npv(I.discountRateEquity, fcfeArr);
 
@@ -822,7 +857,7 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     installedCapacityM3Year, actualCapacityM3Year, unutilisedCapacityM3Year, utilisationPct,
     fixedCostPerM3, variableCostPerM3, electricityCostPerM3, depreciationPerM3, totalCostPerM3,
     lcom3, rows,
-    projectIRR, equityIRR, equityPaybackYears: payback,
+    projectIRR, equityIRR, irrUsd, irrProjectUsd, equityPaybackYears: payback,
     npvProject, npvEquity, minDSCR, avgDSCR,
     tariffEgpPerM3: tariff,
     tariffAllocCbeInflation, tariffAllocElectricity, tariffAllocFx, tariffAllocFixedUsd,

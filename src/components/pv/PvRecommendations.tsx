@@ -255,8 +255,143 @@ const Item = ({ r }: { r: Rec }) => {
 
 export const PvRecommendations = ({ m }: { m: PvOutputs }) => {
   const recs = buildRecs(m);
+  const I = m.inputs;
+  const tariffY1 = m.rows.find(r => r.yearIdx === 0)?.tariffEgp ?? I.govtBaseTariffEgp;
+  const annualEnergyKwh = m.rows.find(r => r.yearIdx === 0)?.energyKwh ?? 0;
   return (
     <div className="space-y-6">
+
+      {/* IC Memo Header */}
+      <div className="rounded-xl border-2 border-[#002060] bg-white p-6 shadow-md">
+        <div className="flex items-start justify-between flex-wrap gap-4 border-b border-border pb-4 mb-4">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-widest text-[#005298] mb-1">Investment Committee Memorandum</div>
+            <h1 className="text-2xl font-bold text-[#002060]">{I.projectName}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{I.scenario} · Solar PV ({I.contractType}) · {I.startYear}–{I.startYear + I.contractYears - 1}</p>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <div className="rounded-lg bg-[#002060] text-white px-4 py-2 text-center min-w-[90px]">
+              <div className="text-xs opacity-70">Total CAPEX</div>
+              <div className="font-bold font-mono text-sm">{fmtEgp(m.totalCapexEgp)}</div>
+            </div>
+            <div className="rounded-lg bg-[#005298] text-white px-4 py-2 text-center min-w-[90px]">
+              <div className="text-xs opacity-70">Equity IRR</div>
+              <div className="font-bold font-mono text-sm">{fmtPct(m.equityIRR)}</div>
+            </div>
+            <div className="rounded-lg bg-[#FFC10E] text-[#002060] px-4 py-2 text-center min-w-[90px]">
+              <div className="text-xs font-semibold opacity-80">Project IRR</div>
+              <div className="font-bold font-mono text-sm">{fmtPct(m.projectIRR)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Executive Summary */}
+        <div className="mb-5">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-[#002060] mb-2">Executive Summary</h2>
+          <p className="text-sm leading-relaxed text-foreground">
+            {I.projectName} is a {I.contractYears}-year {I.contractType} solar PV project with an installed capacity of {fmtNum(I.capacityKwp / 1000, 1)} MWp,
+            targeting an annual energy yield of {fmtNum(annualEnergyKwh / 1e6, 2)} GWh/year (P{I.yieldCase === "P50" ? "50" : "90"} case).
+            Revenue is secured at a {I.voltageLevel} PPA tariff of {fmtNum(tariffY1, 4)} EGP/kWh with {fmtPct(I.govtEscalationPct)} annual escalation.
+            Total CAPEX of {fmtEgp(m.totalCapexEgp)} is financed at {fmtPct(I.debtPct)} gearing over a {I.loanTenorYears}-year senior debt facility.
+            The project targets an equity IRR of {fmtPct(m.equityIRR)} against a cost of equity of {fmtPct(I.discountRateEquity)},
+            delivering a {fmtPct(m.equityIRR - I.discountRateEquity)} spread with an LCOE of {fmtNum(m.lcoeEgpPerKwh, 4)} EGP/kWh
+            and an equity payback of {Number.isFinite(m.paybackYears) ? `${fmtNum(m.paybackYears, 1)} years` : "N/A"}.
+          </p>
+        </div>
+
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          {[
+            { label: "NPV (Project)", value: fmtEgp(m.npvProject), sub: `@ ${fmtPct(I.discountRateProject)} discount` },
+            { label: "NPV (Equity)", value: fmtEgp(m.npvEquity), sub: `@ ${fmtPct(I.discountRateEquity)} discount` },
+            { label: "Min DSCR", value: `${fmtNum(m.minDSCR, 2)}x`, sub: `Avg ${fmtNum(m.avgDSCR, 2)}x · Covenant 1.30x` },
+            { label: "LCOE", value: `${fmtNum(m.lcoeEgpPerKwh, 4)} EGP/kWh`, sub: "Levelised cost of energy" },
+            { label: "Capacity", value: `${fmtNum(I.capacityKwp / 1000, 1)} MWp`, sub: `${I.structureType} mount · P${I.yieldCase === "P50" ? "50" : "90"}` },
+            { label: "Y1 Tariff", value: `${fmtNum(tariffY1, 4)} EGP/kWh`, sub: `${fmtPct(I.govtEscalationPct)}/yr escalation` },
+            { label: "Debt Amount", value: fmtEgp(m.debtAmount), sub: `${I.loanTenorYears}y tenor · ${I.graceYears}y grace` },
+            { label: "Equity Cheque", value: fmtEgp(m.paidInEquity), sub: `${fmtPct(1 - I.debtPct)} of total CAPEX` },
+          ].map((item, i) => (
+            <div key={i} className="rounded-lg bg-[#f0f4f8] p-3">
+              <div className="text-xs text-muted-foreground">{item.label}</div>
+              <div className="font-bold font-mono text-sm mt-0.5">{item.value}</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">{item.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* CAPEX Structure */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#002060] mb-2">CAPEX Breakdown</h3>
+            <table className="w-full text-xs">
+              <tbody>
+                {m.capexBreakdown.map((item, i) => (
+                  <tr key={i} className="border-b border-border/30">
+                    <td className="py-1">{item.label}</td>
+                    <td className="py-1 text-right font-mono">{fmtEgp(item.totalEgp)}</td>
+                    <td className="py-1 text-right text-muted-foreground">{fmtPct(item.totalEgp / m.totalCapexEgp, 1)}</td>
+                  </tr>
+                ))}
+                <tr className="font-semibold">
+                  <td className="py-1.5">Total CAPEX (incl. IDC)</td>
+                  <td className="py-1.5 text-right font-mono">{fmtEgp(m.totalCapexEgp)}</td>
+                  <td className="py-1.5 text-right">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#002060] mb-2">Funding Structure</h3>
+            <table className="w-full text-xs">
+              <tbody>
+                <tr className="border-b border-border/30">
+                  <td className="py-1">Senior Debt</td>
+                  <td className="py-1 text-right font-mono">{fmtEgp(m.debtAmount)}</td>
+                  <td className="py-1 text-right text-muted-foreground">{fmtPct(m.debtAmount / m.totalCapexEgp, 1)}</td>
+                </tr>
+                {m.shareholderLoan > 0 && (
+                  <tr className="border-b border-border/30">
+                    <td className="py-1">Shareholder Loan</td>
+                    <td className="py-1 text-right font-mono">{fmtEgp(m.shareholderLoan)}</td>
+                    <td className="py-1 text-right text-muted-foreground">{fmtPct(m.shareholderLoan / m.totalCapexEgp, 1)}</td>
+                  </tr>
+                )}
+                <tr className="border-b border-border/30">
+                  <td className="py-1">Sponsor Equity</td>
+                  <td className="py-1 text-right font-mono">{fmtEgp(m.paidInEquity)}</td>
+                  <td className="py-1 text-right text-muted-foreground">{fmtPct(m.paidInEquity / m.totalCapexEgp, 1)}</td>
+                </tr>
+                <tr className="font-semibold">
+                  <td className="py-1.5">Total</td>
+                  <td className="py-1.5 text-right font-mono">{fmtEgp(m.totalCapexEgp)}</td>
+                  <td className="py-1.5 text-right">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Key Risks */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-[#002060] mb-2">Key Risk Factors</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            {[
+              { risk: "Solar resource / yield risk", mitigation: `P${I.yieldCase === "P50" ? "50" : "90"} case used; lender stress at P90 (−7%) recommended` },
+              { risk: "Tariff / off-take risk", mitigation: `${I.contractType} structure with ${fmtPct(I.govtEscalationPct)} annual escalation; government counterparty` },
+              { risk: "CAPEX overrun", mitigation: `${fmtPct(I.contingencyPct)} contingency included; EPC lump-sum contract recommended` },
+              { risk: "OPEX / degradation", mitigation: `${fmtPct(I.lossThereafterPct)}/yr degradation modelled; O&M indexed at ${fmtPct(I.opexYoYPct)}/yr` },
+              { risk: "Interest rate risk", mitigation: "Fixed spread structure; sensitivity run at base rate +300 bps" },
+              { risk: "Construction timeline", mitigation: `${I.constructionMonths}-month EPC schedule; delay scenario should be stress-tested` },
+            ].map((r, i) => (
+              <div key={i} className="rounded bg-[#f0f4f8] p-2">
+                <div className="font-semibold text-[#002060]">{r.risk}</div>
+                <div className="text-muted-foreground mt-0.5">{r.mitigation}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <ShareholderVerdict m={m}/>
 
       <div className="rounded-xl border border-border bg-[var(--gradient-card)] p-5 shadow-[var(--shadow-soft)]">

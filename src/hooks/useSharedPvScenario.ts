@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PvInputs, DEFAULT_PV_INPUTS } from "@/lib/pvModel";
+import { takePendingLoad } from "@/lib/directoryStore";
 
 export function useSharedPvScenario(scenarioId: number = 1) {
   const [inputs, setInputs] = useState<PvInputs>(DEFAULT_PV_INPUTS);
@@ -11,6 +12,12 @@ export function useSharedPvScenario(scenarioId: number = 1) {
   useEffect(() => {
     let cancelled = false;
     setLoaded(false);
+    const pending = takePendingLoad("pv");
+    if (pending) {
+      setInputs({ ...DEFAULT_PV_INPUTS, ...(pending as Partial<PvInputs>) });
+      setLoaded(true);
+      return;
+    }
     (async () => {
       const { data } = await supabase
         .from("shared_pv_scenario" as any)

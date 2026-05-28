@@ -960,7 +960,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   const equityAmount = totalCapex - debtAmount;
 
   const N = Math.max(1, Math.floor(Number(I.operationsYears) || 0));
-  const opsStartYear = I.constructionStart + Math.ceil((Number(I.constructionMonths) || 0) / 12);
+  const opsStartYear = I.constructionStart + Math.ceil((Number(I.constructionMonths) || 0) / 12) + Math.ceil((Number(I.delayMonths) || 0) / 12);
   // Split depreciable base: hard capex (PPE life) vs IDC + upfront fees (financing life).
   const hardCapex = agg.epcCost + agg.developmentCost + agg.substationContingency;
   const financingCapex = idc + fees;
@@ -1019,7 +1019,12 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const degr = Math.pow(1 - I.degradation, y - 1);
     const lossKept = (1 - agg.lossFactor);
     const mwh = I.capacityMWp * agg.yieldKWhPerKWp * availabilityEff * lossKept * degr;
-    const revenue = mwh * I.tariffUsdPerKWh * tariffEsc;
+    const baseTariff = I.tariffCase === "Worst" && (I.tariffWorstUsdPerKWh || 0) > 0
+      ? I.tariffWorstUsdPerKWh
+      : I.tariffCase === "Spare" && (I.tariffSpareUsdPerKWh || 0) > 0
+        ? I.tariffSpareUsdPerKWh
+        : I.tariffUsdPerKWh;
+    const revenue = mwh * baseTariff * tariffEsc;
     const carbonOn = I.cdmSwitch === 1 && year >= I.cdmStartYear && year < I.cdmStartYear + I.cdmDurationYears;
     const carbonRevenue = carbonOn ? mwh * I.gridEmissionFactor * I.cdmPriceUSD / 1000 : 0;
     const totalRev = revenue + carbonRevenue;
@@ -1044,7 +1049,8 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     const revPctOpex = totalRev * (I.pctRevConvLocalEUR + I.pctRevUsufructLease + I.pctRevInsuranceOps);
     const decommissioning = decommissioningAnnual * escal;
     const levy = I.additionalLevy * totalRev;
-    const opex = baseOpex + realEstate + levy + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning;
+    const varOpexSpare = ((I.varOpexSpare1 || 0) + (I.varOpexSpare2 || 0) + (I.varOpexSpare3 || 0)) * mwh / 1000 * escal;
+    const opex = baseOpex + realEstate + levy + otherFixedOpex + majorMaintenance + revPctOpex + decommissioning + varOpexSpare;
     const ebitda = totalRev - opex;
     const depPPE = y <= depYearsPPE ? depAnnualPPE : 0;
     const depIDC = y <= depYearsIDC ? depAnnualIDC : 0;
@@ -1061,7 +1067,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     pre.push({ year, y, mwh, revenue, carbonRevenue, totalRev,
       opex, opexBase: baseOpex, opexRealEstate: realEstate, opexOtherFixed: otherFixedOpex,
       opexMajorMaintenance: majorMaintenance, opexPctRevenue: revPctOpex, opexDecommissioning: decommissioning, opexLevy: levy,
-      tariffEsc, effectiveTariff: I.tariffUsdPerKWh * tariffEsc,
+      tariffEsc, effectiveTariff: baseTariff * tariffEsc,
       ebitda, depreciation, ebit, ebitdaTax, cfadsPreShield, wcChange, newReceivables, newPayables });
   }
 
@@ -1338,6 +1344,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     capexSpare20: I.capexSpare20,
     compEsmp: I.compEsmp,
     compCsr: I.compCsr,
+    delayCosts: (I.delayCostsPerMonth || 0) * (I.delayMonths || 0),
   };
   const totalItems = Object.values(capexItems).reduce((a, b) => a + b, 0) || 1;
   // Weighted blended monthly fraction across all items (for IDC / commitment fee).
@@ -1595,6 +1602,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     compEsmp: "Comp — ESMP", compCsr: "Comp — CSR",
     capexSpare15: "Capex spare 15", capexSpare16: "Capex spare 16", capexSpare17: "Capex spare 17",
     capexSpare18: "Capex spare 18", capexSpare19: "Capex spare 19", capexSpare20: "Capex spare 20",
+    delayCosts: "Delay costs",
   };
   const totalCapexItems = Object.values(capexItems).reduce((a, b) => a + b, 0);
   const capexBuckets = Object.entries(capexItems)

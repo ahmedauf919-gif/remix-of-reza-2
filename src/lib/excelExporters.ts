@@ -11,6 +11,7 @@ import type { PvOutputs } from "./pvModel";
 import type { CngOutputs } from "./cngModel";
 import type { WaterOutputs } from "./waterModel";
 import type { ModelOutputs as WindOutputs } from "./windModel";
+import type { LngOutputs } from "./lngModel";
 
 const FMT_NUM0 = "#,##0;(#,##0);-";
 const FMT_PCT = "0.0%;(0.0%);-";
@@ -301,5 +302,87 @@ export async function exportWindExcel(m: WindOutputs) {
     I.projectName ?? "Wind Project", "REZA — Wind Project Finance Model",
     ops.map((rr: any, i) => rr.year ?? rr.calendarYear ?? i + 1), m.wacc ?? 0.10,
     m.totalUses, m.equityAmount, m.debtAmount, inputs, seed,
+  ));
+}
+
+// ─── LNG (Tanzania Micro LNG) ───────────────────────────────────────
+export async function exportLngExcel(m: LngOutputs) {
+  const I = m.inputs;
+  const ops = m.rows.filter(r => r.yearIdx >= 0);
+  const r = (y: number) => ops[y] ?? ({} as any);
+  const opexBreakdown: OpexComponent[] = [
+    { key: "feedGas",    label: "Feed Gas Cost",              value: y => r(y).feedGasCost    ?? 0 },
+    { key: "transport",  label: "Transport Cost",             value: y => r(y).transportCost  ?? 0 },
+    { key: "fixedOpex",  label: "Fixed OPEX (Salaries + O&M)", value: y => r(y).fixedOpex    ?? 0 },
+  ];
+  const seed: StandardRowSeed = {
+    revenue:           y => r(y).revenue        ?? 0,
+    opex:              y => r(y).totalOpex + r(y).feedGasCost ?? 0,
+    opexBreakdown,
+    depreciation:      y => r(y).depreciation   ?? 0,
+    capex:             y => r(y).capex           ?? 0,
+    debtDraw:          y => r(y).seniorDraw      ?? 0,
+    principalRepay:    y => r(y).seniorRepay     ?? 0,
+    slDraw:            y => r(y).shlDraw         ?? 0,
+    slPrincipalRepay:  y => r(y).shlRepay        ?? 0,
+    seniorRate:        _y => I.seniorInterestRatePct,
+    slRate:            I.shlInterestRatePct,
+    taxRate:           I.taxRatePct,
+    arDays:            I.arMonths * 30,
+    apDays:            I.apMonths * 30,
+    debtOpeningY1:     m.seniorDebt,
+    slOpeningY1:       m.shlAmount,
+    paidInEquity:      y => r(y).paidInEquity    ?? m.equityAmount,
+    retainedEarnings:  y => r(y).retainedEarnings ?? 0,
+    netPPE:            y => r(y).netPPE          ?? 0,
+    cash:              y => r(y).cash            ?? 0,
+    ar:                y => r(y).ar              ?? 0,
+    ap:                y => r(y).ap              ?? 0,
+    interest:          y => r(y).seniorInterest  ?? 0,
+    slInterest:        y => r(y).shlInterest     ?? 0,
+    tax:               y => r(y).tax             ?? 0,
+    workingCapDelta:   y => r(y).wcDelta         ?? 0,
+  };
+  const inputs: ScalarInput[] = [
+    ...inputsFromObject({
+      projectName:              I.projectName,
+      startYear:                I.startYear,
+      projectDurationYears:     I.projectDurationYears,
+      constructionMonths:       I.constructionMonths,
+      capacityM3LngPerDay:      I.capacityM3LngPerDay,
+      facilityOperatingDays:    I.facilityOperatingDays,
+      demandUtilizationPct:     I.demandUtilizationPct,
+      sellingPriceUsdPerMmbtu:  I.sellingPriceUsdPerMmbtu,
+      feedGasPriceUsdPerMmbtu:  I.feedGasPriceUsdPerMmbtu,
+      numSemiTrailers:          I.numSemiTrailers,
+      roundTripDistanceKm:      I.roundTripDistanceKm,
+      transportCostUsdPerKm:    I.transportCostUsdPerKm,
+      contingencyPct:           I.contingencyPct,
+      debtRatioPct:             I.debtRatioPct,
+      shlPctOfDebt:             I.shlPctOfDebt,
+      seniorInterestRatePct:    I.seniorInterestRatePct,
+      shlInterestRatePct:       I.shlInterestRatePct,
+      debtTenorYears:           I.debtTenorYears,
+      debtGraceYears:           I.debtGraceYears,
+      taxRatePct:               I.taxRatePct,
+      discountRateProject:      I.discountRateProject,
+      discountRateEquity:       I.discountRateEquity,
+    }, "Project & Financing"),
+    { label: "── Computed ──",       value: "",              group: "Headline Results" },
+    { label: "Total CAPEX (USD)",    value: m.totalCapexUsd, group: "Headline Results", fmt: FMT_NUM0 },
+    { label: "Senior Debt (USD)",    value: m.seniorDebt,    group: "Headline Results", fmt: FMT_NUM0 },
+    { label: "SHL (USD)",            value: m.shlAmount,     group: "Headline Results", fmt: FMT_NUM0 },
+    { label: "Equity (USD)",         value: m.equityAmount,  group: "Headline Results", fmt: FMT_NUM0 },
+    { label: "Project IRR (app)",    value: m.projectIRR,    group: "Headline Results", fmt: FMT_PCT },
+    { label: "Equity IRR (app)",     value: m.equityIRR,     group: "Headline Results", fmt: FMT_PCT },
+    { label: "Min DSCR (app)",       value: m.minDSCR,       group: "Headline Results", fmt: "0.00\"x\"" },
+    { label: "Break-even Price (app)", value: m.breakEvenPriceUsd, group: "Headline Results", fmt: "0.00" },
+    { label: "LCOE (USD/MMBTU)",     value: m.lcoe,          group: "Headline Results", fmt: "0.0000" },
+  ];
+  await exportProjectFinanceExcel(buildSpec(
+    `LNG_Tanzania_Model_${(I.projectName || "project").replace(/\s+/g, "_")}.xlsx`,
+    I.projectName ?? "Tanzania Micro LNG", "Tanzania Micro LNG — Project Finance Model",
+    ops.map(rr => rr.year), I.discountRateEquity,
+    m.totalCapexUsd, m.equityAmount, m.seniorDebt + m.shlAmount, inputs, seed,
   ));
 }

@@ -58,13 +58,12 @@ export const PvOutput = ({ m }: { m: PvOutputs }) => {
       ],
     },
     {
-      title: "Operating expenses (segregated)",
+      title: "Operating expenses (P&L — Replacement is below in Cash Flow)",
       rows: [
         { label: "Operations & Maintenance (O&M)", values: v(r => -r.om), indent: true },
         { label: "VAT on O&M", values: v(r => -r.omVat), indent: true },
         { label: "MMRA", values: v(r => -r.mmra), indent: true },
         { label: "Insurance", values: v(r => -r.insurance), indent: true },
-        { label: "Replacement", values: v(r => -r.replacement), indent: true },
         { label: "Rent (land)", values: v(r => -r.rent), indent: true },
         { label: "Usufruct", values: v(r => -r.usufruct), indent: true },
         { label: "Total OPEX", values: v(r => -r.opex), bold: true },
@@ -86,6 +85,49 @@ export const PvOutput = ({ m }: { m: PvOutputs }) => {
     },
   ];
 
+  // Cash Flow Statement
+  const cashFlowStmt: Section[] = [
+    {
+      title: "Operating activities",
+      rows: [
+        { label: "Net profit", values: v(r => r.netProfit) },
+        { label: "(+) Depreciation (non-cash add-back)", values: v(r => r.depreciation), indent: true },
+        { label: "(+/−) Working capital change", values: v(r => r.workingCapDelta), indent: true },
+        { label: "Cash flow from operations", values: v(r => r.netProfit + r.depreciation + r.workingCapDelta), bold: true },
+      ],
+    },
+    {
+      title: "Investing activities",
+      rows: [
+        { label: "(−) Initial CAPEX", values: v(r => r.capex), indent: true },
+        { label: "(−) Replacement capex (cash outflow)", values: v(r => -r.replacement), indent: true },
+        { label: "Cash flow from investing", values: v(r => r.capex - r.replacement), bold: true },
+      ],
+    },
+    {
+      title: "Financing activities",
+      rows: [
+        { label: "(+) Debt drawn", values: v(r => r.debtDraw), indent: true },
+        { label: "(−) Senior principal repaid", values: v(r => -r.principalRepay), indent: true },
+        { label: "(−) Senior interest paid", values: v(r => -r.interest), indent: true },
+        { label: "(+) Shareholder loan drawn", values: v(r => r.slDraw), indent: true },
+        { label: "(−) SL principal repaid", values: v(r => -r.slPrincipalRepay), indent: true },
+        { label: "(−) SL interest paid", values: v(r => -r.slInterest), indent: true },
+        { label: "Cash flow from financing", values: v(r => r.debtDraw - r.principalRepay - r.interest + r.slDraw - r.slPrincipalRepay - r.slInterest), bold: true },
+      ],
+    },
+    {
+      title: "Net cash flow",
+      rows: [
+        {
+          label: "Net cash flow for period", bold: true,
+          values: v(r => (r.netProfit + r.depreciation + r.workingCapDelta) + (r.capex - r.replacement) + (r.debtDraw - r.principalRepay - r.interest + r.slDraw - r.slPrincipalRepay - r.slInterest)),
+        },
+        { label: "Cumulative cash balance", bold: true, values: v(r => r.cash) },
+      ],
+    },
+  ];
+
   const debtSched: Section[] = [
     {
       title: "Senior debt",
@@ -95,7 +137,7 @@ export const PvOutput = ({ m }: { m: PvOutputs }) => {
         { label: "Principal repayment", values: v(r => -r.principalRepay), indent: true },
         { label: "Interest", values: v(r => -r.interest), indent: true },
         { label: "Closing balance", values: v(r => r.debtClosing), bold: true },
-        { label: "All-in rate (annual)", values: v(r => r.rate * 100), d: 2, indent: true, xfmt: (x) => `${x.toFixed(2)}%` },
+        { label: "All-in rate (base + spread, annual)", values: v(r => r.rate * 100), d: 2, indent: true, xfmt: (x) => `${x.toFixed(2)}%` },
         { label: "DSCR (CFADS / Debt service)", values: v(r => isFinite(r.dscr) ? r.dscr : null), pct: true, bold: true },
       ],
     },
@@ -153,7 +195,8 @@ export const PvOutput = ({ m }: { m: PvOutputs }) => {
         { label: "(−) Tax on EBIT", values: v(r => -Math.max(0, r.ebit) * I.taxRatePct), indent: true },
         { label: "(+) Depreciation", values: v(r => r.depreciation), indent: true },
         { label: "(+/−) Working capital Δ", values: v(r => r.workingCapDelta), indent: true },
-        { label: "(−) CAPEX", values: v(r => r.capex), indent: true },
+        { label: "(−) CAPEX (initial)", values: v(r => r.capex), indent: true },
+        { label: "(−) Replacement capex", values: v(r => -r.replacement), indent: true },
         { label: "FCFF (project)", values: v(r => r.fcff), bold: true },
       ],
     },
@@ -168,6 +211,7 @@ export const PvOutput = ({ m }: { m: PvOutputs }) => {
         { label: "(+/−) Working capital Δ", values: v(r => r.workingCapDelta), indent: true },
         { label: "(−) Senior principal repaid", values: v(r => -r.principalRepay), indent: true },
         { label: "(−) Shareholder loan principal repaid", values: v(r => -r.slPrincipalRepay), indent: true },
+        { label: "(−) Replacement capex", values: v(r => -r.replacement), indent: true },
         { label: "(−) Equity contribution", values: v(r => r.yearIdx === -1 ? -m.paidInEquity : 0), indent: true },
         { label: "FCFE (equity)", values: v(r => r.fcfe), bold: true },
       ],
@@ -177,6 +221,7 @@ export const PvOutput = ({ m }: { m: PvOutputs }) => {
   return (
     <div className="space-y-6">
       <ScheduleTable title="Income statement (EGP)" years={years} sections={incomeStmt} />
+      <ScheduleTable title="Cash flow statement (EGP)" years={years} sections={cashFlowStmt} />
       <ScheduleTable title="Debt schedule" years={years} sections={debtSched} />
       <ScheduleTable title="Balance sheet (EGP)" years={years} sections={bs} />
       <ScheduleTable title="Project IRR build" years={years} sections={projectIrr} />

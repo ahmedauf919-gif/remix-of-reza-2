@@ -105,6 +105,7 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
 
   const N = inputs.contractYears;
   const Tenor = inputs.loanTenorYears;
+  const N_constr = inputs.constructionMonths;
 
   return (
     <div className="space-y-6">
@@ -152,14 +153,8 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
 
       <TabsContent value="fx" className="m-0 pt-4">
       <FullSection title="FX & Inflation (per year, full PPA)">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          {F("fxRateEgpPerUsd", "FX Rate (scalar fallback)", "EGP/USD", 0.01)}
-          {F("egpInflation", "EGP Cost Inflation", "decimal", 0.001)}
-          {F("revenueInflation", "Revenue Inflation", "decimal", 0.001)}
-          {F("electricityInflation", "Electricity Inflation", "decimal", 0.001)}
-          {F("usdInflation", "USD Inflation", "decimal", 0.001)}
-        </div>
         <div className="space-y-4">
+          <YearArrayEditor label={`FX EGP/USD — Construction months (${N_constr} months)`} years={N_constr} values={inputs.fxRateConstructionPerMonth} fallback={inputs.fxRateEgpPerUsd} onChange={(a) => set("fxRateConstructionPerMonth", a)} step={0.01}/>
           <YearArrayEditor label="FX EGP/USD per year" years={N} values={inputs.fxRatePerYear} fallback={inputs.fxRateEgpPerUsd} onChange={(a) => set("fxRatePerYear", a)} step={0.01}/>
           <YearArrayEditor label="EGP Inflation per year (%)" years={N} values={inputs.egpInflationPerYear} fallback={inputs.egpInflation} onChange={(a) => set("egpInflationPerYear", a)} step={0.1} asPct/>
           <YearArrayEditor label="Revenue Inflation per year (%)" years={N} values={inputs.revenueInflationPerYear} fallback={inputs.revenueInflation} onChange={(a) => set("revenueInflationPerYear", a)} step={0.1} asPct/>
@@ -179,6 +174,7 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
               <TableHead className="w-40">Amount</TableHead>
               <TableHead className="w-28">Tax % (VAT/duty)</TableHead>
               <TableHead className="w-32">Depreciation (yrs)</TableHead>
+              <TableHead className="w-32">USD equiv (Y0)</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
@@ -195,6 +191,9 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
                 <TableCell><Input type="number" step={100} value={it.amount} onChange={(e) => updateCapex(i, { amount: parseFloat(e.target.value) || 0 })} /></TableCell>
                 <TableCell><Input type="number" step={0.5} value={+(((it.taxPct ?? 0) * 100).toFixed(4))} onChange={(e) => { const r = parseFloat(e.target.value); updateCapex(i, { taxPct: isFinite(r) ? r / 100 : 0 }); }} /></TableCell>
                 <TableCell><Input type="number" step={1} value={it.depreciationYears} onChange={(e) => updateCapex(i, { depreciationYears: parseInt(e.target.value) || 0 })} /></TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">
+                  {it.currency === "USD" ? it.amount.toLocaleString("en-US", { maximumFractionDigits: 0 }) : (it.amount / inputs.fxRateEgpPerUsd).toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                </TableCell>
                 <TableCell><Button size="icon" variant="ghost" onClick={() => removeCapex(i)}><Trash2 className="h-4 w-4"/></Button></TableCell>
               </TableRow>
             ))}
@@ -203,6 +202,19 @@ export const WaterInputsForm = ({ inputs, onChange }: { inputs: WaterInputs; onC
         <Button size="sm" variant="outline" onClick={addCapex} className="mt-3 gap-2"><Plus className="h-4 w-4"/>Add CAPEX item</Button>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
           <PctField label="Contingency" value={inputs.contingencyPct} onChange={(n) => set("contingencyPct", n)} step={0.5}/>
+        </div>
+        <div className="mt-4">
+          <FullSection title="CAPEX Construction Draw Schedule (% per month)">
+            <YearArrayEditor
+              label="% draw per construction month"
+              years={N_constr}
+              values={inputs.capexDrawScheduleMonthly}
+              fallback={1 / Math.max(1, N_constr)}
+              onChange={(a) => set("capexDrawScheduleMonthly", a)}
+              step={0.5}
+              asPct
+            />
+          </FullSection>
         </div>
       </FullSection>
       </TabsContent>

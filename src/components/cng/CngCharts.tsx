@@ -61,7 +61,7 @@ export const CngCharts = ({ m }: { m: CngOutputs }) => {
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
               <XAxis dataKey="year"/>
-              <YAxis domain={[0, 4]} ticks={[0,1,1.3,2,3,4]}/>
+              <YAxis domain={[1, 4]} ticks={[1,1.3,2,3,4]}/>
               <Tooltip {...tt}/>
               <ReferenceLine y={1.3} stroke="hsl(var(--accent))" strokeDasharray="4 4"/>
               <ReferenceLine y={1} stroke="hsl(var(--destructive))" strokeDasharray="2 2"/>
@@ -83,7 +83,7 @@ export const CngCharts = ({ m }: { m: CngOutputs }) => {
       </div>
 
       <div className="rounded-xl border bg-card p-5 shadow-sm">
-        <h3 className="font-semibold mb-3">Cost composition — {fmtNum(y1Price, 3)} EGP/m³ (Year 1 effective price)</h3>
+        <h3 className="font-semibold mb-3">Cost Composition as % of Selling Price — Y1: {fmtNum(y1Price, 3)} EGP/m³</h3>
         <div style={{ height: Math.max(280, comp.length * 28) }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={comp} layout="vertical" margin={{ left: 160, right: 60 }}>

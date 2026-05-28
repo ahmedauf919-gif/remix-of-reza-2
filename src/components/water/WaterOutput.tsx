@@ -133,6 +133,91 @@ export const WaterOutput = ({ m }: { m: WaterOutputs }) => {
           Project IRR (FCFF) = <span className="font-semibold text-foreground">{fmtPct(m.projectIRR)}</span> · Equity IRR (FCFE) = <span className="font-semibold text-foreground">{fmtPct(m.equityIRR)}</span>
         </div>
       </div>
+
+      {/* Project IRR Build */}
+      <div className="rounded-xl border bg-card p-5 shadow-sm overflow-x-auto">
+        <h3 className="font-semibold mb-3">Project IRR Build — {fmtPct(m.projectIRR)} EGP · {fmtPct(m.irrProjectUsd)} USD (Unlevered FCFF, EGP '000)</h3>
+        <table className="text-xs min-w-full">
+          <thead><tr className="border-b">
+            <th className="text-left py-1 px-2">Item</th>
+            {m.rows.map(r => <th key={r.year} className="text-right py-1 px-2 font-medium">{r.year}</th>)}
+          </tr></thead>
+          <tbody>
+            {[
+              ["EBIT", m.rows.map(r => r.ebit / 1000)],
+              ["(−) Tax on EBIT", m.rows.map(r => -Math.max(0, r.ebit) * m.inputs.taxRate / 1000)],
+              ["(+) Depreciation", m.rows.map(r => r.depreciation / 1000)],
+              ["(+/−) Working Capital Δ", m.rows.map(r => r.workingCapDelta / 1000)],
+              ["(−) CAPEX", m.rows.map(r => r.capex / 1000)],
+              ["FCFF (Project)", m.rows.map(r => r.fcff / 1000), true],
+            ].map(([label, vals, bold], i) => (
+              <tr key={i} className={`border-b border-border/30 ${bold ? "font-semibold bg-secondary/20" : ""}`}>
+                <td className="py-1 px-2">{label as string}</td>
+                {(vals as number[]).map((v, j) => numCell(v, 0))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Equity IRR Build */}
+      <div className="rounded-xl border bg-card p-5 shadow-sm overflow-x-auto">
+        <h3 className="font-semibold mb-3">Equity IRR Build — {fmtPct(m.equityIRR)} EGP · {fmtPct(m.irrUsd)} USD (Levered FCFE, EGP '000)</h3>
+        <table className="text-xs min-w-full">
+          <thead><tr className="border-b">
+            <th className="text-left py-1 px-2">Item</th>
+            {m.rows.map(r => <th key={r.year} className="text-right py-1 px-2 font-medium">{r.year}</th>)}
+          </tr></thead>
+          <tbody>
+            {[
+              ["Net Profit", m.rows.map(r => r.netProfit / 1000)],
+              ["(+) Depreciation", m.rows.map(r => r.depreciation / 1000)],
+              ["(+/−) Working Capital Δ", m.rows.map(r => r.workingCapDelta / 1000)],
+              ["(−) Principal Repaid", m.rows.map(r => -r.principalRepay / 1000)],
+              ["(−) Equity Contribution", m.rows.map(r => r.yearIdx === -1 ? -m.equityAmount / 1000 : 0)],
+              ["FCFE (Equity)", m.rows.map(r => r.fcfe / 1000), true],
+            ].map(([label, vals, bold], i) => (
+              <tr key={i} className={`border-b border-border/30 ${bold ? "font-semibold bg-secondary/20" : ""}`}>
+                <td className="py-1 px-2">{label as string}</td>
+                {(vals as number[]).map((v, j) => numCell(v, 0))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Debt Schedule */}
+      <div className="rounded-xl border bg-card p-5 shadow-sm overflow-x-auto">
+        <h3 className="font-semibold mb-3">Debt Schedule (EGP '000)</h3>
+        <table className="text-xs min-w-full">
+          <thead><tr className="border-b">
+            <th className="text-left py-1 px-2">Item</th>
+            {m.rows.map(r => <th key={r.year} className="text-right py-1 px-2 font-medium">{r.year}</th>)}
+          </tr></thead>
+          <tbody>
+            {[
+              ["Opening Balance", m.rows.map(r => r.debtOpening / 1000)],
+              ["Draw", m.rows.map(r => r.debtDraw / 1000)],
+              ["(−) Principal Repayment", m.rows.map(r => -r.principalRepay / 1000)],
+              ["(−) Interest", m.rows.map(r => -r.interest / 1000)],
+              ["Closing Balance", m.rows.map(r => r.debtClosing / 1000), true],
+              ["DSCR", m.rows.map(r => r.dscr)],
+            ].map(([label, vals, bold], i) => {
+              const isDscr = label === "DSCR";
+              return (
+                <tr key={i} className={`border-b border-border/30 ${bold ? "font-semibold bg-secondary/20" : ""}`}>
+                  <td className="py-1 px-2">{label as string}</td>
+                  {(vals as number[]).map((v, j) => (
+                    <td key={j} className="py-1 px-2 text-right font-mono text-xs">
+                      {isDscr ? (isFinite(v) && v > 0 && v < 50 ? fmtNum(v, 2) + "x" : "—") : fmtNum(v, 0)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

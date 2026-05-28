@@ -96,7 +96,7 @@ export const CngSummary = ({ m }: { m: CngOutputs }) => {
             <LineChart data={m.rows.filter(r => r.yearIdx >= 0).map(r => ({ year: r.year, DSCR: (r.principalRepay > 0 || r.interest > 0) ? +r.dscr.toFixed(3) : null }))}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
               <XAxis dataKey="year" tick={{ fontSize: 11 }}/>
-              <YAxis domain={[0, 'auto']} tick={{ fontSize: 11 }}/>
+              <YAxis domain={[1, 4]} ticks={[1, 1.3, 2, 3, 4]} tick={{ fontSize: 11 }}/>
               <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}/>
               <ReferenceLine y={1.3} stroke="hsl(var(--accent))" strokeDasharray="4 4" label={{ value: "Target 1.30x", fontSize: 10, fill: "hsl(var(--accent))" }}/>
               <ReferenceLine y={1} stroke="hsl(var(--destructive))" strokeDasharray="2 2"/>

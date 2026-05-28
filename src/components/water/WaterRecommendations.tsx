@@ -1,4 +1,4 @@
-import { WaterOutputs, fmtNum, fmtPct } from "@/lib/waterModel";
+import { WaterOutputs, fmtNum, fmtPct, fmtEgp } from "@/lib/waterModel";
 import { CheckCircle2, AlertTriangle, Info, ThumbsUp, ThumbsDown, Minus, Shield, TrendingUp } from "lucide-react";
 
 type ScoreItem = {
@@ -138,6 +138,145 @@ export const WaterRecommendations = ({ m }: { m: WaterOutputs }) => {
 
   return (
     <div className="space-y-6">
+
+      {/* IC Memo Header */}
+      <div className="rounded-xl border-2 border-[#002060] bg-white p-6 shadow-md">
+        <div className="flex items-start justify-between flex-wrap gap-4 border-b border-border pb-4 mb-4">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-widest text-[#005298] mb-1">Investment Committee Memorandum</div>
+            <h1 className="text-2xl font-bold text-[#002060]">{I.projectName}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{I.scenario} · SWRO Desalination · {I.startYear}–{I.startYear + I.contractYears - 1}</p>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <div className="rounded-lg bg-[#002060] text-white px-4 py-2 text-center min-w-[90px]">
+              <div className="text-xs opacity-70">Total CAPEX</div>
+              <div className="font-bold font-mono text-sm">{fmtEgp(m.totalCapexWithIdc)}</div>
+            </div>
+            <div className="rounded-lg bg-[#005298] text-white px-4 py-2 text-center min-w-[90px]">
+              <div className="text-xs opacity-70">Equity IRR</div>
+              <div className="font-bold font-mono text-sm">{fmtPct(m.equityIRR)}</div>
+            </div>
+            <div className="rounded-lg bg-[#FFC10E] text-[#002060] px-4 py-2 text-center min-w-[90px]">
+              <div className="text-xs font-semibold opacity-80">Project IRR</div>
+              <div className="font-bold font-mono text-sm">{fmtPct(m.projectIRR)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Executive Summary */}
+        <div className="mb-5">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-[#002060] mb-2">Executive Summary</h2>
+          <p className="text-sm leading-relaxed text-foreground">
+            {I.projectName} is a {I.contractYears}-year SWRO desalination project with a nameplate capacity of {fmtNum(I.capacityM3Day, 0)} m³/day ({fmtNum(I.capacityM3Day * 365 / 1e6, 2)}M m³/year).
+            Operating at a minimum take-or-pay of {fmtPct(I.minTakePct)}, the plant delivers water at a PPA tariff of EGP {fmtNum(I.sellingPriceEgpPerM3, 2)}/m³
+            {I.pctPeggedToUsd > 0 ? ` (${fmtPct(I.pctPeggedToUsd)} USD-indexed)` : " (fully EGP-denominated)"}.
+            Total project cost of {fmtEgp(m.totalCapexWithIdc)} is financed at {fmtPct(I.debtToEquity)} gearing over a {I.loanTenorYears}-year senior debt facility.
+            The project targets an equity IRR of {fmtPct(m.equityIRR)} against a cost of equity of {fmtPct(I.discountRateEquity)},
+            delivering a {fmtPct(m.equityIRR - I.discountRateEquity)} spread with a levelised cost of water (LCOM³) of {fmtNum(m.lcom3, 3)} EGP/m³
+            and an equity payback of {Number.isFinite(m.equityPaybackYears) ? `${fmtNum(m.equityPaybackYears, 1)} years` : "N/A"}.
+          </p>
+        </div>
+
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          {[
+            { label: "NPV (Project)", value: fmtEgp(m.npvProject), sub: `@ ${fmtPct(I.discountRateProject)} discount` },
+            { label: "NPV (Equity)", value: fmtEgp(m.npvEquity), sub: `@ ${fmtPct(I.discountRateEquity)} discount` },
+            { label: "Min DSCR", value: `${fmtNum(m.minDSCR, 2)}x`, sub: `Avg ${fmtNum(m.avgDSCR, 2)}x · Covenant 1.30x` },
+            { label: "LCOM³", value: `${fmtNum(m.lcom3, 3)} EGP/m³`, sub: "Levelised cost of water delivery" },
+            { label: "Capacity", value: `${fmtNum(I.capacityM3Day, 0)} m³/day`, sub: `${fmtPct(I.minTakePct)} min take-or-pay` },
+            { label: "PPA Tariff", value: `${fmtNum(I.sellingPriceEgpPerM3, 2)} EGP/m³`, sub: I.pctPeggedToUsd > 0 ? `${fmtPct(I.pctPeggedToUsd)} USD-pegged` : "Fully EGP" },
+            { label: "Debt Amount", value: fmtEgp(m.debtAmount), sub: `${I.loanTenorYears}y tenor · ${I.debtGraceYears}y grace` },
+            { label: "Equity Cheque", value: fmtEgp(m.equityAmount), sub: `${fmtPct(1 - I.debtToEquity)} of total CAPEX` },
+          ].map((item, i) => (
+            <div key={i} className="rounded-lg bg-[#f0f4f8] p-3">
+              <div className="text-xs text-muted-foreground">{item.label}</div>
+              <div className="font-bold font-mono text-sm mt-0.5">{item.value}</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">{item.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* CAPEX Structure */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#002060] mb-2">CAPEX Structure</h3>
+            <table className="w-full text-xs">
+              <tbody>
+                {m.capexResolved.map((item, i) => (
+                  <tr key={i} className="border-b border-border/30">
+                    <td className="py-1">{item.label}</td>
+                    <td className="py-1 text-right font-mono">{fmtEgp(item.amountEgp)}</td>
+                    <td className="py-1 text-right text-muted-foreground">{fmtPct(item.amountEgp / m.totalRoCapex, 1)}</td>
+                  </tr>
+                ))}
+                {m.idc > 0 && (
+                  <tr className="border-b border-border/30">
+                    <td className="py-1 text-muted-foreground italic">Interest During Construction</td>
+                    <td className="py-1 text-right font-mono">{fmtEgp(m.idc)}</td>
+                    <td className="py-1 text-right text-muted-foreground">—</td>
+                  </tr>
+                )}
+                <tr className="font-semibold">
+                  <td className="py-1.5">Total CAPEX (incl. IDC)</td>
+                  <td className="py-1.5 text-right font-mono">{fmtEgp(m.totalCapexWithIdc)}</td>
+                  <td className="py-1.5 text-right">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#002060] mb-2">Funding Structure</h3>
+            <table className="w-full text-xs">
+              <tbody>
+                <tr className="border-b border-border/30">
+                  <td className="py-1">Senior Debt</td>
+                  <td className="py-1 text-right font-mono">{fmtEgp(m.debtAmount)}</td>
+                  <td className="py-1 text-right text-muted-foreground">{fmtPct(m.debtAmount / m.totalCapexWithIdc, 1)}</td>
+                </tr>
+                {I.shareholderLoanPct > 0 && (
+                  <tr className="border-b border-border/30">
+                    <td className="py-1">Shareholder Loan</td>
+                    <td className="py-1 text-right font-mono">{fmtEgp(m.totalCapexWithIdc * (1 - I.debtToEquity) * I.shareholderLoanPct)}</td>
+                    <td className="py-1 text-right text-muted-foreground">{fmtPct((1 - I.debtToEquity) * I.shareholderLoanPct, 1)}</td>
+                  </tr>
+                )}
+                <tr className="border-b border-border/30">
+                  <td className="py-1">Sponsor Equity</td>
+                  <td className="py-1 text-right font-mono">{fmtEgp(m.equityAmount)}</td>
+                  <td className="py-1 text-right text-muted-foreground">{fmtPct(m.equityAmount / m.totalCapexWithIdc, 1)}</td>
+                </tr>
+                <tr className="font-semibold">
+                  <td className="py-1.5">Total</td>
+                  <td className="py-1.5 text-right font-mono">{fmtEgp(m.totalCapexWithIdc)}</td>
+                  <td className="py-1.5 text-right">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Key Risks */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-[#002060] mb-2">Key Risk Factors</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            {[
+              { risk: "Water demand / offtake risk", mitigation: `${fmtPct(I.minTakePct)} minimum take-or-pay contract provides revenue floor` },
+              { risk: "RO membrane replacement", mitigation: "Periodic replacement (every 5–7y) must be reserved; MMRA provision recommended" },
+              { risk: "Electricity price inflation", mitigation: `${fmtNum(I.electricityKwhPerM3, 2)} kWh/m³ at EGP ${fmtNum(I.electricityPriceEgpKwh, 2)}/kWh; pass-through clauses advisable` },
+              { risk: "EGP/USD depreciation", mitigation: I.pctPeggedToUsd > 0 ? `${fmtPct(I.pctPeggedToUsd)} of tariff USD-indexed; chemical/membrane cost partially hedged` : "No USD peg — full EGP depreciation risk on USD-denominated OPEX" },
+              { risk: "Regulatory / tariff risk", mitigation: "PPA tariff must be enshrined in off-take agreement with government counterparty" },
+              { risk: "Construction timeline", mitigation: `${I.constructionMonths}-month build programme with ${fmtPct(I.contingencyPct)} CAPEX contingency` },
+            ].map((r, i) => (
+              <div key={i} className="rounded bg-[#f0f4f8] p-2">
+                <div className="font-semibold text-[#002060]">{r.risk}</div>
+                <div className="text-muted-foreground mt-0.5">{r.mitigation}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-xl border border-border bg-[var(--gradient-card)] p-5 shadow-[var(--shadow-soft)] space-y-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">

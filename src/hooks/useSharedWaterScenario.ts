@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { WaterInputs, DEFAULT_WATER_INPUTS } from "@/lib/waterModel";
+import { takePendingLoad } from "@/lib/directoryStore";
 
 export function useSharedWaterScenario(scenarioId: number = 1) {
   const [inputs, setInputs] = useState<WaterInputs>(DEFAULT_WATER_INPUTS);
@@ -12,6 +13,13 @@ export function useSharedWaterScenario(scenarioId: number = 1) {
   useEffect(() => {
     let cancelled = false;
     setLoaded(false);
+    const pending = takePendingLoad("water");
+    if (pending) {
+      setInputs({ ...DEFAULT_WATER_INPUTS, ...(pending as Partial<WaterInputs>) });
+      lastWrittenJson.current = JSON.stringify(pending);
+      setLoaded(true);
+      return;
+    }
     (async () => {
       const { data } = await supabase
         .from("shared_water_scenario" as any)

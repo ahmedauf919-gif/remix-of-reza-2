@@ -26,11 +26,12 @@ export interface CngInputs {
   constructionMonths: number;
 
   // Volume / capacity
-  dailyConsumptionM3: number;          // m3/day delivered
+  dailyConsumptionM3: number;          // m3/day delivered (legacy, kept for backwards compat)
+  meterM3PerHour: number;              // meter capacity in m³/hr
   operatingHoursPerDay: number;
   operatingDaysPerYear: number;
   monthlyTrend: number[];              // 12 entries summing to 1
-  rampUpYr1Pct: number;                // % of full volume in Y1 (commissioning ramp)
+  minTakePerYear: number[];            // minimum take % per operating year (replaces rampUp)
 
   // Pricing
   transportSellingPriceEgp: number;    // EGP/m3 (transportation fee)
@@ -42,6 +43,7 @@ export interface CngInputs {
   numCompressors: number;
   compressorPerformance: number;       // 0..1
   flowSharingFactor: number;           // 0..1
+  pruCapacityM3hr?: number;            // PRU capacity in m³/hr (informational)
 
   // Trailers / transport
   numTrailers: number;
@@ -159,10 +161,11 @@ export const DEFAULT_CNG_INPUTS: CngInputs = {
   constructionMonths: 12,
 
   dailyConsumptionM3: 11_000,
+  meterM3PerHour: 458,
   operatingHoursPerDay: 24,
   operatingDaysPerYear: 365,
   monthlyTrend: monthlyEqual,
-  rampUpYr1Pct: 0.95,
+  minTakePerYear: [0.70, 0.85, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
 
   transportSellingPriceEgp: 7.6,
   gasCommissionEgp: 0.5,
@@ -172,6 +175,7 @@ export const DEFAULT_CNG_INPUTS: CngInputs = {
   numCompressors: 1,
   compressorPerformance: 1,
   flowSharingFactor: 1,
+  pruCapacityM3hr: 800,
 
   numTrailers: 3,
   trailerCapacityM3: 6174,
@@ -260,6 +264,12 @@ const at = (arr: number[] | undefined, y: number, fb: number): number => {
   return (v === undefined || v === null || !isFinite(v)) ? fb : v;
 };
 
+const cumulAt = (arr: number[] | undefined, y: number, fb: number): number => {
+  let r = 1;
+  for (let i = 0; i < y; i++) r *= (1 + at(arr, i, fb));
+  return r;
+};
+
 function npv(rate: number, cf: number[]): number {
   let s = 0; for (let i = 0; i < cf.length; i++) s += cf[i] / Math.pow(1 + rate, i); return s;
 }
@@ -299,10 +309,12 @@ export interface CngYearRow {
   electricity: number;
   msRent: number;
   msOpex: number;
+  msVat: number;        // VAT on Mother Station OPEX
   transportFixed: number;
   transportVariable: number;
   tires: number;
   trailerOpex: number;
+  trailerVat: number;   // VAT on Trailer OPEX
   toll: number;
   insurance: number;
   misc: number;
@@ -426,7 +438,10 @@ export function runCngModel(I: CngInputs): CngOutputs {
   const allCapex = [...breakdown, contingencyRow, idcRow];
 
   // ── Capacities & operational ratios ──
-  const designedAnnualM3 = I.dailyConsumptionM3 * I.operatingDaysPerYear;
+  const dailyM3 = I.meterM3PerHour * I.operatingHoursPerDay;
+  const compressorDailyM3 = (I.compressorCapacityM3hr || 0) * (I.numCompressors || 1) * (I.compressorPerformance || 1) * (I.flowSharingFactor || 1) * (I.operatingHoursPerDay || 24);
+  const effectiveDailyM3 = compressorDailyM3 > 0 ? Math.min(dailyM3, compressorDailyM3) : dailyM3;
+  const designedAnnualM3 = dailyM3 * I.operatingDaysPerYear;
   const designedMonthlyM3 = designedAnnualM3 / 12;
   // trips per month required
   const effectiveTrailerPayload = I.trailerCapacityM3 * (1 - I.unutilizedPctPerTruck);
@@ -450,10 +465,13 @@ export function runCngModel(I: CngInputs): CngOutputs {
   // Pre-compute revenue & opex per year (for sculpting)
   const revOpex = (y: number) => {
     const fx = at(I.fxEgpPerUsdPerYear, y, fx0);
-    const inflRev = Math.pow(1 + at(I.revenueInflationPerYear, y, 0.05), y);
-    const inflCost = Math.pow(1 + at(I.costInflationPerYear, y, 0.10), y);
+    const inflRev = cumulAt(I.revenueInflationPerYear, y, 0.05);
+    const inflCost = cumulAt(I.costInflationPerYear, y, 0.10);
 
-    const rampMul = y === 0 ? I.rampUpYr1Pct : 1;
+    const minTake = (I.minTakePerYear && I.minTakePerYear.length > 0)
+      ? (I.minTakePerYear[Math.min(y, I.minTakePerYear.length - 1)] ?? 1.0)
+      : (y === 0 ? 0.70 : 1.0);
+    const rampMul = minTake;
     const volume = designedAnnualM3 * rampMul;
 
     const revenueTransport = volume * I.transportSellingPriceEgp * inflRev;
@@ -469,6 +487,7 @@ export function runCngModel(I: CngInputs): CngOutputs {
     const electricity = volume * I.msKwhPerM3 * I.msElectricityEgpKwh * inflCost;
     const msRent = I.msPruRentEgpMo * 12 * inflCost;
     const msOpex = salaries + electricity + msRent;
+    const msVat = msOpex * I.vatTaxRatePct;
 
     // Trailer / transport — based on actual trips done
     const tripsThisYear = tripsRequiredMonth * 12 * rampMul;
@@ -477,6 +496,7 @@ export function runCngModel(I: CngInputs): CngOutputs {
     const transportVariable = tripsThisYear * kmPerTrip * I.variableTransportPerKmEgp * inflCost;
     const tires = I.tireCostPerYearEgp * I.numTrailers * inflCost;
     const trailerOpex = transportFixed + transportVariable + tires;
+    const trailerVat = trailerOpex * I.vatTaxRatePct;
 
     const toll = I.tollEgpMo * 12 * inflCost;
     const insurance = I.insuranceEgpMo * 12 * inflCost;
@@ -484,12 +504,12 @@ export function runCngModel(I: CngInputs): CngOutputs {
     const daughterOpex = toll + insurance + misc;
 
     const headOffice = I.headOfficeEgpMo * 12 * I.headOfficeAllocPct * inflCost;
-    const opex = msOpex + trailerOpex + daughterOpex + headOffice;
+    const opex = msOpex + msVat + trailerOpex + trailerVat + daughterOpex + headOffice;
 
     return {
       fx, volume, revenueTransport, revenueGasCommission, revenue,
-      salaries, electricity, msRent, msOpex,
-      transportFixed, transportVariable, tires, trailerOpex,
+      salaries, electricity, msRent, msOpex, msVat,
+      transportFixed, transportVariable, tires, trailerOpex, trailerVat,
       toll, insurance, misc, daughterOpex, headOffice, opex,
     };
   };
@@ -557,8 +577,8 @@ export function runCngModel(I: CngInputs): CngOutputs {
   rows.push({
     year: I.startYear - 1, yearIdx: -1, fx: fx0,
     volumeM3: 0, revenueTransport: 0, revenueGasCommission: 0, revenue: 0,
-    salaries: 0, electricity: 0, msRent: 0, msOpex: 0,
-    transportFixed: 0, transportVariable: 0, tires: 0, trailerOpex: 0,
+    salaries: 0, electricity: 0, msRent: 0, msOpex: 0, msVat: 0,
+    transportFixed: 0, transportVariable: 0, tires: 0, trailerOpex: 0, trailerVat: 0,
     toll: 0, insurance: 0, misc: 0, daughterOpex: 0, headOffice: 0, opex: 0,
     ebitda: 0, depreciation: 0, ebit: 0, interest: 0, slInterest: 0,
     ebt: 0, tax: 0, netProfit: 0,
@@ -635,8 +655,8 @@ export function runCngModel(I: CngInputs): CngOutputs {
       revenueTransport: o.revenueTransport,
       revenueGasCommission: o.revenueGasCommission,
       revenue: o.revenue,
-      salaries: o.salaries, electricity: o.electricity, msRent: o.msRent, msOpex: o.msOpex,
-      transportFixed: o.transportFixed, transportVariable: o.transportVariable, tires: o.tires, trailerOpex: o.trailerOpex,
+      salaries: o.salaries, electricity: o.electricity, msRent: o.msRent, msOpex: o.msOpex, msVat: o.msVat,
+      transportFixed: o.transportFixed, transportVariable: o.transportVariable, tires: o.tires, trailerOpex: o.trailerOpex, trailerVat: o.trailerVat,
       toll: o.toll, insurance: o.insurance, misc: o.misc, daughterOpex: o.daughterOpex,
       headOffice: o.headOffice, opex: o.opex,
       ebitda, depreciation, ebit, interest, slInterest, ebt, tax, netProfit,

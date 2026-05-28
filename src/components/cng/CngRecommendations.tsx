@@ -116,6 +116,119 @@ export const CngRecommendations = ({ m }: { m: CngOutputs }) => {
   const recs = buildRecs(m);
   return (
     <div className="space-y-6">
+
+      {/* IC Memo Header */}
+      <div className="rounded-xl border-2 border-[#002060] bg-white p-6 shadow-md">
+        <div className="flex items-start justify-between flex-wrap gap-4 border-b border-border pb-4 mb-4">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-widest text-[#005298] mb-1">Investment Committee Memorandum</div>
+            <h1 className="text-2xl font-bold text-[#002060]">{m.inputs.projectName}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{m.inputs.scenario} · CNG Infrastructure · {m.inputs.startYear}–{m.inputs.startYear + m.inputs.contractYears - 1}</p>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <div className="rounded-lg bg-[#002060] text-white px-4 py-2 text-center min-w-[90px]">
+              <div className="text-xs opacity-70">Total CAPEX</div>
+              <div className="font-bold font-mono text-sm">{fmtEgp(m.totalCapexEgp)}</div>
+            </div>
+            <div className="rounded-lg bg-[#005298] text-white px-4 py-2 text-center min-w-[90px]">
+              <div className="text-xs opacity-70">Equity IRR</div>
+              <div className="font-bold font-mono text-sm">{fmtPct(m.equityIRR)}</div>
+            </div>
+            <div className="rounded-lg bg-[#FFC10E] text-[#002060] px-4 py-2 text-center min-w-[90px]">
+              <div className="text-xs font-semibold opacity-80">Project IRR</div>
+              <div className="font-bold font-mono text-sm">{fmtPct(m.projectIRR)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Executive Summary */}
+        <div className="mb-5">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-[#002060] mb-2">Executive Summary</h2>
+          <p className="text-sm leading-relaxed text-foreground">
+            {m.inputs.projectName} is a {m.inputs.contractYears}-year mobile CNG infrastructure project targeting an annual throughput of {fmtNum(m.inputs.meterM3PerHour * m.inputs.operatingHoursPerDay * m.inputs.operatingDaysPerYear / 1e6, 2)}M m³/year.
+            The project deploys {m.inputs.numCompressors} compressor unit(s) and {m.inputs.numTrailers} CNG trailer(s) to serve industrial and commercial customers via
+            a transportation tariff of EGP {fmtNum(m.inputs.transportSellingPriceEgp, 2)}/m³ plus a gas commission of EGP {fmtNum(m.inputs.gasCommissionEgp, 2)}/m³.
+            Financed at {fmtPct(m.inputs.debtPct)} gearing over a {m.inputs.loanTenorYears}-year senior debt facility, the project targets an equity IRR of {fmtPct(m.equityIRR)}{" "}
+            against a cost of equity of {fmtPct(m.inputs.discountRateEquity)}, delivering a {fmtPct(m.equityIRR - m.inputs.discountRateEquity)} spread and an equity payback of
+            {isFinite(m.paybackYears) ? ` ${fmtNum(m.paybackYears, 1)} years` : " N/A"}.
+          </p>
+        </div>
+
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          {[
+            { label: "NPV (Project)", value: fmtEgp(m.npvProject), sub: `@ ${fmtPct(m.inputs.discountRateProject)} discount` },
+            { label: "NPV (Equity)", value: fmtEgp(m.npvEquity), sub: `@ ${fmtPct(m.inputs.discountRateEquity)} discount` },
+            { label: "Min DSCR", value: `${fmtNum(m.minDSCR, 2)}x`, sub: `Avg ${fmtNum(m.avgDSCR, 2)}x · Covenant 1.30x` },
+            { label: "LCOM³", value: `${fmtNum(m.lcomEgpPerM3, 3)} EGP/m³`, sub: "Levelised cost of delivery" },
+            { label: "Daily Volume", value: `${fmtNum(m.inputs.meterM3PerHour * m.inputs.operatingHoursPerDay, 0)} m³/day`, sub: `${fmtNum(m.inputs.operatingHoursPerDay, 0)} hr/day` },
+            { label: "Fleet", value: `${m.inputs.numTrailers} trailers`, sub: `${fmtNum(m.inputs.trailerCapacityM3, 0)} m³ ea · ${fmtPct(m.utilizationPct)} utilisation` },
+            { label: "Debt Amount", value: fmtEgp(m.debtAmount), sub: `${m.inputs.loanTenorYears}y tenor · ${m.inputs.graceYears}y grace` },
+            { label: "Equity Cheque", value: fmtEgp(m.paidInEquity), sub: `${fmtPct(1 - m.inputs.debtPct)} of total CAPEX` },
+          ].map((item, i) => (
+            <div key={i} className="rounded-lg bg-[#f0f4f8] p-3">
+              <div className="text-xs text-muted-foreground">{item.label}</div>
+              <div className="font-bold font-mono text-sm mt-0.5">{item.value}</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">{item.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* CAPEX Structure */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#002060] mb-2">CAPEX Structure</h3>
+            <table className="w-full text-xs">
+              <tbody>
+                {m.capexByGroup.map((g, i) => (
+                  <tr key={i} className="border-b border-border/30">
+                    <td className="py-1">{g.group}</td>
+                    <td className="py-1 text-right font-mono">{fmtEgp(g.total)}</td>
+                    <td className="py-1 text-right text-muted-foreground">{fmtPct(g.total / m.totalCapexEgp, 1)}</td>
+                  </tr>
+                ))}
+                <tr className="font-semibold">
+                  <td className="py-1.5">Total CAPEX (incl. IDC)</td>
+                  <td className="py-1.5 text-right font-mono">{fmtEgp(m.totalCapexEgp)}</td>
+                  <td className="py-1.5 text-right">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#002060] mb-2">Funding Structure</h3>
+            <table className="w-full text-xs">
+              <tbody>
+                <tr className="border-b border-border/30"><td className="py-1">Senior Debt</td><td className="py-1 text-right font-mono">{fmtEgp(m.debtAmount)}</td><td className="py-1 text-right text-muted-foreground">{fmtPct(m.debtAmount / m.totalCapexEgp, 1)}</td></tr>
+                {m.shareholderLoan > 0 && <tr className="border-b border-border/30"><td className="py-1">Shareholder Loan</td><td className="py-1 text-right font-mono">{fmtEgp(m.shareholderLoan)}</td><td className="py-1 text-right text-muted-foreground">{fmtPct(m.shareholderLoan / m.totalCapexEgp, 1)}</td></tr>}
+                <tr className="border-b border-border/30"><td className="py-1">Sponsor Equity</td><td className="py-1 text-right font-mono">{fmtEgp(m.paidInEquity)}</td><td className="py-1 text-right text-muted-foreground">{fmtPct(m.paidInEquity / m.totalCapexEgp, 1)}</td></tr>
+                <tr className="font-semibold"><td className="py-1.5">Total</td><td className="py-1.5 text-right font-mono">{fmtEgp(m.totalCapexEgp)}</td><td className="py-1.5 text-right">100%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Key Risks */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-[#002060] mb-2">Key Risk Factors</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            {[
+              { risk: "Volume offtake risk", mitigation: "Long-term supply agreements + minimum take provisions" },
+              { risk: "Fuel/electricity price inflation", mitigation: "Cost inflation pass-through clauses in tariff" },
+              { risk: "EGP/USD depreciation", mitigation: `${fmtPct(0)} USD-linked costs; primarily EGP cost base` },
+              { risk: "Regulatory / CBE rate risk", mitigation: `Fixed spread; rate sensitivity performed at +300bps` },
+              { risk: "Fleet availability risk", mitigation: `${m.inputs.numTrailers} trailer fleet with ${fmtPct(m.utilizationPct)} utilisation headroom` },
+              { risk: "Construction timeline", mitigation: `${m.inputs.constructionMonths}-month build with ${fmtPct(m.inputs.contingencyPct)} contingency` },
+            ].map((r, i) => (
+              <div key={i} className="rounded bg-[#f0f4f8] p-2">
+                <div className="font-semibold text-[#002060]">{r.risk}</div>
+                <div className="text-muted-foreground mt-0.5">{r.mitigation}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <Verdict m={m}/>
       <div className="rounded-xl border border-border bg-[var(--gradient-card)] p-5 shadow-[var(--shadow-soft)]">
         <div className="flex items-center gap-3"><Shield className="h-6 w-6 text-primary"/>

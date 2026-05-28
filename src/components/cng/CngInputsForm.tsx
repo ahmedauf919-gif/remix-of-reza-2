@@ -1,4 +1,4 @@
-import { CngInputs, CngCapexItem, RepaymentMethod, Periodicity } from "@/lib/cngModel";
+import { CngInputs, CngCapexItem, RepaymentMethod, Periodicity, fmtNum } from "@/lib/cngModel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -101,11 +101,19 @@ export const CngInputsForm = ({ inputs, onChange }: { inputs: CngInputs; onChang
 
         <TabsContent value="volume" className="m-0 pt-4">
           <Section title="Volume">
-            {F("dailyConsumptionM3", "Daily consumption", "m³/day", 100)}
+            <Field label="Meter capacity" value={inputs.meterM3PerHour} onChange={(n) => set("meterM3PerHour", n)} step={10} suffix="m³/hr"/>
+            <div className="space-y-1 col-span-1 md:col-span-2 lg:col-span-3">
+              <Label className="text-xs text-muted-foreground">Daily volume (m³/day) = {fmtNum(inputs.meterM3PerHour * inputs.operatingHoursPerDay, 0)} m³ · Annual = {fmtNum(inputs.meterM3PerHour * inputs.operatingHoursPerDay * inputs.operatingDaysPerYear, 0)} m³</Label>
+            </div>
             {F("operatingDaysPerYear", "Operating days", "days/yr")}
             {F("operatingHoursPerDay", "Operating hours", "hr/day")}
-            <PctField label="Year-1 ramp-up" value={inputs.rampUpYr1Pct} onChange={(n) => set("rampUpYr1Pct", n)} step={1}/>
           </Section>
+          <div className="mt-4">
+            <FullSection title="Minimum Take per year (%)">
+              <YearArrayEditor years={N} values={inputs.minTakePerYear} fallback={1.0}
+                onChange={(a) => set("minTakePerYear", a)} step={1} asPct/>
+            </FullSection>
+          </div>
           <div className="mt-4">
             <Section title="Pricing (EGP/m³)">
               {F("transportSellingPriceEgp", "Transportation selling price", "EGP/m³", 0.1)}
@@ -175,7 +183,7 @@ export const CngInputsForm = ({ inputs, onChange }: { inputs: CngInputs; onChang
                     <TableCell><Input type="number" step={1000} value={it.costPerUnit} onChange={(e) => updateCapex(i, { costPerUnit: parseFloat(e.target.value) || 0 })} /></TableCell>
                     <TableCell><Input type="number" step={0.5} value={+((it.vatPct * 100).toFixed(2))} onChange={(e) => updateCapex(i, { vatPct: (parseFloat(e.target.value) || 0) / 100 })} /></TableCell>
                     <TableCell><Input type="number" step={0.5} value={+(((it.customsPct ?? 0) * 100).toFixed(2))} onChange={(e) => updateCapex(i, { customsPct: (parseFloat(e.target.value) || 0) / 100 })} /></TableCell>
-                    <TableCell><Input type="number" step={1} value={it.usefulLife} onChange={(e) => updateCapex(i, { usefulLife: parseInt(e.target.value) || 0 })} /></TableCell>
+                    <TableCell><Input type="number" step={0.5} value={+it.usefulLife.toFixed(2)} onChange={(e) => updateCapex(i, { usefulLife: parseFloat(e.target.value) || 0 })} /></TableCell>
                     <TableCell><Button size="icon" variant="ghost" onClick={() => removeCapex(i)}><Trash2 className="h-4 w-4"/></Button></TableCell>
                   </TableRow>
                 ))}
@@ -195,14 +203,30 @@ export const CngInputsForm = ({ inputs, onChange }: { inputs: CngInputs; onChang
         </TabsContent>
 
         <TabsContent value="opex" className="m-0 pt-4">
-          <Section title="Mother Station — Salaries (EGP/month)">
-            {F("msEngineerSalaryEgpMo", "Engineer / PM salary", "EGP/mo", 1000)}
-            {F("msEngineersCount", "# engineers")}
-            {F("msTechnicianSalaryEgpMo", "Technician salary", "EGP/mo", 500)}
-            {F("msTechniciansCount", "# technicians")}
-            {F("msPruTechnicianSalaryEgpMo", "PRU technician salary", "EGP/mo", 500)}
-            {F("msPruTechniciansCount", "# PRU technicians")}
+          <Section title="Mother Station — Salaries">
+            <div className="col-span-1 md:col-span-2 lg:col-span-3 grid grid-cols-3 gap-2 text-xs text-muted-foreground font-medium pb-1 border-b">
+              <span>Role</span><span className="text-right">Count</span><span className="text-right">EGP/month / person</span>
+            </div>
+            <div className="col-span-1 md:col-span-2 lg:col-span-3 grid grid-cols-3 gap-2 items-center">
+              <span className="text-sm">Engineers / PM</span>
+              <Input type="number" step={1} value={inputs.msEngineersCount} onChange={(e) => set("msEngineersCount", parseFloat(e.target.value)||0)} className="h-8"/>
+              <Input type="number" step={500} value={inputs.msEngineerSalaryEgpMo} onChange={(e) => set("msEngineerSalaryEgpMo", parseFloat(e.target.value)||0)} className="h-8"/>
+            </div>
+            <div className="col-span-1 md:col-span-2 lg:col-span-3 grid grid-cols-3 gap-2 items-center">
+              <span className="text-sm">Mother Station Technicians</span>
+              <Input type="number" step={1} value={inputs.msTechniciansCount} onChange={(e) => set("msTechniciansCount", parseFloat(e.target.value)||0)} className="h-8"/>
+              <Input type="number" step={500} value={inputs.msTechnicianSalaryEgpMo} onChange={(e) => set("msTechnicianSalaryEgpMo", parseFloat(e.target.value)||0)} className="h-8"/>
+            </div>
+            <div className="col-span-1 md:col-span-2 lg:col-span-3 grid grid-cols-3 gap-2 items-center">
+              <span className="text-sm">PRU / Daughter Station Technicians</span>
+              <Input type="number" step={1} value={inputs.msPruTechniciansCount} onChange={(e) => set("msPruTechniciansCount", parseFloat(e.target.value)||0)} className="h-8"/>
+              <Input type="number" step={500} value={inputs.msPruTechnicianSalaryEgpMo} onChange={(e) => set("msPruTechnicianSalaryEgpMo", parseFloat(e.target.value)||0)} className="h-8"/>
+            </div>
+            <div className="col-span-1 md:col-span-2 lg:col-span-3 text-xs text-muted-foreground border-t pt-1">
+              Monthly salary total: EGP {fmtNum((inputs.msEngineersCount * inputs.msEngineerSalaryEgpMo) + (inputs.msTechniciansCount * inputs.msTechnicianSalaryEgpMo) + (inputs.msPruTechniciansCount * inputs.msPruTechnicianSalaryEgpMo), 0)}
+            </div>
             {F("msPruRentEgpMo", "PRU/Site rent", "EGP/mo", 1000)}
+            {F("pruCapacityM3hr", "PRU capacity", "m³/hr", 50)}
           </Section>
           <div className="mt-4">
             <Section title="Compression — Electricity">
@@ -242,7 +266,7 @@ export const CngInputsForm = ({ inputs, onChange }: { inputs: CngInputs; onChang
           <FullSection title="Senior Debt">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
               <PctField label="Debt %" value={inputs.debtPct} onChange={(n) => set("debtPct", Math.max(0, Math.min(1, n)))} step={1}/>
-              <PctField label="Bank spread (fallback)" value={inputs.spreadPct} onChange={(n) => set("spreadPct", n)} step={0.1}/>
+              <PctField label="Bank spread" value={inputs.spreadPct} onChange={(n) => set("spreadPct", n)} step={0.1}/>
               {F("loanTenorYears", "Tenor", "years")}
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Periodicity</Label>
@@ -280,11 +304,6 @@ export const CngInputsForm = ({ inputs, onChange }: { inputs: CngInputs; onChang
               <Label className="text-xs">Bank all-in interest rate per year (overrides corridor + spread)</Label>
               <YearArrayEditor years={N} values={inputs.bankInterestPerYear} fallback={(inputs.corridorPctPerYear[0] ?? 0.20) + inputs.spreadPct}
                 onChange={(a) => set("bankInterestPerYear", a)} step={0.25} asPct/>
-            </div>
-            <div className="mt-4">
-              <Label className="text-xs">CBE corridor per year</Label>
-              <YearArrayEditor years={N} values={inputs.corridorPctPerYear} fallback={0.20}
-                onChange={(a) => set("corridorPctPerYear", a)} step={0.25} asPct/>
             </div>
           </FullSection>
 
