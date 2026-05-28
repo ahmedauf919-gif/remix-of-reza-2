@@ -1,0 +1,32 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npm run build
+        env:
+          GITHUB_ACTIONS: true
+          VITE_SUPABASE_URL: https://xaqrwtvancbmfvfgyolp.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhcXJ3dHZhbmNibWZ2Zmd5b2xwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzY2NjIsImV4cCI6MjA5MzY1MjY2Mn0.6V5nHE0bLCIU80JldaO5fv5HyEEkdx7Df1W6ZF1ghFE
+
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
