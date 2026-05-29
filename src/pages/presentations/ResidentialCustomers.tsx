@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Home as HomeIcon, Download,
@@ -7,6 +7,52 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import taqaLogo from "@/assets/taqa-logo.png";
+
+// ─── Photos ───────────────────────────────────────────────────────────────────
+
+const P: Record<string, string> = {
+  cover:      "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1600&q=80",
+  buildings:  "https://images.unsplash.com/photo-1486406691009-3fd3f000ea5a?auto=format&fit=crop&w=1400&q=80",
+  city:       "https://images.unsplash.com/photo-1524492000408-81a939da285a?auto=format&fit=crop&w=1400&q=80",
+  solar:      "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1400&q=80",
+  energy:     "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1400&q=80",
+  cng:        "https://images.unsplash.com/photo-1568605135229-43af0a9bc4e8?auto=format&fit=crop&w=1400&q=80",
+  homes:      "https://images.unsplash.com/photo-1560472355-536de3962603?auto=format&fit=crop&w=1400&q=80",
+  truck:      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1400&q=80",
+  electricity:"https://images.unsplash.com/photo-1548529293-0fbaae5b1b36?auto=format&fit=crop&w=1400&q=80",
+  smart:      "https://images.unsplash.com/photo-1508615039623-a25605d2b022?auto=format&fit=crop&w=1400&q=80",
+  water:      "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1400&q=80",
+  ocean:      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80",
+  beach:      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1400&q=80",
+  pipeline:   "https://images.unsplash.com/photo-1498354136128-58f790194fa7?auto=format&fit=crop&w=1400&q=80",
+  gas:        "https://images.unsplash.com/photo-1472492243-a3f56ef0a7af?auto=format&fit=crop&w=1400&q=80",
+  generator:  "https://images.unsplash.com/photo-1581092921461-39b9d08a9b21?auto=format&fit=crop&w=1400&q=80",
+  plant:      "https://images.unsplash.com/photo-1513828583688-c52646db42da?auto=format&fit=crop&w=1400&q=80",
+  ev:         "https://images.unsplash.com/photo-1593941799082-4fc77a3c4fc3?auto=format&fit=crop&w=1400&q=80",
+  green:      "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=1400&q=80",
+  meeting:    "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1400&q=80",
+  integrated: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1400&q=80",
+  resort:     "https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=1400&q=80",
+};
+
+/** Horizontal photo strip that breaks out of p-10 padding and fades to white */
+function PhotoBanner({ src, height = 158 }: { src: string; height?: number }) {
+  return (
+    <div className="relative overflow-hidden -mx-10 -mt-10 mb-5 shrink-0" style={{ height }}>
+      <img
+        src={src}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
+        loading="lazy"
+        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(255,255,255,1) 90%)" }}
+      />
+    </div>
+  );
+}
 
 // ─── Slide Data ──────────────────────────────────────────────────────────────
 
@@ -30,11 +76,13 @@ function sectionOf(slideIdx: number) {
 
 function CoverSlide() {
   return (
-    <div className="flex flex-col h-full justify-between" style={{ background: "linear-gradient(135deg, #001845 0%, #002060 40%, #004080 75%, #005298 100%)" }}>
-      <div className="flex items-center gap-3 p-8">
+    <div className="flex flex-col h-full justify-between relative overflow-hidden" style={{ background: "#001845" }}>
+      <img src={P.cover} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.35, mixBlendMode: "luminosity" }} />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #001845ee 0%, #002060cc 40%, #004080aa 70%, #005298 100%)" }} />
+      <div className="flex items-center gap-3 p-8 relative z-10">
         <img src={taqaLogo} alt="TAQA Arabia" className="h-12 object-contain bg-white/90 rounded px-3 py-1" />
       </div>
-      <div className="px-12 pb-4">
+      <div className="px-12 pb-4 relative z-10">
         <div className="w-16 h-1 bg-[#FFC10E] rounded-full mb-6" />
         <h1 className="text-5xl font-bold text-white leading-tight mb-4">
           Residential<br />
@@ -43,7 +91,7 @@ function CoverSlide() {
         <p className="text-white/70 text-xl mb-2">Integrated Energy &amp; Utility Solutions</p>
         <p className="text-white/40 text-sm">January 2026</p>
       </div>
-      <div className="px-12 py-8 border-t border-white/10">
+      <div className="px-12 py-8 border-t border-white/10 relative z-10">
         <p className="text-white/30 text-xs">TAQA Arabia · Confidential</p>
       </div>
     </div>
@@ -53,6 +101,7 @@ function CoverSlide() {
 function AboutSlide() {
   return (
     <div className="flex flex-col h-full bg-white p-10">
+      <PhotoBanner src={P.buildings} />
       <div className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#005298] mb-1">TAQA Arabia · Who We Are</p>
         <h2 className="text-3xl font-bold text-[#002060]">Egypt's leading integrated energy infrastructure developer</h2>
@@ -101,6 +150,7 @@ function RegionalSlide() {
   ];
   return (
     <div className="flex flex-col h-full bg-white p-10">
+      <PhotoBanner src={P.city} />
       <div className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#005298] mb-1">TAQA Arabia · Regional Presence</p>
         <h2 className="text-3xl font-bold text-[#002060]">A growing platform across Egypt, the GCC, Africa and Greece</h2>
@@ -146,6 +196,7 @@ function RegionalSlide() {
 function NumbersSlide() {
   return (
     <div className="flex flex-col h-full bg-white p-10">
+      <PhotoBanner src={P.solar} />
       <div className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#005298] mb-1">TAQA Arabia · In Numbers</p>
         <h2 className="text-3xl font-bold text-[#002060]">The scale behind a single residential utility partner</h2>
@@ -200,6 +251,7 @@ function SolutionsOverviewSlide() {
   ];
   return (
     <div className="flex flex-col h-full bg-white p-10">
+      <PhotoBanner src={P.energy} />
       <div className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#009045] mb-1">Residential Customers · Solutions Overview</p>
         <h2 className="text-3xl font-bold text-[#002060]">Six integrated solutions</h2>
@@ -232,11 +284,13 @@ interface ScopeSlideProps {
   scopeTitle: string;
   scopeDesc: string;
   deliverables: string[];
+  photo: string;
 }
 
-function ScopeSlide({ num, title, subtitle, color, icon, scopeTitle, scopeDesc, deliverables }: ScopeSlideProps) {
+function ScopeSlide({ num, title, subtitle, color, icon, scopeTitle, scopeDesc, deliverables, photo }: ScopeSlideProps) {
   return (
     <div className="flex flex-col h-full bg-white p-10">
+      <PhotoBanner src={photo} />
       <div className="mb-5 flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl flex items-center justify-center text-white shrink-0" style={{ background: color }}>{icon}</div>
         <div>
@@ -273,11 +327,13 @@ interface ValueSlideProps {
   icon: React.ReactNode;
   values: { label: string; desc: string }[];
   timeline: { phase: string; desc: string }[];
+  photo: string;
 }
 
-function ValueSlide({ num, title, color, icon, values, timeline }: ValueSlideProps) {
+function ValueSlide({ num, title, color, icon, values, timeline, photo }: ValueSlideProps) {
   return (
     <div className="flex flex-col h-full bg-white p-10">
+      <PhotoBanner src={photo} />
       <div className="mb-5 flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl flex items-center justify-center text-white shrink-0" style={{ background: color }}>{icon}</div>
         <div>
@@ -326,11 +382,13 @@ interface TrackRecordSlideProps {
   subheadline: string;
   body: string;
   stats: { value: string; label: string }[];
+  photo: string;
 }
 
-function TrackRecordSlide({ num, title, color, icon, headline, subheadline, body, stats }: TrackRecordSlideProps) {
+function TrackRecordSlide({ num, title, color, icon, headline, subheadline, body, stats, photo }: TrackRecordSlideProps) {
   return (
     <div className="flex flex-col h-full bg-white p-10">
+      <PhotoBanner src={photo} />
       <div className="mb-5 flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl flex items-center justify-center text-white shrink-0" style={{ background: color }}>{icon}</div>
         <div>
@@ -370,6 +428,7 @@ function WhyOnePartnerSlide() {
   const solutions = ["Mobile CNG", "Electricity", "Water", "Gas", "Diesel Back-up", "EV Charging"];
   return (
     <div className="flex flex-col h-full bg-white p-10">
+      <PhotoBanner src={P.meeting} />
       <div className="mb-5">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#002060] mb-1">Why One Partner</p>
         <h2 className="text-3xl font-bold text-[#002060]">The TAQA One-Stop-Shop</h2>
@@ -417,6 +476,7 @@ function BundleSlide() {
   ];
   return (
     <div className="flex flex-col h-full bg-white p-10">
+      <PhotoBanner src={P.integrated} />
       <div className="mb-5">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#002060] mb-1">The Power of the Bundle</p>
         <h2 className="text-3xl font-bold text-[#002060]">Cross-Solution Benefits</h2>
@@ -437,6 +497,7 @@ function BundleSlide() {
 function SomaBaySlide() {
   return (
     <div className="flex flex-col h-full bg-white p-10">
+      <PhotoBanner src={P.resort} height={175} />
       <div className="mb-5">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#009045] mb-1">Success Story</p>
         <h2 className="text-3xl font-bold text-[#002060]">Soma Bay</h2>
@@ -513,6 +574,7 @@ const SLIDES = [
       scopeTitle="Mobile CNG Solution"
       scopeDesc="TAQA Arabia delivers portable CNG via MEGC trailers with an integrated pressure-reduction unit — connecting any compound, resort or remote community to natural gas without waiting for a pipeline, at zero infrastructure capex."
       deliverables={["MEGC trailers (5,700 Nm³ at 250 bar) with optional onboard PRU", "Mother / Mobile / Daughter virtual-pipeline station chain", "Capacity-as-a-Service billing (monthly subscription)", "24/7 emergency dispatch and customer service hotline", "O&M, HSE and driver training", "Bridge-to-grid transition planning"]}
+      photo={P.cng}
     />,
   },
   // 6 - Mobile CNG Value
@@ -531,6 +593,7 @@ const SLIDES = [
         { phase: "Month 2: Live supply", desc: "First gas delivered; resident usage tracked via smart metering." },
         { phase: "Ongoing: O&M + grid transition", desc: "24/7 monitoring and coordinated handover when fixed pipeline arrives." },
       ]}
+      photo={P.homes}
     />,
   },
   // 7 - Mobile CNG Track Record
@@ -541,6 +604,7 @@ const SLIDES = [
       subheadline="First company in Egypt to supply natural gas through a mobile virtual pipeline"
       body="TAQA Arabia pioneered mobile CNG in Egypt, using its network of 86 CNG stations to extend a virtual pipeline into four governorates with no fixed gas infrastructure. The same model now serves industrial, residential, touristic and agribusiness clients — proving off-grid communities can run on clean natural gas years before the physical pipeline arrives."
       stats={[{ value: "86", label: "CNG stations feeding the virtual pipeline" }, { value: "4", label: "Governorates served" }, { value: "1st", label: "Virtual pipeline operator in Egypt" }, { value: "24/7", label: "Emergency dispatch" }]}
+      photo={P.truck}
     />,
   },
   // 8 - Electricity Scope
@@ -550,6 +614,7 @@ const SLIDES = [
       scopeTitle="Turnkey Power Distribution"
       scopeDesc="TAQA Arabia is the largest private electricity distributor in Egypt. For residential developments it sources power, builds the substation and medium/low-voltage network, installs smart metering, and operates the whole asset under a licensed long-term concession."
       deliverables={["Power sourcing, government relations & grid MV interconnection", "Substation development & engineering", "MV/LV network design, supply and installation", "Smart metering and AMI system", "Lifetime O&M under GOEIC license", "Profit-share revenue model for the developer"]}
+      photo={P.electricity}
     />,
   },
   // 9 - Electricity Value
@@ -568,6 +633,7 @@ const SLIDES = [
         { phase: "Month 11–12: Commissioning", desc: "Testing, energisation and handover to TAQA O&M team." },
         { phase: "Year 1+: Live O&M", desc: "24/7 monitoring, billing collection, preventive and corrective maintenance." },
       ]}
+      photo={P.smart}
     />,
   },
   // 10 - Electricity Track Record
@@ -578,6 +644,7 @@ const SLIDES = [
       subheadline="Powering Egypt's leading residential and mixed-use developments"
       body="TAQA Power operates +1,600 MVA of distribution capacity, of which 950 MVA serves 26 mixed-use and residential concessions across 31 million m². Its NABQ (160 MVA) and 6th of October Developers (250 MVA) substations anchor a network serving Emaar, Ora, City Edge, Marakez and LMD — currently +12,000 customers, targeting 50,000."
       stats={[{ value: "+1,600", label: "MVA distribution capacity" }, { value: "950", label: "MVA in residential concessions" }, { value: "26", label: "Residential concessions" }, { value: "31M m²", label: "Development footprint" }]}
+      photo={P.buildings}
     />,
   },
   // 11 - Water Scope
@@ -587,6 +654,7 @@ const SLIDES = [
       scopeTitle="Turnkey Desalination & Smart Water"
       scopeDesc="TAQA Arabia delivers guaranteed freshwater security for residential and coastal developments via reverse-osmosis desalination plants and fully digitalized water operations — using technology that consumes up to 50% less power than its peers."
       deliverables={["Reverse-osmosis (RO) desalination plant design & build", "Pre-treatment, post-treatment & brine management", "Energy-recovery systems (50% less power vs peers)", "SCADA-based smart water management", "Solar integration for green desalination", "Lifetime O&M and water-purchase agreement (per-m³ billing)"]}
+      photo={P.water}
     />,
   },
   // 12 - Water Value
@@ -605,6 +673,7 @@ const SLIDES = [
         { phase: "Month 9–10: Testing & commissioning", desc: "Water quality testing, flow rate validation and handover." },
         { phase: "Year 1+: O&M & monitoring", desc: "24/7 SCADA monitoring, membrane management and resident billing." },
       ]}
+      photo={P.ocean}
     />,
   },
   // 13 - Water Track Record
@@ -615,6 +684,7 @@ const SLIDES = [
       subheadline="Egypt's first & largest eco solar-powered water-desalination plant"
       body="On the Red Sea, TAQA Water built Egypt's first green desalination facility powered entirely by renewable energy, using technology that consumes 50% less power than peers. It serves 50,000+ people in the Red Sea Governorate and cuts CO₂ by 8,560 tonnes a year — winning both Sustainable Project of the Year and Power & Water Project of the Year."
       stats={[{ value: "+47,000", label: "m³/day contracted desalination" }, { value: "15", label: "Operational locations" }, { value: "8,560 t", label: "CO₂/yr saved" }, { value: "50%", label: "Less power vs peers" }]}
+      photo={P.beach}
     />,
   },
   // 14 - Gas Scope
@@ -624,6 +694,7 @@ const SLIDES = [
       scopeTitle="Turnkey Gas Network EPC"
       scopeDesc="As Egypt's largest private gas distributor, TAQA Arabia delivers full-scope Engineering, Procurement and Construction for natural-gas distribution networks — from feasibility and route planning through testing, commissioning and lifetime operation of the community network."
       deliverables={["Feasibility studies & network route planning", "Detailed engineering & design", "Procurement of pipes, valves, pressure regulators & meters", "Pipeline construction & civil works", "PRS station installation & commissioning", "EGAS-compliant handover & lifetime O&M"]}
+      photo={P.pipeline}
     />,
   },
   // 15 - Gas Value
@@ -642,6 +713,7 @@ const SLIDES = [
         { phase: "Month 7–8: Testing & commissioning", desc: "Pressure testing, purging, metering and EGAS inspection." },
         { phase: "Year 1+: O&M & expansion", desc: "Meter reading, leak detection, maintenance and new connection hook-ups." },
       ]}
+      photo={P.homes}
     />,
   },
   // 16 - Gas Track Record
@@ -652,6 +724,7 @@ const SLIDES = [
       subheadline="Egypt's largest private gas distributor, serving ~6.5 million residential customers"
       body="TAQA Gas operates a network exceeding 10,000 km across 8 governorate concessions, renewed for 15 years since 2019. With ~6.5 million residential customers connected and a 66% share of private gas concessions, it has the EPC and operating track record to build and run the gas backbone of any new residential community."
       stats={[{ value: "+10,000", label: "km of gas network" }, { value: "~6.5M", label: "Residential customers" }, { value: "66%", label: "Private concession share" }, { value: "8", label: "Governorate concessions" }]}
+      photo={P.gas}
     />,
   },
   // 17 - Diesel Scope
@@ -661,6 +734,7 @@ const SLIDES = [
       scopeTitle="Turnkey Diesel Power Solutions"
       scopeDesc="TAQA Arabia supplies, installs, rents and operates diesel generator sets for emergency and back-up power across residential compounds, clubhouses and community infrastructure — on a flexible rental model with full 24/7 operation and maintenance."
       deliverables={["Diesel generator supply, sizing & commissioning", "Synchronization, ATS & switchgear integration", "Acoustic enclosure & exhaust system", "Fuel supply & storage management", "24/7 remote monitoring & rapid response O&M", "Flexible capacity — scale up/down with occupancy"]}
+      photo={P.generator}
     />,
   },
   // 18 - Diesel Value
@@ -679,6 +753,7 @@ const SLIDES = [
         { phase: "Week 4: Commissioning & training", desc: "Load testing, auto-start verification and staff briefing." },
         { phase: "Ongoing: Monitoring & fuel management", desc: "24/7 SCADA, scheduled maintenance and automatic fuel replenishment." },
       ]}
+      photo={P.energy}
     />,
   },
   // 19 - Diesel Track Record
@@ -689,6 +764,7 @@ const SLIDES = [
       subheadline="Owning and operating captive generation across Egypt's toughest sites"
       body="TAQA Power owns and operates 6 captive power plants and +150 MW of contracted generation capacity through long-term agreements, including flare-to-power and combined-heat-and-power systems. The same engineering, fuel-logistics and 24/7 O&M discipline underpins TAQA's diesel back-up rental offering for residential communities."
       stats={[{ value: "6", label: "Captive power plants operated" }, { value: "+150", label: "MW contracted generation" }, { value: "24/7", label: "O&M coverage" }, { value: "CHP", label: "Flare-to-power capability" }]}
+      photo={P.plant}
     />,
   },
   // 20 - EV Scope
@@ -698,6 +774,7 @@ const SLIDES = [
       scopeTitle="EV Charging Infrastructure"
       scopeDesc="TAQA Arabia holds Egypt's first EV-charging license and delivers complete green-mobility infrastructure for residential developments — engineering, supply, installation, operation and full investment — backed by a 24/7 hotline and mobile app."
       deliverables={["AC EV chargers — residential & commercial", "DC fast chargers — highways & community gateways", "Golf-cart chargers for touristic / resort developments", "Operator & user mobile app", "24/7 hotline and remote monitoring", "Full-investment model — zero capex for the developer"]}
+      photo={P.ev}
     />,
   },
   // 21 - EV Value
@@ -716,6 +793,7 @@ const SLIDES = [
         { phase: "Month 2: Go-live", desc: "Resident onboarding, app launch and billing activation." },
         { phase: "Ongoing: Monitoring & expansion", desc: "Usage analytics, charger maintenance and capacity additions." },
       ]}
+      photo={P.green}
     />,
   },
   // 22 - EV Track Record
@@ -726,6 +804,7 @@ const SLIDES = [
       subheadline="Pioneering Egypt's EV-charging rollout from the front"
       body="TAQA Power secured the first private EV-charging license in Egypt and is rolling out AC and DC charging across residential, commercial and highway locations, supported by its own operator and user mobile app and 24/7 hotline. As Egypt's largest private power player, TAQA pairs charging with on-site solar and distribution — a complete green-mobility package."
       stats={[{ value: "1st", label: "Private EV-charging license in Egypt" }, { value: "AC+DC", label: "Full charger range" }, { value: "24/7", label: "Hotline & monitoring" }, { value: "App", label: "Operator & user mobile app" }]}
+      photo={P.ev}
     />,
   },
   // 23 - Why One Partner
@@ -740,92 +819,147 @@ const SLIDES = [
 
 export default function ResidentialCustomers() {
   const [current, setCurrent] = useState(0);
+  const [animKey, setAnimKey] = useState(0);
+  const [direction, setDirection] = useState<"fwd" | "bwd">("fwd");
   const total = SLIDES.length;
   const section = sectionOf(current);
 
-  const prev = () => setCurrent(c => Math.max(0, c - 1));
-  const next = () => setCurrent(c => Math.min(total - 1, c + 1));
+  const go = (target: number) => {
+    if (target < 0 || target >= total) return;
+    setDirection(target > current ? "fwd" : "bwd");
+    setAnimKey(k => k + 1);
+    setCurrent(target);
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        setDirection("fwd");
+        setAnimKey(k => k + 1);
+        setCurrent(c => Math.min(total - 1, c + 1));
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setDirection("bwd");
+        setAnimKey(k => k + 1);
+        setCurrent(c => Math.max(0, c - 1));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [total]);
+
+  const handleSlideClick = (e: React.MouseEvent) => {
+    const t = e.target as HTMLElement;
+    if (t.closest("button") || t.closest("a") || t.closest("select") || t.closest("input")) return;
+    go(current + 1);
+  };
+
+  const progressPct = ((current + 1) / total) * 100;
 
   return (
-    <div className="min-h-screen bg-[#f0f4f8] flex flex-col">
-      {/* Header */}
-      <header className="bg-[#002060] border-b border-white/10 px-4 py-3 flex items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-3">
-          <Link to="/"><Button variant="secondary" size="sm" className="gap-1.5 shrink-0"><HomeIcon className="h-4 w-4" />Home</Button></Link>
-          <div className="border-l border-white/20 pl-3 hidden sm:block">
-            <p className="text-white text-sm font-bold">Residential Customers</p>
-            <p className="text-white/40 text-[10px]">TAQA Arabia · Integrated Energy &amp; Utility Solutions · Jan 2026</p>
+    <>
+      <style>{`
+        @keyframes rc-slide-right { from { opacity:0; transform:translateX(32px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes rc-slide-left  { from { opacity:0; transform:translateX(-32px); } to { opacity:1; transform:translateX(0); } }
+        .rc-fwd { animation: rc-slide-right 0.32s cubic-bezier(0.16,1,0.3,1) both; }
+        .rc-bwd { animation: rc-slide-left  0.32s cubic-bezier(0.16,1,0.3,1) both; }
+      `}</style>
+
+      <div className="min-h-screen bg-[#0d1117] flex flex-col">
+        {/* Progress bar */}
+        <div className="h-0.5 bg-white/10 shrink-0">
+          <div className="h-full transition-all duration-500" style={{ width: `${progressPct}%`, background: section.color }} />
+        </div>
+
+        {/* Header */}
+        <header className="bg-[#161b22] border-b border-white/10 px-4 py-3 flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3">
+            <Link to="/"><Button variant="secondary" size="sm" className="gap-1.5 shrink-0"><HomeIcon className="h-4 w-4" />Home</Button></Link>
+            <div className="border-l border-white/20 pl-3 hidden sm:block">
+              <p className="text-white text-sm font-bold">Residential Customers</p>
+              <p className="text-white/40 text-[10px]">TAQA Arabia · Integrated Energy &amp; Utility Solutions · Jan 2026</p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-white/30 text-xs hidden md:block">{current + 1} / {total}</span>
-          <a href="/presentations/residential-customers.pptx" download>
-            <Button size="sm" variant="secondary" className="gap-1.5"><Download className="h-3.5 w-3.5" />Download PPTX</Button>
-          </a>
-        </div>
-      </header>
+          <div className="flex items-center gap-2">
+            <span className="text-white/30 text-xs hidden md:flex items-center gap-2">
+              <span className="font-medium" style={{ color: section.color }}>{section.label}</span>
+              <span>·</span>
+              {current + 1} / {total}
+            </span>
+            <a href="/presentations/residential-customers.pptx" download>
+              <Button size="sm" variant="secondary" className="gap-1.5"><Download className="h-3.5 w-3.5" />Download PPTX</Button>
+            </a>
+          </div>
+        </header>
 
-      {/* Section nav */}
-      <div className="bg-white border-b border-border px-4 overflow-x-auto scrollbar-thin">
-        <div className="flex gap-1 py-1">
-          {SECTIONS.map(s => {
-            const isActive = s.slides.some(i => i === current);
-            return (
-              <button
-                key={s.id}
-                onClick={() => setCurrent(s.slides[0])}
-                className={`px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg transition-colors ${isActive ? "text-white font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}
-                style={isActive ? { background: s.color } : undefined}
-              >
-                {s.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Slide */}
-      <div className="flex-1 flex flex-col p-4 md:p-6 gap-4">
-        <div className="flex-1 rounded-2xl shadow-xl overflow-hidden border border-border" style={{ minHeight: "520px" }}>
-          {SLIDES[current].render()}
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center justify-between gap-4">
-          <Button variant="outline" onClick={prev} disabled={current === 0} className="gap-2">
-            <ChevronLeft className="h-4 w-4" /> Previous
-          </Button>
-
-          {/* Slide dots */}
-          <div className="flex items-center gap-1 overflow-x-auto max-w-[50vw] pb-1">
-            {SLIDES.map((_, i) => {
-              const sec = sectionOf(i);
-              const isActive = i === current;
+        {/* Section nav */}
+        <div className="bg-[#161b22] border-b border-white/10 px-4 overflow-x-auto">
+          <div className="flex gap-1 py-1">
+            {SECTIONS.map(s => {
+              const isActive = s.slides.some(i => i === current);
               return (
                 <button
-                  key={i}
-                  onClick={() => setCurrent(i)}
-                  className={`rounded-full transition-all shrink-0 ${isActive ? "w-6 h-3" : "w-2.5 h-2.5 opacity-40 hover:opacity-70"}`}
-                  style={{ background: sec.color }}
-                  title={SLIDES[i].title}
-                />
+                  key={s.id}
+                  onClick={() => go(s.slides[0])}
+                  className={`px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg transition-colors ${isActive ? "text-white font-semibold" : "text-white/40 hover:text-white/70 hover:bg-white/5"}`}
+                  style={isActive ? { background: s.color } : undefined}
+                >
+                  {s.label}
+                </button>
               );
             })}
           </div>
-
-          <Button variant="outline" onClick={next} disabled={current === total - 1} className="gap-2">
-            Next <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
 
-        {/* Current slide label */}
-        <div className="text-center">
-          <span className="text-xs text-muted-foreground">
-            <span className="font-medium" style={{ color: section.color }}>{section.label}</span>
-            {" · "}{SLIDES[current].title}{" · "}Slide {current + 1} of {total}
-          </span>
+        {/* Slide canvas */}
+        <div className="flex-1 flex flex-col p-4 md:p-6 gap-4">
+          <div
+            className="flex-1 rounded-2xl shadow-2xl overflow-hidden border border-white/10 cursor-pointer"
+            style={{ minHeight: "520px" }}
+            onClick={handleSlideClick}
+          >
+            <div key={animKey} className={direction === "fwd" ? "rc-fwd h-full" : "rc-bwd h-full"}>
+              {SLIDES[current].render()}
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between gap-4">
+            <Button variant="outline" onClick={() => go(current - 1)} disabled={current === 0} className="gap-2 border-white/20 text-white hover:bg-white/10 bg-transparent">
+              <ChevronLeft className="h-4 w-4" /> Previous
+            </Button>
+
+            <div className="flex items-center gap-1 overflow-x-auto max-w-[50vw] pb-1">
+              {SLIDES.map((_, i) => {
+                const sec = sectionOf(i);
+                const isActive = i === current;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => go(i)}
+                    className={`rounded-full transition-all shrink-0 ${isActive ? "w-5 h-3" : "w-2.5 h-2.5 opacity-30 hover:opacity-60"}`}
+                    style={{ background: sec.color }}
+                    title={SLIDES[i].title}
+                  />
+                );
+              })}
+            </div>
+
+            <Button variant="outline" onClick={() => go(current + 1)} disabled={current === total - 1} className="gap-2 border-white/20 text-white hover:bg-white/10 bg-transparent">
+              Next <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="text-center">
+            <span className="text-xs text-white/30">
+              <span className="font-medium" style={{ color: section.color }}>{section.label}</span>
+              {" · "}{SLIDES[current].title}{" · "}Slide {current + 1} of {total}
+            </span>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
