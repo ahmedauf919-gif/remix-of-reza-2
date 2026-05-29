@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Home as HomeIcon, Download,
@@ -740,42 +740,113 @@ const SLIDES = [
 
 export default function ResidentialCustomers() {
   const [current, setCurrent] = useState(0);
+  const [animKey, setAnimKey] = useState(0);
+  const [direction, setDirection] = useState<"fwd" | "bwd">("fwd");
   const total = SLIDES.length;
   const section = sectionOf(current);
 
-  const prev = () => setCurrent(c => Math.max(0, c - 1));
-  const next = () => setCurrent(c => Math.min(total - 1, c + 1));
+  const go = (target: number) => {
+    if (target < 0 || target >= total) return;
+    setDirection(target > current ? "fwd" : "bwd");
+    setAnimKey(k => k + 1);
+    setCurrent(target);
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        setDirection("fwd");
+        setAnimKey(k => k + 1);
+        setCurrent(c => Math.min(total - 1, c + 1));
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setDirection("bwd");
+        setAnimKey(k => k + 1);
+        setCurrent(c => Math.max(0, c - 1));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [total]);
+
+  // Click anywhere on the slide canvas to advance
+  const handleSlideClick = (e: React.MouseEvent) => {
+    const t = e.target as HTMLElement;
+    if (t.closest("button") || t.closest("a") || t.closest("select") || t.closest("input")) return;
+    go(current + 1);
+  };
+
+  const progress = ((current + 1) / total) * 100;
 
   return (
-    <div className="min-h-screen bg-[#f0f4f8] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: "#0d1b2e" }}>
+      <style>{`
+        @keyframes rc-slide-right { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes rc-slide-left  { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: translateX(0); } }
+        .rc-fwd { animation: rc-slide-right 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+        .rc-bwd { animation: rc-slide-left  0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+      `}</style>
+
+      {/* Thin progress bar */}
+      <div className="h-0.5 shrink-0" style={{ background: "rgba(255,255,255,0.08)" }}>
+        <div
+          className="h-full transition-all duration-500 ease-out"
+          style={{ width: `${progress}%`, background: section.color }}
+        />
+      </div>
+
       {/* Header */}
-      <header className="bg-[#002060] border-b border-white/10 px-4 py-3 flex items-center justify-between gap-3 shrink-0">
+      <header className="shrink-0 border-b px-5 py-3 flex items-center justify-between gap-3"
+        style={{ background: "#001540", borderColor: "rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-3">
-          <Link to="/"><Button variant="secondary" size="sm" className="gap-1.5 shrink-0"><HomeIcon className="h-4 w-4" />Home</Button></Link>
-          <div className="border-l border-white/20 pl-3 hidden sm:block">
-            <p className="text-white text-sm font-bold">Residential Customers</p>
-            <p className="text-white/40 text-[10px]">TAQA Arabia · Integrated Energy &amp; Utility Solutions · Jan 2026</p>
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="gap-1.5 text-white/60 hover:text-white hover:bg-white/10">
+              <HomeIcon className="h-4 w-4" />Home
+            </Button>
+          </Link>
+          <img src={taqaLogo} alt="TAQA" className="h-8 object-contain rounded px-2 py-0.5 hidden sm:block" style={{ background: "rgba(255,255,255,0.92)" }} />
+          <div className="border-l pl-3 hidden sm:block" style={{ borderColor: "rgba(255,255,255,0.15)" }}>
+            <p className="text-white text-sm font-bold tracking-tight">Residential Customers</p>
+            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>TAQA Arabia · Integrated Energy &amp; Utility Solutions · Jan 2026</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-white/30 text-xs hidden md:block">{current + 1} / {total}</span>
+        <div className="flex items-center gap-3">
+          <div className="text-right hidden md:block">
+            <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: section.color }}>{section.label}</p>
+            <p className="text-xs text-white/70">{SLIDES[current].title}</p>
+          </div>
+          <span className="text-sm font-semibold tabular-nums" style={{ color: "rgba(255,255,255,0.35)" }}>
+            {String(current + 1).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.15)" }}>/{String(total).padStart(2, "0")}</span>
+          </span>
           <a href="/presentations/residential-customers.pptx" download>
-            <Button size="sm" variant="secondary" className="gap-1.5"><Download className="h-3.5 w-3.5" />Download PPTX</Button>
+            <Button size="sm" variant="ghost" className="gap-1.5 text-white/50 hover:text-white hover:bg-white/10">
+              <Download className="h-3.5 w-3.5" />PPTX
+            </Button>
           </a>
         </div>
       </header>
 
       {/* Section nav */}
-      <div className="bg-white border-b border-border px-4 overflow-x-auto scrollbar-thin">
-        <div className="flex gap-1 py-1">
+      <div className="shrink-0 px-4 overflow-x-auto scrollbar-thin border-b"
+        style={{ background: "#001030", borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="flex gap-1 py-1.5">
           {SECTIONS.map(s => {
             const isActive = s.slides.some(i => i === current);
             return (
               <button
                 key={s.id}
-                onClick={() => setCurrent(s.slides[0])}
-                className={`px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg transition-colors ${isActive ? "text-white font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}
-                style={isActive ? { background: s.color } : undefined}
+                onClick={() => go(s.slides[0])}
+                className="px-3 py-1.5 text-xs font-medium whitespace-nowrap rounded-lg transition-all"
+                style={
+                  isActive
+                    ? { background: s.color, color: "#fff", fontWeight: 700 }
+                    : { color: "rgba(255,255,255,0.38)", background: "transparent" }
+                }
+                onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)"; }}
+                onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.38)"; }}
               >
                 {s.label}
               </button>
@@ -784,47 +855,85 @@ export default function ResidentialCustomers() {
         </div>
       </div>
 
-      {/* Slide */}
-      <div className="flex-1 flex flex-col p-4 md:p-6 gap-4">
-        <div className="flex-1 rounded-2xl shadow-xl overflow-hidden border border-border" style={{ minHeight: "520px" }}>
-          {SLIDES[current].render()}
+      {/* Slide canvas */}
+      <div className="flex-1 flex flex-col p-3 md:p-5 gap-3 min-h-0">
+        <div
+          className="flex-1 rounded-2xl overflow-hidden relative"
+          style={{
+            minHeight: 480,
+            boxShadow: "0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.07)",
+            cursor: current < total - 1 ? "pointer" : "default",
+          }}
+          onClick={handleSlideClick}
+        >
+          <div key={animKey} className={direction === "fwd" ? "rc-fwd" : "rc-bwd"} style={{ height: "100%" }}>
+            {SLIDES[current].render()}
+          </div>
+
+          {/* Click-to-advance hint */}
+          {current < total - 1 && (
+            <div
+              className="absolute bottom-4 right-5 flex items-center gap-1 text-[11px] pointer-events-none select-none transition-opacity"
+              style={{ color: "rgba(255,255,255,0.22)" }}
+            >
+              click to advance <ChevronRight className="h-3 w-3" />
+            </div>
+          )}
         </div>
 
-        {/* Navigation */}
-        <div className="flex items-center justify-between gap-4">
-          <Button variant="outline" onClick={prev} disabled={current === 0} className="gap-2">
-            <ChevronLeft className="h-4 w-4" /> Previous
+        {/* Navigation row */}
+        <div className="flex items-center gap-3 shrink-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => go(current - 1)}
+            disabled={current === 0}
+            className="gap-1.5 border disabled:opacity-20"
+            style={{ color: "rgba(255,255,255,0.65)", borderColor: "rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.04)" }}
+          >
+            <ChevronLeft className="h-4 w-4" />Prev
           </Button>
 
-          {/* Slide dots */}
-          <div className="flex items-center gap-1 overflow-x-auto max-w-[50vw] pb-1">
+          {/* Dot navigation */}
+          <div className="flex-1 flex items-center justify-center gap-1 overflow-x-auto pb-1">
             {SLIDES.map((_, i) => {
               const sec = sectionOf(i);
               const isActive = i === current;
               return (
                 <button
                   key={i}
-                  onClick={() => setCurrent(i)}
-                  className={`rounded-full transition-all shrink-0 ${isActive ? "w-6 h-3" : "w-2.5 h-2.5 opacity-40 hover:opacity-70"}`}
-                  style={{ background: sec.color }}
+                  onClick={() => go(i)}
+                  className="rounded-full transition-all shrink-0"
+                  style={{
+                    width: isActive ? 20 : 7,
+                    height: 7,
+                    background: sec.color,
+                    opacity: isActive ? 1 : 0.28,
+                  }}
                   title={SLIDES[i].title}
                 />
               );
             })}
           </div>
 
-          <Button variant="outline" onClick={next} disabled={current === total - 1} className="gap-2">
-            Next <ChevronRight className="h-4 w-4" />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => go(current + 1)}
+            disabled={current === total - 1}
+            className="gap-1.5 border disabled:opacity-20"
+            style={{ color: "rgba(255,255,255,0.65)", borderColor: "rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.04)" }}
+          >
+            Next<ChevronRight className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* Current slide label */}
-        <div className="text-center">
-          <span className="text-xs text-muted-foreground">
-            <span className="font-medium" style={{ color: section.color }}>{section.label}</span>
-            {" · "}{SLIDES[current].title}{" · "}Slide {current + 1} of {total}
-          </span>
-        </div>
+        {/* Slide label */}
+        <p className="text-center text-xs shrink-0" style={{ color: "rgba(255,255,255,0.25)" }}>
+          <span style={{ color: section.color }}>{section.label}</span>
+          {" · "}{SLIDES[current].title}
+          {" · "}<span className="opacity-60">Use ← → arrow keys or click the slide</span>
+        </p>
       </div>
     </div>
   );

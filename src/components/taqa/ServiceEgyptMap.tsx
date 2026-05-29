@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import { ClientRecord, GOVERNORATE_COORDS } from "@/data/taqa/types";
 import { X } from "lucide-react";
+import { MapContainer, TileLayer, CircleMarker, Tooltip as LTooltip } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+
+const SAT_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+const LABEL_TILES = "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png";
+const EGYPT_CENTER: [number, number] = [26.5, 30.0];
 
 const SERVICE_LABELS: Record<string, string> = {
   "MV Distribution": "MV Dist",
@@ -63,77 +69,79 @@ export function ServiceEgyptMap({ records, title }: { records: ClientRecord[]; t
 
   return (
     <div className="glass-card rounded-xl p-5">
-      <h3 className="text-white font-semibold mb-4">{title}</h3>
+      <h3 className="text-slate-800 font-semibold mb-2">{title}</h3>
       <div className="flex flex-wrap gap-3 mb-3">
         {Object.entries(SERVICE_COLORS).map(([name, color]) => (
-          <div key={name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div key={name} className="flex items-center gap-1.5 text-xs text-slate-600">
             <span className="w-3 h-3 rounded-full inline-block" style={{ background: color }} />
             {name}
           </div>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground mb-2">Click any governorate to see service & activity breakdown</p>
-      <div className="relative">
-        <svg viewBox="0 0 500 520" className="w-full max-h-[500px]">
-          <path d="M 100,88 L 145,93 L 195,97 L 220,95 C 232,86 250,79 268,78 C 280,80 290,85 305,88 L 325,91 L 348,93 L 365,95 L 374,108 L 384,135 L 392,165 L 396,195 L 394,220 L 389,242 L 383,250 L 376,242 L 369,222 L 363,198 L 359,172 L 357,148 L 357,128 L 359,110 L 352,102 L 342,98 L 340,108 L 338,125 L 338,145 L 340,168 L 344,192 L 350,218 L 358,248 L 368,280 L 378,312 L 388,345 L 396,378 L 404,410 L 412,445 L 418,480 L 420,490 L 80,490 L 80,88 Z" fill="hsl(220,20%,12%)" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.6" />
-          <path d="M 275,470 C 270,440 265,420 262,400 C 260,380 268,360 272,340 C 276,310 280,285 285,260 C 288,240 292,220 298,205 L 310,195" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="2" opacity="0.3" />
-          <path d="M 310,195 C 300,170 280,140 255,100" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.2" />
-          <path d="M 310,195 C 308,170 302,140 290,100" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.2" />
-          {govTotals.map(d => {
-            const coords = GOVERNORATE_COORDS[d.name];
-            if (!coords) return null;
-            const svcMap = govServiceData.get(d.name);
-            if (!svcMap) return null;
-            const isSelected = selected === d.name;
-            const services = [...svcMap.entries()];
-            const baseR = 10 + (d.count / maxCount) * 18;
-            const angleStep = (2 * Math.PI) / Math.max(services.length, 1);
-            const spread = services.length > 1 ? Math.min(12, 6 + services.length * 2) : 0;
-
-            return (
-              <g key={d.name} onClick={() => setSelected(isSelected ? null : d.name)} className="cursor-pointer" role="button">
-                {isSelected && <circle cx={coords.svg[0]} cy={coords.svg[1]} r={baseR + spread + 6} fill="none" stroke="hsl(0,0%,100%)" strokeWidth="1.5" opacity="0.5" strokeDasharray="3 2" />}
-                {services.map(([service, { count }], i) => {
-                  const angle = angleStep * i - Math.PI / 2;
-                  const cx = coords.svg[0] + Math.cos(angle) * spread;
-                  const cy = coords.svg[1] + Math.sin(angle) * spread;
-                  const r = Math.max(6, 5 + (count / maxCount) * 14);
-                  const color = SERVICE_COLORS[service] || "hsl(0,0%,60%)";
-                  return (
-                    <g key={service}>
-                      <circle cx={cx} cy={cy} r={r} fill={color} opacity={isSelected ? 0.9 : 0.6} />
-                      <text x={cx} y={cy + 3} textAnchor="middle" fill="hsl(0,0%,100%)" fontSize="7" fontWeight="bold">{count}</text>
-                    </g>
-                  );
-                })}
-                <text x={coords.svg[0]} y={coords.svg[1] - baseR - spread - 2} textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">{d.name}</text>
-              </g>
-            );
-          })}
-        </svg>
+      <p className="text-xs text-slate-500 mb-2">Click any marker to see service & activity breakdown</p>
+      <div className="relative" style={{ zIndex: 0 }}>
+        <div style={{ height: 440, borderRadius: 8, overflow: "hidden" }}>
+          <MapContainer center={EGYPT_CENTER} zoom={5} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
+            <TileLayer url={SAT_TILES} attribution="ESRI World Imagery" />
+            <TileLayer url={LABEL_TILES} attribution="CartoDB" />
+            {govTotals.map(d => {
+              const coords = GOVERNORATE_COORDS[d.name];
+              if (!coords) return null;
+              const svcMap = govServiceData.get(d.name)!;
+              const isSelected = selected === d.name;
+              // Use dominant service color
+              const dominantService = [...svcMap.entries()].reduce((a, b) => a[1].count >= b[1].count ? a : b);
+              const color = SERVICE_COLORS[dominantService[0]] || "hsl(195,90%,48%)";
+              const r = 8 + (d.count / maxCount) * 18;
+              return (
+                <CircleMarker
+                  key={d.name}
+                  center={coords.latLng as [number, number]}
+                  radius={isSelected ? r + 4 : r}
+                  fillColor={color}
+                  color={isSelected ? "#ffffff" : "rgba(255,255,255,0.6)"}
+                  weight={isSelected ? 2.5 : 1.5}
+                  fillOpacity={isSelected ? 0.95 : 0.75}
+                  eventHandlers={{ click: () => setSelected(isSelected ? null : d.name) }}
+                >
+                  <LTooltip direction="top">
+                    <strong>{d.name}</strong> — {d.count} records
+                  </LTooltip>
+                </CircleMarker>
+              );
+            })}
+          </MapContainer>
+        </div>
 
         {selected && selectedInfo && (
-          <div className="absolute top-2 right-2 w-72 rounded-xl p-4 shadow-xl z-10 max-h-[480px] overflow-y-auto scrollbar-thin" style={{ background: "hsl(220 20% 14%)", border: "1px solid hsl(220 15% 22%)" }}>
+          <div
+            className="absolute top-2 right-2 w-72 rounded-xl p-4 shadow-xl z-[1000] max-h-[420px] overflow-y-auto scrollbar-thin"
+            style={{ background: "#ffffff", border: "1px solid #e2e8f0" }}
+          >
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-white font-bold text-sm">{selected}</h4>
-              <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+              <h4 className="text-slate-800 font-bold text-sm">{selected}</h4>
+              <button onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Total records: {selectedInfo.total}</p>
+            <p className="text-xs text-slate-500 mb-3">Total records: {selectedInfo.total}</p>
             {selectedInfo.services.map(s => (
               <div key={s.service} className="mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: SERVICE_COLORS[s.service] }} />
-                  <span className="text-xs font-semibold text-white">{s.service}</span>
-                  <span className="text-xs text-muted-foreground">({s.count})</span>
+                  <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ background: SERVICE_COLORS[s.service] }} />
+                  <span className="text-xs font-semibold text-slate-800">{s.service}</span>
+                  <span className="text-xs text-slate-500">({s.count})</span>
                 </div>
                 <ul className="mt-1 space-y-0.5 ml-4">
                   {s.activities.map(a => (
-                    <li key={a} className="text-xs text-muted-foreground pl-2 border-l-2" style={{ borderColor: SERVICE_COLORS[s.service] }}>{a}</li>
+                    <li key={a} className="text-xs text-slate-600 pl-2 border-l-2" style={{ borderColor: SERVICE_COLORS[s.service] }}>{a}</li>
                   ))}
                 </ul>
               </div>
             ))}
-            <button onClick={() => openGoogleMaps(selected)} className="mt-2 w-full text-xs py-1.5 rounded-lg text-white/80 hover:text-white transition-colors" style={{ background: "hsl(220 20% 22%)" }}>
+            <button
+              onClick={() => openGoogleMaps(selected)}
+              className="mt-2 w-full text-xs py-1.5 rounded-lg text-white transition-colors"
+              style={{ background: "hsl(45, 90%, 45%)", color: "#1a1a1a" }}
+            >
               Open in Google Maps ↗
             </button>
           </div>

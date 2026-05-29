@@ -94,7 +94,6 @@ export function ClientsOverviewTab() {
     [allData, selectedCompany]
   );
 
-  // Aggregate activities
   const activityMap = useMemo(() => {
     const map = new Map<string, { count: number; companies: Set<string> }>();
     filtered.forEach(r => {
@@ -116,29 +115,29 @@ export function ClientsOverviewTab() {
       {/* Hero header */}
       <div className="glass-card rounded-2xl p-8 relative overflow-hidden">
         <div
-          className="absolute inset-0 opacity-30 pointer-events-none"
+          className="absolute inset-0 opacity-10 pointer-events-none"
           style={{
             background:
               "radial-gradient(circle at 20% 20%, hsl(195,90%,48%) 0%, transparent 40%), radial-gradient(circle at 80% 70%, hsl(38,92%,50%) 0%, transparent 45%)",
           }}
         />
         <div className="relative">
-          <h2 className="text-white text-2xl md:text-3xl font-bold mb-2">Who We Serve</h2>
-          <p className="text-white/70 max-w-2xl">
+          <h2 className="text-slate-900 text-2xl md:text-3xl font-bold mb-2">Who We Serve</h2>
+          <p className="text-slate-600 max-w-2xl">
             A panoramic look at the industries and communities powered by TAQA Arabia — across gas,
             electricity, petroleum, water and CNG.
           </p>
           <div className="flex flex-wrap gap-6 mt-6">
             <div>
-              <div className="text-white/60 text-xs uppercase tracking-wider">Total Clients</div>
+              <div className="text-slate-500 text-xs uppercase tracking-wider">Total Clients</div>
               <div className="text-3xl font-bold" style={{ color: "hsl(var(--tab-theme))" }}>{totalClients.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-white/60 text-xs uppercase tracking-wider">Industries / Activities</div>
+              <div className="text-slate-500 text-xs uppercase tracking-wider">Industries / Activities</div>
               <div className="text-3xl font-bold" style={{ color: "hsl(var(--tab-theme))" }}>{totalActivities}</div>
             </div>
             <div>
-              <div className="text-white/60 text-xs uppercase tracking-wider">Companies</div>
+              <div className="text-slate-500 text-xs uppercase tracking-wider">Companies</div>
               <div className="text-3xl font-bold" style={{ color: "hsl(var(--tab-theme))" }}>{companies.length}</div>
             </div>
           </div>
@@ -151,8 +150,8 @@ export function ClientsOverviewTab() {
           onClick={() => setSelectedCompany("All")}
           className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
             selectedCompany === "All"
-              ? "bg-white text-black border-white"
-              : "bg-white/5 text-white/80 border-white/10 hover:bg-white/10"
+              ? "bg-slate-800 text-white border-slate-800"
+              : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
           }`}
         >
           All Portfolio
@@ -165,7 +164,7 @@ export function ClientsOverviewTab() {
               key={c}
               onClick={() => setSelectedCompany(c)}
               className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${
-                active ? "text-black border-transparent" : "bg-white/5 text-white/80 border-white/10 hover:bg-white/10"
+                active ? "text-white border-transparent" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
               }`}
               style={active ? { background: meta?.color } : undefined}
             >
@@ -178,22 +177,22 @@ export function ClientsOverviewTab() {
 
       {/* Services provided per company */}
       <div>
-        <h3 className="text-white text-lg font-semibold mb-3">Services Provided</h3>
+        <h3 className="text-slate-800 text-lg font-semibold mb-3">Services Provided</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {(selectedCompany === "All" ? companies : [selectedCompany]).map(c => {
             const meta = COMPANY_META[c];
             return (
               <div key={c} className="glass-card rounded-xl p-5 border-l-4" style={{ borderLeftColor: meta?.color }}>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="p-2 rounded-lg" style={{ background: `${meta?.color}33`, color: meta?.color }}>
+                  <span className="p-2 rounded-lg" style={{ background: `${meta?.color}22`, color: meta?.color }}>
                     {meta?.icon}
                   </span>
-                  <h4 className="text-white font-bold">{c}</h4>
+                  <h4 className="text-slate-800 font-bold">{c}</h4>
                 </div>
                 <ul className="space-y-1.5">
                   {meta?.services.map(s => (
-                    <li key={s} className="text-white/80 text-sm flex items-start gap-2">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
+                    <li key={s} className="text-slate-600 text-sm flex items-start gap-2">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: meta.color }} />
                       {s}
                     </li>
                   ))}
@@ -206,7 +205,7 @@ export function ClientsOverviewTab() {
 
       {/* Activity / Industry cards */}
       <div>
-        <h3 className="text-white text-lg font-semibold mb-3">Client Industries & Activities</h3>
+        <h3 className="text-slate-800 text-lg font-semibold mb-3">Client Industries & Activities</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {activityMap.map((a, i) => {
             const color = CHART_COLORS[i % CHART_COLORS.length];
@@ -216,24 +215,25 @@ export function ClientsOverviewTab() {
                 className="glass-card rounded-xl p-4 hover:scale-[1.02] transition-transform relative overflow-hidden"
               >
                 <div
-                  className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-20"
+                  className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
                   style={{ background: color }}
                 />
                 <div className="relative">
                   <div
                     className="inline-flex items-center justify-center p-2 rounded-lg mb-3"
-                    style={{ background: `${color}33`, color }}
+                    style={{ background: `${color}22`, color }}
                   >
                     {iconFor(a.name)}
                   </div>
-                  <div className="text-white font-semibold text-sm leading-tight mb-1">{a.name}</div>
+                  <div className="text-slate-800 font-semibold text-sm leading-tight mb-1">{a.name}</div>
                   <div className="text-2xl font-bold" style={{ color }}>{a.count}</div>
-                  <div className="text-white/50 text-xs mt-1">clients</div>
+                  <div className="text-slate-500 text-xs mt-1">clients</div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {a.companies.map(c => (
                       <span
                         key={c}
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/70"
+                        className="text-[10px] px-1.5 py-0.5 rounded text-slate-600"
+                        style={{ background: `${COMPANY_META[c]?.color}20`, border: `1px solid ${COMPANY_META[c]?.color}40` }}
                       >
                         {c}
                       </span>
@@ -248,10 +248,10 @@ export function ClientsOverviewTab() {
 
       {/* Activity by company matrix */}
       <div className="glass-card rounded-xl p-5 overflow-x-auto">
-        <h3 className="text-white font-semibold mb-4">Activity Coverage by Company</h3>
+        <h3 className="text-slate-800 font-semibold mb-4">Activity Coverage by Company</h3>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-white/60 text-left border-b border-white/10">
+            <tr className="text-slate-500 text-left border-b border-slate-200">
               <th className="py-2 pr-4">Activity</th>
               {companies.map(c => (
                 <th key={c} className="py-2 px-3 text-center">{c}</th>
@@ -265,21 +265,21 @@ export function ClientsOverviewTab() {
                 allData.filter(r => r.activity === a.name && r.company === c).length
               );
               return (
-                <tr key={a.name} className="border-b border-white/5 hover:bg-white/5">
-                  <td className="py-2 pr-4 text-white">{a.name}</td>
+                <tr key={a.name} className="border-b border-slate-100 hover:bg-slate-50">
+                  <td className="py-2 pr-4 text-slate-800">{a.name}</td>
                   {perCompany.map((n, i) => (
                     <td key={i} className="py-2 px-3 text-center">
                       {n > 0 ? (
                         <span className="inline-block min-w-[28px] px-2 py-0.5 rounded text-xs font-semibold"
-                          style={{ background: `${COMPANY_META[companies[i]]?.color}33`, color: COMPANY_META[companies[i]]?.color }}>
+                          style={{ background: `${COMPANY_META[companies[i]]?.color}22`, color: COMPANY_META[companies[i]]?.color }}>
                           {n}
                         </span>
                       ) : (
-                        <span className="text-white/20">—</span>
+                        <span className="text-slate-300">—</span>
                       )}
                     </td>
                   ))}
-                  <td className="py-2 px-3 text-center text-white font-bold">{a.count}</td>
+                  <td className="py-2 px-3 text-center text-slate-800 font-bold">{a.count}</td>
                 </tr>
               );
             })}
