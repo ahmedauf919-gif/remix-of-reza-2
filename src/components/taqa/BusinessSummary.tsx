@@ -16,17 +16,17 @@ function SummaryCard({ title, icon, nature, points }: SummaryProps) {
           <div className="p-2 rounded-lg" style={{ background: "hsl(var(--tab-theme) / 0.15)" }}>
             <span style={{ color: "hsl(var(--tab-theme))" }}>{icon}</span>
           </div>
-          <h2 className="text-white text-lg font-bold">Business Nature</h2>
+          <h2 className="text-slate-800 text-lg font-bold">Business Nature</h2>
         </div>
-        <p className="text-white/80 text-sm leading-relaxed">{nature}</p>
+        <p className="text-slate-600 text-sm leading-relaxed">{nature}</p>
       </div>
 
       {/* What Do We Do */}
       <div className="glass-card rounded-xl p-6 space-y-3">
-        <h2 className="text-white text-lg font-bold">What We Do</h2>
+        <h2 className="text-slate-800 text-lg font-bold">What We Do</h2>
         <ul className="space-y-2">
           {points.map((point, i) => (
-            <li key={i} className="flex items-start gap-2 text-white/75 text-sm leading-relaxed">
+            <li key={i} className="flex items-start gap-2 text-slate-600 text-sm leading-relaxed">
               <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "hsl(var(--tab-theme))" }} />
               {point}
             </li>

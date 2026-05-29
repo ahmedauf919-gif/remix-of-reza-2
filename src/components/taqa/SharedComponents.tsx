@@ -2,15 +2,27 @@ import { useMemo, useState } from "react";
 import { ClientRecord, countBy, GOVERNORATE_COORDS, CHART_COLORS } from "@/data/taqa/types";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 import { Search, X } from "lucide-react";
+import { MapContainer, TileLayer, CircleMarker, Tooltip as LTooltip } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+
+const EGYPT_CENTER: [number, number] = [26.5, 30.0];
+const SAT_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+const LABEL_TILES = "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png";
+
+function openGoogleMaps(govName: string) {
+  const coords = GOVERNORATE_COORDS[govName];
+  if (!coords) return;
+  window.open(`https://www.google.com/maps?q=${coords.latLng[0]},${coords.latLng[1]}&z=10`, "_blank");
+}
 
 // Stat Card
 export function StatCard({ label, value, icon, badge }: { label: string; value: number | string; icon?: React.ReactNode; badge?: string }) {
   return (
     <div className="glass-card stat-glow rounded-xl p-5 flex flex-col gap-2">
-      <div className="flex items-center gap-2 text-white text-sm">{icon}{label}</div>
+      <div className="flex items-center gap-2 text-slate-600 text-sm">{icon}{label}</div>
       <div className="flex items-center gap-3">
         <span className="text-3xl font-bold" style={{ color: "hsl(var(--tab-theme))" }}>{value}</span>
-        {badge && <span className="text-xs text-white/60 bg-white/10 rounded-lg px-2 py-1">{badge}</span>}
+        {badge && <span className="text-xs text-slate-500 bg-slate-100 rounded-lg px-2 py-1">{badge}</span>}
       </div>
     </div>
   );
@@ -20,17 +32,17 @@ export function StatCard({ label, value, icon, badge }: { label: string; value: 
 export function SectorBarChart({ data, title }: { data: { name: string; count: number }[]; title: string }) {
   return (
     <div className="glass-card rounded-xl p-5">
-      <h3 className="text-white font-semibold mb-4">{title}</h3>
+      <h3 className="text-slate-800 font-semibold mb-4">{title}</h3>
       <ResponsiveContainer width="100%" height={Math.max(300, data.length * 28)}>
         <BarChart data={data} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,18%)" />
-          <XAxis type="number" tick={{ fill: "#ffffff", fontSize: 11 }} />
-          <YAxis dataKey="name" type="category" width={150} tick={{ fill: "#ffffff", fontSize: 10 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(210 15% 88%)" />
+          <XAxis type="number" tick={{ fill: "#475569", fontSize: 11 }} />
+          <YAxis dataKey="name" type="category" width={150} tick={{ fill: "#475569", fontSize: 10 }} />
           <Tooltip
-            contentStyle={{ background: "hsl(220,20%,12%)", border: "1px solid hsl(220,15%,20%)", borderRadius: 8, color: "hsl(210,20%,90%)" }}
+            contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 8, color: "#1e293b" }}
           />
           <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-            <LabelList dataKey="count" position="right" fill="#ffffff" fontSize={11} fontWeight="bold" />
+            <LabelList dataKey="count" position="right" fill="#334155" fontSize={11} fontWeight="bold" />
             {data.map((_, i) => (
               <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
             ))}
@@ -41,47 +53,50 @@ export function SectorBarChart({ data, title }: { data: { name: string; count: n
   );
 }
 
-function openGoogleMaps(govName: string) {
-  const coords = GOVERNORATE_COORDS[govName];
-  if (!coords) return;
-  window.open(`https://www.google.com/maps?q=${coords.latLng[0]},${coords.latLng[1]}&z=10`, "_blank");
-}
-
-// Egypt Map - clickable markers open Google Maps
+// Simple Satellite Egypt Map
 export function EgyptMap({ data, title }: { data: { name: string; count: number }[]; title: string }) {
   const maxCount = Math.max(...data.map(d => d.count), 1);
   return (
     <div className="glass-card rounded-xl p-5">
-      <h3 className="text-white font-semibold mb-4">{title}</h3>
-      <p className="text-xs text-muted-foreground mb-2">Click any marker to open in Google Maps</p>
-      <svg viewBox="0 0 500 520" className="w-full max-h-[500px]">
-        <path
-          d="M 100,88 L 145,93 L 195,97 L 220,95 C 232,86 250,79 268,78 C 280,80 290,85 305,88 L 325,91 L 348,93 L 365,95 L 374,108 L 384,135 L 392,165 L 396,195 L 394,220 L 389,242 L 383,250 L 376,242 L 369,222 L 363,198 L 359,172 L 357,148 L 357,128 L 359,110 L 352,102 L 342,98 L 340,108 L 338,125 L 338,145 L 340,168 L 344,192 L 350,218 L 358,248 L 368,280 L 378,312 L 388,345 L 396,378 L 404,410 L 412,445 L 418,480 L 420,490 L 80,490 L 80,88 Z"
-          fill="hsl(220,20%,12%)" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.6"
-        />
-        <path d="M 275,470 C 270,440 265,420 262,400 C 260,380 268,360 272,340 C 276,310 280,285 285,260 C 288,240 292,220 298,205 L 310,195" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="2" opacity="0.3" />
-        <path d="M 310,195 C 300,170 280,140 255,100" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.2" />
-        <path d="M 310,195 C 308,170 302,140 290,100" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.2" />
-        {data.map(d => {
-          const coords = GOVERNORATE_COORDS[d.name];
-          if (!coords) return null;
-          const r = 8 + (d.count / maxCount) * 22;
-          return (
-            <g key={d.name} onClick={() => openGoogleMaps(d.name)} className="cursor-pointer" role="button">
-              <circle cx={coords.svg[0]} cy={coords.svg[1]} r={r} fill="hsl(var(--tab-theme))" opacity="0.3" />
-              <circle cx={coords.svg[0]} cy={coords.svg[1]} r={r * 0.6} fill="hsl(var(--tab-theme))" opacity="0.6" />
-              <text x={coords.svg[0]} y={coords.svg[1] - r - 4} textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">{d.name}</text>
-              <text x={coords.svg[0]} y={coords.svg[1] + 4} textAnchor="middle" fill="hsl(0,0%,100%)" fontSize="9" fontWeight="bold">{d.count}</text>
-            </g>
-          );
-        })}
-      </svg>
+      <h3 className="text-slate-800 font-semibold mb-2">{title}</h3>
+      <p className="text-xs text-slate-500 mb-3">Click any marker to open in Google Maps</p>
+      <div style={{ height: 420, borderRadius: 8, overflow: "hidden", zIndex: 0, position: "relative" }}>
+        <MapContainer center={EGYPT_CENTER} zoom={5} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
+          <TileLayer url={SAT_TILES} attribution="ESRI World Imagery" />
+          <TileLayer url={LABEL_TILES} attribution="CartoDB" />
+          {data.map(d => {
+            const coords = GOVERNORATE_COORDS[d.name];
+            if (!coords) return null;
+            const r = 8 + (d.count / maxCount) * 18;
+            return (
+              <CircleMarker
+                key={d.name}
+                center={coords.latLng as [number, number]}
+                radius={r}
+                fillColor="hsl(195, 90%, 48%)"
+                color="#ffffff"
+                weight={1.5}
+                fillOpacity={0.8}
+                eventHandlers={{ click: () => openGoogleMaps(d.name) }}
+              >
+                <LTooltip permanent={false} direction="top">
+                  <span className="font-semibold">{d.name}</span>: {d.count}
+                </LTooltip>
+              </CircleMarker>
+            );
+          })}
+        </MapContainer>
+      </div>
     </div>
   );
 }
 
-// Dual-layer Egypt Map (stations + MCNG) - clickable markers open Google Maps
-export function DualEgyptMap({ stationsData, mcngData, title }: { stationsData: { name: string; count: number }[]; mcngData: { name: string; count: number }[]; title: string }) {
+// Dual-layer Satellite Map (CNG stations + MCNG)
+export function DualEgyptMap({ stationsData, mcngData, title }: {
+  stationsData: { name: string; count: number }[];
+  mcngData: { name: string; count: number }[];
+  title: string;
+}) {
   const allGovs = useMemo(() => {
     const map = new Map<string, { stations: number; mcng: number }>();
     stationsData.forEach(d => map.set(d.name, { stations: d.count, mcng: 0 }));
@@ -97,45 +112,61 @@ export function DualEgyptMap({ stationsData, mcngData, title }: { stationsData: 
 
   return (
     <div className="glass-card rounded-xl p-5">
-      <h3 className="text-white font-semibold mb-4">{title}</h3>
-      <div className="flex gap-4 mb-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <h3 className="text-slate-800 font-semibold mb-2">{title}</h3>
+      <div className="flex gap-4 mb-3">
+        <div className="flex items-center gap-2 text-xs text-slate-600">
           <span className="w-3 h-3 rounded-full inline-block" style={{ background: "hsl(155, 65%, 40%)" }} /> CNG Stations
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-slate-600">
           <span className="w-3 h-3 rounded-full inline-block" style={{ background: "hsl(38, 92%, 50%)" }} /> MCNG Units
         </div>
       </div>
-      <p className="text-xs text-muted-foreground mb-2">Click any marker to open in Google Maps</p>
-      <svg viewBox="0 0 500 520" className="w-full max-h-[500px]">
-        <path d="M 100,88 L 145,93 L 195,97 L 220,95 C 232,86 250,79 268,78 C 280,80 290,85 305,88 L 325,91 L 348,93 L 365,95 L 374,108 L 384,135 L 392,165 L 396,195 L 394,220 L 389,242 L 383,250 L 376,242 L 369,222 L 363,198 L 359,172 L 357,148 L 357,128 L 359,110 L 352,102 L 342,98 L 340,108 L 338,125 L 338,145 L 340,168 L 344,192 L 350,218 L 358,248 L 368,280 L 378,312 L 388,345 L 396,378 L 404,410 L 412,445 L 418,480 L 420,490 L 80,490 L 80,88 Z" fill="hsl(220,20%,12%)" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.6" />
-        <path d="M 275,470 C 270,440 265,420 262,400 C 260,380 268,360 272,340 C 276,310 280,285 285,260 C 288,240 292,220 298,205 L 310,195" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="2" opacity="0.3" />
-        <path d="M 310,195 C 300,170 280,140 255,100" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.2" />
-        <path d="M 310,195 C 308,170 302,140 290,100" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.2" />
-        {[...allGovs.entries()].map(([name, { stations, mcng }]) => {
-          const coords = GOVERNORATE_COORDS[name];
-          if (!coords) return null;
-          const total = stations + mcng;
-          const r = 8 + (total / maxCount) * 22;
-          return (
-            <g key={name} onClick={() => openGoogleMaps(name)} className="cursor-pointer" role="button">
-              {stations > 0 && (
-                <>
-                  <circle cx={coords.svg[0] - (mcng > 0 ? 8 : 0)} cy={coords.svg[1]} r={Math.max(6, r * 0.7)} fill="hsl(155, 65%, 40%)" opacity="0.5" />
-                  <text x={coords.svg[0] - (mcng > 0 ? 8 : 0)} y={coords.svg[1] + 4} textAnchor="middle" fill="hsl(0,0%,100%)" fontSize="8" fontWeight="bold">{stations}</text>
-                </>
-              )}
-              {mcng > 0 && (
-                <>
-                  <circle cx={coords.svg[0] + (stations > 0 ? 8 : 0)} cy={coords.svg[1]} r={Math.max(6, r * 0.5)} fill="hsl(38, 92%, 50%)" opacity="0.5" />
-                  <text x={coords.svg[0] + (stations > 0 ? 8 : 0)} y={coords.svg[1] + 4} textAnchor="middle" fill="hsl(0,0%,100%)" fontSize="8" fontWeight="bold">{mcng}</text>
-                </>
-              )}
-              <text x={coords.svg[0]} y={coords.svg[1] - r - 2} textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">{name}</text>
-            </g>
-          );
-        })}
-      </svg>
+      <div style={{ height: 420, borderRadius: 8, overflow: "hidden", zIndex: 0, position: "relative" }}>
+        <MapContainer center={EGYPT_CENTER} zoom={5} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
+          <TileLayer url={SAT_TILES} attribution="ESRI World Imagery" />
+          <TileLayer url={LABEL_TILES} attribution="CartoDB" />
+          {[...allGovs.entries()].filter(([, v]) => v.stations > 0).map(([name, { stations, mcng }]) => {
+            const coords = GOVERNORATE_COORDS[name];
+            if (!coords) return null;
+            const baseR = 6 + ((stations + mcng) / maxCount) * 16;
+            const [lat, lng] = coords.latLng;
+            return (
+              <CircleMarker
+                key={`st-${name}`}
+                center={[lat, lng - (mcng > 0 ? 0.18 : 0)] as [number, number]}
+                radius={Math.max(6, baseR * 0.7)}
+                fillColor="hsl(155, 65%, 40%)"
+                color="#fff"
+                weight={1.5}
+                fillOpacity={0.8}
+                eventHandlers={{ click: () => openGoogleMaps(name) }}
+              >
+                <LTooltip>{name} — CNG Stations: {stations}</LTooltip>
+              </CircleMarker>
+            );
+          })}
+          {[...allGovs.entries()].filter(([, v]) => v.mcng > 0).map(([name, { stations, mcng }]) => {
+            const coords = GOVERNORATE_COORDS[name];
+            if (!coords) return null;
+            const baseR = 6 + ((stations + mcng) / maxCount) * 16;
+            const [lat, lng] = coords.latLng;
+            return (
+              <CircleMarker
+                key={`mc-${name}`}
+                center={[lat, lng + (stations > 0 ? 0.18 : 0)] as [number, number]}
+                radius={Math.max(6, baseR * 0.55)}
+                fillColor="hsl(38, 92%, 50%)"
+                color="#fff"
+                weight={1.5}
+                fillOpacity={0.8}
+                eventHandlers={{ click: () => openGoogleMaps(name) }}
+              >
+                <LTooltip>{name} — MCNG: {mcng}</LTooltip>
+              </CircleMarker>
+            );
+          })}
+        </MapContainer>
+      </div>
     </div>
   );
 }
@@ -144,12 +175,12 @@ export function DualEgyptMap({ stationsData, mcngData, title }: { stationsData: 
 const COMPANY_COLORS: Record<string, string> = {
   "TAQA Gas": "hsl(280, 65%, 55%)",
   "Master Gas": "hsl(155, 65%, 40%)",
-  "Petroleum": "hsl(0, 0%, 55%)",
+  "Petroleum": "hsl(0, 0%, 45%)",
   "Electricity": "hsl(45, 90%, 50%)",
   "Water": "hsl(210, 80%, 55%)",
 };
 
-// Consolidated Egypt Map - company-segregated markers with activity breakdown
+// Consolidated Satellite Map — company-segregated markers with activity breakdown
 export function ConsolidatedEgyptMap({ data, allRecords, title }: {
   data: { name: string; count: number }[];
   allRecords: { name: string; service: string; governorate: string; activity: string; company: string }[];
@@ -157,7 +188,6 @@ export function ConsolidatedEgyptMap({ data, allRecords, title }: {
 }) {
   const [selected, setSelected] = useState<string | null>(null);
 
-  // Group records by governorate then by company
   const govCompanyData = useMemo(() => {
     const map = new Map<string, Map<string, { count: number; activities: Set<string> }>>();
     allRecords.forEach(r => {
@@ -186,95 +216,80 @@ export function ConsolidatedEgyptMap({ data, allRecords, title }: {
 
   return (
     <div className="glass-card rounded-xl p-5">
-      <h3 className="text-white font-semibold mb-4">{title}</h3>
+      <h3 className="text-slate-800 font-semibold mb-2">{title}</h3>
       <div className="flex flex-wrap gap-3 mb-3">
         {Object.entries(COMPANY_COLORS).map(([name, color]) => (
-          <div key={name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div key={name} className="flex items-center gap-1.5 text-xs text-slate-600">
             <span className="w-3 h-3 rounded-full inline-block" style={{ background: color }} />
             {name}
           </div>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground mb-2">Click any governorate to see company & activity breakdown</p>
-      <div className="relative">
-        <svg viewBox="0 0 500 520" className="w-full max-h-[500px]">
-          {/* Realistic Egypt outline */}
-          <path
-            d="M 100,88 L 145,93 L 195,97 L 220,95 C 232,86 250,79 268,78 C 280,80 290,85 305,88 L 325,91 L 348,93 L 365,95 L 374,108 L 384,135 L 392,165 L 396,195 L 394,220 L 389,242 L 383,250 L 376,242 L 369,222 L 363,198 L 359,172 L 357,148 L 357,128 L 359,110 L 352,102 L 342,98 L 340,108 L 338,125 L 338,145 L 340,168 L 344,192 L 350,218 L 358,248 L 368,280 L 378,312 L 388,345 L 396,378 L 404,410 L 412,445 L 418,480 L 420,490 L 80,490 L 80,88 Z"
-            fill="hsl(220,20%,12%)" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.6"
-          />
-          {/* Nile River */}
-          <path
-            d="M 275,470 C 270,440 265,420 262,400 C 260,380 268,360 272,340 C 276,310 280,285 285,260 C 288,240 292,220 298,205 L 310,195"
-            fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="2" opacity="0.3"
-          />
-          {/* Nile Delta branches */}
-          <path d="M 310,195 C 300,170 280,140 255,100" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.2" />
-          <path d="M 310,195 C 308,170 302,140 290,100" fill="none" stroke="hsl(var(--tab-theme))" strokeWidth="1.5" opacity="0.2" />
-          {data.map(d => {
-            const coords = GOVERNORATE_COORDS[d.name];
-            if (!coords) return null;
-            const compMap = govCompanyData.get(d.name);
-            if (!compMap) return null;
-            const isSelected = selected === d.name;
-            const companies = [...compMap.entries()];
-            const baseR = 10 + (d.count / maxCount) * 18;
+      <p className="text-xs text-slate-500 mb-2">Click any marker to see company & activity breakdown</p>
+      <div className="relative" style={{ zIndex: 0 }}>
+        <div style={{ height: 460, borderRadius: 8, overflow: "hidden" }}>
+          <MapContainer center={EGYPT_CENTER} zoom={5} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
+            <TileLayer url={SAT_TILES} attribution="ESRI World Imagery" />
+            <TileLayer url={LABEL_TILES} attribution="CartoDB" />
+            {data.map(d => {
+              const coords = GOVERNORATE_COORDS[d.name];
+              if (!coords) return null;
+              const compMap = govCompanyData.get(d.name);
+              if (!compMap) return null;
+              const companies = [...compMap.entries()];
+              const baseR = 8 + (d.count / maxCount) * 16;
+              const isSelected = selected === d.name;
+              // Use dominant company's color
+              const dominantCompany = companies.reduce((a, b) => a[1].count >= b[1].count ? a : b);
+              const color = COMPANY_COLORS[dominantCompany[0]] || "hsl(195,90%,48%)";
+              return (
+                <CircleMarker
+                  key={d.name}
+                  center={coords.latLng as [number, number]}
+                  radius={isSelected ? baseR + 4 : baseR}
+                  fillColor={color}
+                  color={isSelected ? "#ffffff" : "rgba(255,255,255,0.6)"}
+                  weight={isSelected ? 2.5 : 1.5}
+                  fillOpacity={isSelected ? 0.95 : 0.75}
+                  eventHandlers={{ click: () => setSelected(isSelected ? null : d.name) }}
+                >
+                  <LTooltip direction="top">
+                    <strong>{d.name}</strong> — {d.count} records
+                  </LTooltip>
+                </CircleMarker>
+              );
+            })}
+          </MapContainer>
+        </div>
 
-            // Arrange company circles around the governorate point
-            const angleStep = (2 * Math.PI) / Math.max(companies.length, 1);
-            const spread = companies.length > 1 ? Math.min(12, 6 + companies.length * 2) : 0;
-
-            return (
-              <g key={d.name} onClick={() => setSelected(isSelected ? null : d.name)} className="cursor-pointer" role="button">
-                {/* Selection ring */}
-                {isSelected && <circle cx={coords.svg[0]} cy={coords.svg[1]} r={baseR + spread + 6} fill="none" stroke="hsl(0,0%,100%)" strokeWidth="1.5" opacity="0.5" strokeDasharray="3 2" />}
-                {/* Company circles */}
-                {companies.map(([company, { count }], i) => {
-                  const angle = angleStep * i - Math.PI / 2;
-                  const cx = coords.svg[0] + Math.cos(angle) * spread;
-                  const cy = coords.svg[1] + Math.sin(angle) * spread;
-                  const r = Math.max(6, 5 + (count / maxCount) * 14);
-                  const color = COMPANY_COLORS[company] || "hsl(0,0%,60%)";
-                  return (
-                    <g key={company}>
-                      <circle cx={cx} cy={cy} r={r} fill={color} opacity={isSelected ? 0.9 : 0.6} />
-                      <text x={cx} y={cy + 3} textAnchor="middle" fill="hsl(0,0%,100%)" fontSize="7" fontWeight="bold">{count}</text>
-                    </g>
-                  );
-                })}
-                {/* Governorate label */}
-                <text x={coords.svg[0]} y={coords.svg[1] - baseR - spread - 2} textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">{d.name}</text>
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Detail panel */}
         {selected && selectedInfo && (
-          <div className="absolute top-2 right-2 w-72 rounded-xl p-4 shadow-xl z-10 max-h-[480px] overflow-y-auto scrollbar-thin" style={{ background: "hsl(220 20% 14%)", border: "1px solid hsl(220 15% 22%)" }}>
+          <div
+            className="absolute top-2 right-2 w-72 rounded-xl p-4 shadow-xl z-[1000] max-h-[440px] overflow-y-auto scrollbar-thin"
+            style={{ background: "#ffffff", border: "1px solid #e2e8f0" }}
+          >
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-white font-bold text-sm">{selected}</h4>
-              <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+              <h4 className="text-slate-800 font-bold text-sm">{selected}</h4>
+              <button onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Total records: {selectedInfo.total}</p>
+            <p className="text-xs text-slate-500 mb-3">Total records: {selectedInfo.total}</p>
             {selectedInfo.companies.map(c => (
               <div key={c.company} className="mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: COMPANY_COLORS[c.company] }} />
-                  <span className="text-xs font-semibold text-white">{c.company}</span>
-                  <span className="text-xs text-muted-foreground">({c.count})</span>
+                  <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ background: COMPANY_COLORS[c.company] }} />
+                  <span className="text-xs font-semibold text-slate-800">{c.company}</span>
+                  <span className="text-xs text-slate-500">({c.count})</span>
                 </div>
                 <ul className="mt-1 space-y-0.5 ml-4">
                   {c.activities.map(a => (
-                    <li key={a} className="text-xs text-muted-foreground pl-2 border-l-2" style={{ borderColor: COMPANY_COLORS[c.company] }}>{a}</li>
+                    <li key={a} className="text-xs text-slate-600 pl-2 border-l-2" style={{ borderColor: COMPANY_COLORS[c.company] }}>{a}</li>
                   ))}
                 </ul>
               </div>
             ))}
             <button
               onClick={() => openGoogleMaps(selected)}
-              className="mt-2 w-full text-xs py-1.5 rounded-lg text-white/80 hover:text-white transition-colors"
-              style={{ background: "hsl(220 20% 22%)" }}
+              className="mt-2 w-full text-xs py-1.5 rounded-lg text-white transition-colors"
+              style={{ background: "hsl(var(--tab-theme))" }}
             >
               Open in Google Maps ↗
             </button>
@@ -322,45 +337,40 @@ export function RecordsTable({ records, columns }: { records: ClientRecord[]; co
     activity: "Activity",
   };
 
+  const selectStyle: React.CSSProperties = {
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#334155",
+    borderRadius: 8,
+    padding: "6px 12px",
+    fontSize: 13,
+    outline: "none",
+  };
+
   return (
     <div className="glass-card rounded-xl p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <h3 className="text-white font-semibold">Portfolio ({filtered.length})</h3>
+        <h3 className="text-slate-800 font-semibold">Portfolio ({filtered.length})</h3>
         <div className="flex items-center flex-wrap gap-2">
-          <select
-            value={govFilter}
-            onChange={e => { setGovFilter(e.target.value); setPage(0); }}
-            className="rounded-lg px-3 py-1.5 text-sm outline-none z-10"
-            style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", color: "#fff" }}
-          >
+          <select value={govFilter} onChange={e => { setGovFilter(e.target.value); setPage(0); }} style={selectStyle}>
             <option value="">All Governorates</option>
             {governorates.map(g => <option key={g} value={g}>{g}</option>)}
           </select>
-          <select
-            value={actFilter}
-            onChange={e => { setActFilter(e.target.value); setPage(0); }}
-            className="rounded-lg px-3 py-1.5 text-sm outline-none z-10"
-            style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", color: "#fff" }}
-          >
+          <select value={actFilter} onChange={e => { setActFilter(e.target.value); setPage(0); }} style={selectStyle}>
             <option value="">All Activities</option>
             {activities.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           {hasService && (
-            <select
-              value={serviceFilter}
-              onChange={e => { setServiceFilter(e.target.value); setPage(0); }}
-              className="rounded-lg px-3 py-1.5 text-sm outline-none z-10"
-              style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", color: "#fff" }}
-            >
+            <select value={serviceFilter} onChange={e => { setServiceFilter(e.target.value); setPage(0); }} style={selectStyle}>
               <option value="">All Services</option>
               {services.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           )}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
-              className="pl-9 pr-3 py-1.5 rounded-lg text-sm text-white outline-none focus:ring-1"
-              style={{ background: "hsl(220 20% 18%)", border: "1px solid hsl(220 15% 25%)", "--tw-ring-color": "hsl(var(--tab-theme))" } as React.CSSProperties}
+              className="pl-9 pr-3 py-1.5 rounded-lg text-sm text-slate-800 outline-none focus:ring-1 focus:ring-blue-300"
+              style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
               placeholder="Search..."
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(0); }}
@@ -371,19 +381,19 @@ export function RecordsTable({ records, columns }: { records: ClientRecord[]; co
       <div className="overflow-x-auto scrollbar-thin">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border">
-              <th className="text-left py-2 px-3 text-white font-medium">#</th>
+            <tr className="border-b border-slate-200">
+              <th className="text-left py-2 px-3 text-slate-600 font-medium">#</th>
               {columns.map(c => (
-                <th key={c} className="text-left py-2 px-3 text-white font-medium">{colLabels[c]}</th>
+                <th key={c} className="text-left py-2 px-3 text-slate-600 font-medium">{colLabels[c]}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {slice.map((r, i) => (
-              <tr key={i} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                <td className="py-2 px-3 text-white">{page * perPage + i + 1}</td>
+              <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td className="py-2 px-3 text-slate-500">{page * perPage + i + 1}</td>
                 {columns.map(c => (
-                  <td key={c} className="py-2 px-3 text-white">{r[c]}</td>
+                  <td key={c} className="py-2 px-3 text-slate-800">{r[c]}</td>
                 ))}
               </tr>
             ))}
@@ -392,9 +402,9 @@ export function RecordsTable({ records, columns }: { records: ClientRecord[]; co
       </div>
       {pages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-4">
-          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="px-3 py-1 rounded text-white text-sm disabled:opacity-40" style={{ background: "hsl(220 20% 18%)" }}>Prev</button>
-          <span className="text-white/60 text-sm">{page + 1} / {pages}</span>
-          <button onClick={() => setPage(p => Math.min(pages - 1, p + 1))} disabled={page >= pages - 1} className="px-3 py-1 rounded text-white text-sm disabled:opacity-40" style={{ background: "hsl(220 20% 18%)" }}>Next</button>
+          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="px-3 py-1 rounded text-slate-700 text-sm disabled:opacity-40" style={{ background: "#f1f5f9", border: "1px solid #e2e8f0" }}>Prev</button>
+          <span className="text-slate-500 text-sm">{page + 1} / {pages}</span>
+          <button onClick={() => setPage(p => Math.min(pages - 1, p + 1))} disabled={page >= pages - 1} className="px-3 py-1 rounded text-slate-700 text-sm disabled:opacity-40" style={{ background: "#f1f5f9", border: "1px solid #e2e8f0" }}>Next</button>
         </div>
       )}
     </div>

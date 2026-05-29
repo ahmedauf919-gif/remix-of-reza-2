@@ -270,23 +270,24 @@
   .theme-consolidated { --tab-theme: 195 90% 48%; }
   .theme-taqa         { --tab-theme: 145 70% 42%; }
   .theme-master       { --tab-theme: 155 65% 40%; }
-  .theme-petroleum    { --tab-theme: 220 10% 55%; }
-  .theme-electricity  { --tab-theme:  45 90% 50%; }
-  .theme-water        { --tab-theme: 210 85% 55%; }
+  .theme-petroleum    { --tab-theme: 220 10% 45%; }
+  .theme-electricity  { --tab-theme:  45 90% 42%; }
+  .theme-water        { --tab-theme: 210 85% 50%; }
   .theme-clients      { --tab-theme: 195 90% 48%; }
+  .theme-portfolio    { --tab-theme: 280 65% 50%; }
 
   /* TAQA Analytics: glow on stat cards */
   .stat-glow {
-    box-shadow: 0 0 30px -5px hsl(var(--tab-theme) / 0.15);
+    box-shadow: 0 0 30px -5px hsl(var(--tab-theme) / 0.12);
   }
 
-  /* TAQA Analytics: dark glass card override (scoped to avoid NABQ conflicts) */
+  /* TAQA Analytics: light glass card (scoped to avoid NABQ conflicts) */
   .taqa-analytics .glass-card {
-    background: linear-gradient(135deg, hsl(220 20% 12% / 0.9), hsl(220 20% 8% / 0.95));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid hsl(220 15% 20% / 0.5);
-    box-shadow: none;
+    background: #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid hsl(210 15% 90%);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
 }
 
