@@ -136,7 +136,7 @@ const categories = [
     label: "Client Presentations",
     description: "Investor-ready presentation templates and executive summary generators.",
     icon: Presentation,
-    count: 1,
+    count: 0,
     iconBg: "bg-violet-700",
     iconColor: "text-white",
     accent: "border-violet-300/40 hover:border-violet-400/60",
@@ -574,38 +574,6 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {/* Residential Customers */}
-              <Link to="/presentations/residential-customers" className="group block animate-fade-in-up">
-                <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm transition-all duration-300 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 hover:border-violet-500/30 border-border">
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.03] to-violet-300/[0.06] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
-                  <div className="flex items-start justify-between mb-4 relative z-10">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-violet-50 text-violet-700">
-                      Residential
-                    </span>
-                    <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-violet-700 transition-transform duration-300 group-hover:scale-110 group-hover:shadow-md">
-                      <Presentation className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                  <div className="relative z-10">
-                    <h3 className="font-bold text-[#002060] text-base leading-snug">Residential Customers</h3>
-                    <p className="text-[11px] text-violet-700 font-medium mt-0.5 mb-2.5">Client Presentation · Jan 2026</p>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      26-slide interactive presentation covering TAQA Arabia's six integrated utility solutions for residential developments: Mobile CNG, Electricity, Water, Gas, Diesel Back-up and EV Charging.
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {["Mobile CNG", "Electricity", "Water", "Gas", "Diesel", "EV"].map(tag => (
-                        <span key={tag} className="text-[10px] bg-violet-50 text-violet-600 rounded-full px-2 py-0.5 font-medium">{tag}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="relative z-10 mt-5 flex items-center gap-1.5 text-xs font-semibold text-violet-700 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                    Open Presentation
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-violet-500 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 rounded-b-xl" />
-                </div>
-              </Link>
-
               {/* Coming soon slot */}
               <div className="rounded-xl border-2 border-dashed border-border/50 flex items-center justify-center bg-muted/20 min-h-[220px] transition-colors hover:border-border hover:bg-muted/30">
                 <div className="text-center text-muted-foreground">
