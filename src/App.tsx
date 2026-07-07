@@ -13,6 +13,10 @@ import Lng from "./pages/Lng.tsx";
 import RabKsa from "./pages/RabKsa.tsx";
 import TaqaAnalytics from "./pages/TaqaAnalytics.tsx";
 import ResidentialCustomers from "./pages/presentations/ResidentialCustomers.tsx";
+import FleetMobilityClients from "./pages/presentations/FleetMobilityClients.tsx";
+import AgricultureClients from "./pages/presentations/AgricultureClients.tsx";
+import IndustrialClients from "./pages/presentations/IndustrialClients.tsx";
+import ResidentialClientsNew from "./pages/presentations/ResidentialClientsNew.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { PasswordGate } from "./components/PasswordGate";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -44,6 +48,10 @@ const App = () => (
             <Route path="/models/rab-ksa" element={<RabKsa />} />
             <Route path="/analytics/taqa" element={<TaqaAnalytics />} />
             <Route path="/presentations/residential-customers" element={<ResidentialCustomers />} />
+            <Route path="/presentations/fleet-mobility-clients" element={<FleetMobilityClients />} />
+            <Route path="/presentations/agriculture-clients" element={<AgricultureClients />} />
+            <Route path="/presentations/industrial-clients" element={<IndustrialClients />} />
+            <Route path="/presentations/residential-clients" element={<ResidentialClientsNew />} />
             {/* NABQ Routes — lazy loaded with error boundary */}
             <Route path="/sizing/nabq" element={<ErrorBoundary label="NABQ Diesel"><NabqDashboardProvider><Suspense fallback={<div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>}><NabqDiesel /></Suspense></NabqDashboardProvider></ErrorBoundary>} />
             <Route path="/sizing/nabq/battery" element={<ErrorBoundary label="NABQ Battery"><NabqDashboardProvider><Suspense fallback={<div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>}><NabqBattery /></Suspense></NabqDashboardProvider></ErrorBoundary>} />

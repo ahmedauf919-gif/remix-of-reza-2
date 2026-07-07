@@ -136,7 +136,7 @@ const categories = [
     label: "Client Presentations",
     description: "Investor-ready presentation templates and executive summary generators.",
     icon: Presentation,
-    count: 0,
+    count: 4,
     iconBg: "bg-violet-700",
     iconColor: "text-white",
     accent: "border-violet-300/40 hover:border-violet-400/60",
@@ -574,13 +574,58 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {/* Coming soon slot */}
-              <div className="rounded-xl border-2 border-dashed border-border/50 flex items-center justify-center bg-muted/20 min-h-[220px] transition-colors hover:border-border hover:bg-muted/30">
-                <div className="text-center text-muted-foreground">
-                  <Plus className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm font-medium opacity-50">More coming soon</p>
+              {/* Fleet & Mobility Clients */}
+              <Link to="/presentations/fleet-mobility-clients" className="block rounded-xl border border-border bg-white hover:shadow-md transition-shadow overflow-hidden group">
+                <div className="h-24 relative overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=60" alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#001020]/80 to-[#0369a1]/60" />
+                  <span className="absolute bottom-2 left-3 text-white text-xs font-semibold">Jun 2026</span>
                 </div>
-              </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-[#002060] text-sm leading-snug">Fleet &amp; Mobility Clients</h3>
+                  <p className="text-[11px] text-[#0369a1] font-medium mt-0.5 mb-2">Client Presentation · 26 slides</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Integrated energy & mobility solutions — fuel, CNG, EV charging and Waqood smart system for fleet operators.</p>
+                </div>
+              </Link>
+              {/* Agriculture Clients */}
+              <Link to="/presentations/agriculture-clients" className="block rounded-xl border border-border bg-white hover:shadow-md transition-shadow overflow-hidden group">
+                <div className="h-24 relative overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=60" alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#052e16]/80 to-[#15803d]/60" />
+                  <span className="absolute bottom-2 left-3 text-white text-xs font-semibold">Jun 2026</span>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-[#002060] text-sm leading-snug">Agriculture Clients</h3>
+                  <p className="text-[11px] text-[#15803d] font-medium mt-0.5 mb-2">Client Presentation · 27 slides</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Water, solar, BESS and CNG solutions for agri-businesses — cut energy cost, ensure water security and boost yield.</p>
+                </div>
+              </Link>
+              {/* Industrial Clients */}
+              <Link to="/presentations/industrial-clients" className="block rounded-xl border border-border bg-white hover:shadow-md transition-shadow overflow-hidden group">
+                <div className="h-24 relative overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=800&q=60" alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#1c0700]/80 to-[#c2410c]/60" />
+                  <span className="absolute bottom-2 left-3 text-white text-xs font-semibold">Jun 2026</span>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-[#002060] text-sm leading-snug">Industrial Clients</h3>
+                  <p className="text-[11px] text-[#c2410c] font-medium mt-0.5 mb-2">Client Presentation · 26 slides</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">CNG, electricity, gas, CHP, solar PV and BESS for industrial operators — reliability, efficiency and decarbonisation.</p>
+                </div>
+              </Link>
+              {/* Residential Clients */}
+              <Link to="/presentations/residential-clients" className="block rounded-xl border border-border bg-white hover:shadow-md transition-shadow overflow-hidden group">
+                <div className="h-24 relative overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=60" alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#1e0a3c]/80 to-[#7c3aed]/60" />
+                  <span className="absolute bottom-2 left-3 text-white text-xs font-semibold">Jun 2026</span>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-[#002060] text-sm leading-snug">Residential Clients</h3>
+                  <p className="text-[11px] text-[#7c3aed] font-medium mt-0.5 mb-2">Client Presentation · 29 slides</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">CNG, electricity, water, gas, diesel, EV chargers and solar PV for residential developers and communities.</p>
+                </div>
+              </Link>
             </div>
           </div>
         )}
