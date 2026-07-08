@@ -609,7 +609,7 @@ export default function Home() {
                 </div>
                 <div className="p-4">
                   <h3 className="font-bold text-[#002060] text-sm leading-snug">Industrial Clients</h3>
-                  <p className="text-[11px] text-[#c2410c] font-medium mt-0.5 mb-2">Client Presentation · 26 slides</p>
+                  <p className="text-[11px] text-[#c2410c] font-medium mt-0.5 mb-2">Client Presentation · 32 slides</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">CNG, electricity, gas, CHP, solar PV and BESS for industrial operators — reliability, efficiency and decarbonisation.</p>
                 </div>
               </Link>

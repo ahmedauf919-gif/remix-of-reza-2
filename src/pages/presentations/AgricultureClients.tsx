@@ -1,10 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import {
-  ChevronLeft, ChevronRight, Home as HomeIcon,
-  Flame, Zap, Droplets, Truck, Battery, Globe, CheckCircle2, SunMedium,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { DeckShell } from "./DeckShell";
+import { Flame, Zap, Droplets, Truck, Battery, Globe, CheckCircle2, SunMedium } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.png";
 
 // ─── Photos ───────────────────────────────────────────────────────────────────
@@ -1485,171 +1480,13 @@ const SLIDES = [
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AgricultureClients() {
-  const [current, setCurrent] = useState(0);
-  const [animKey, setAnimKey] = useState(0);
-  const [direction, setDirection] = useState<"fwd" | "bwd">("fwd");
-  const total = SLIDES.length;
-  const section = sectionOf(current);
-
-  const go = (target: number) => {
-    if (target < 0 || target >= total) return;
-    setDirection(target > current ? "fwd" : "bwd");
-    setAnimKey(k => k + 1);
-    setCurrent(target);
-  };
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === " ") {
-        e.preventDefault();
-        setDirection("fwd");
-        setAnimKey(k => k + 1);
-        setCurrent(c => Math.min(total - 1, c + 1));
-      }
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        setDirection("bwd");
-        setAnimKey(k => k + 1);
-        setCurrent(c => Math.max(0, c - 1));
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [total]);
-
-  const handleSlideClick = (e: React.MouseEvent) => {
-    const t = e.target as HTMLElement;
-    if (t.closest("button") || t.closest("a") || t.closest("select") || t.closest("input")) return;
-    go(current + 1);
-  };
-
-  const progressPct = ((current + 1) / total) * 100;
-
   return (
-    <>
-      <style>{`
-        @keyframes ag-slide-right { from { opacity:0; transform:translateX(32px); } to { opacity:1; transform:translateX(0); } }
-        @keyframes ag-slide-left  { from { opacity:0; transform:translateX(-32px); } to { opacity:1; transform:translateX(0); } }
-        .ag-fwd { animation: ag-slide-right 0.32s cubic-bezier(0.16,1,0.3,1) both; }
-        .ag-bwd { animation: ag-slide-left  0.32s cubic-bezier(0.16,1,0.3,1) both; }
-      `}</style>
-
-      <div className="min-h-screen bg-[#0d1117] flex flex-col">
-
-        {/* Progress bar */}
-        <div className="h-0.5 bg-white/10 shrink-0">
-          <div
-            className="h-full transition-all duration-500"
-            style={{ width: `${progressPct}%`, background: section.color }}
-          />
-        </div>
-
-        {/* Header */}
-        <header className="bg-[#161b22] border-b border-white/10 px-4 py-3 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3">
-            <Link to="/">
-              <Button variant="secondary" size="sm" className="gap-1.5 shrink-0">
-                <HomeIcon className="h-4 w-4" />Home
-              </Button>
-            </Link>
-            <div className="border-l border-white/20 pl-3 hidden sm:block">
-              <p className="text-white text-sm font-bold">Agriculture Clients</p>
-              <p className="text-white/40 text-[10px]">
-                TAQA Arabia · Integrated Energy &amp; Utility Solutions · Jan 2026
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-white/30 text-xs hidden md:flex items-center gap-2">
-              <span className="font-medium" style={{ color: section.color }}>{section.label}</span>
-              <span>·</span>
-              {current + 1} / {total}
-            </span>
-          </div>
-        </header>
-
-        {/* Section nav */}
-        <div className="bg-[#161b22] border-b border-white/10 px-4 overflow-x-auto">
-          <div className="flex gap-1 py-1">
-            {SECTIONS.map(s => {
-              const isActive = s.slides.some(i => i === current);
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => go(s.slides[0])}
-                  className={`px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg transition-colors ${
-                    isActive
-                      ? "text-white font-semibold"
-                      : "text-white/40 hover:text-white/70 hover:bg-white/5"
-                  }`}
-                  style={isActive ? { background: s.color } : undefined}
-                >
-                  {s.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Slide canvas */}
-        <div className="flex-1 flex flex-col p-4 md:p-6 gap-4">
-          <div
-            className="flex-1 rounded-2xl shadow-2xl overflow-hidden border border-white/10 cursor-pointer"
-            style={{ minHeight: "520px" }}
-            onClick={handleSlideClick}
-          >
-            <div key={animKey} className={direction === "fwd" ? "ag-fwd h-full" : "ag-bwd h-full"}>
-              {SLIDES[current].render()}
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <div className="flex items-center justify-between gap-4">
-            <Button
-              variant="outline"
-              onClick={() => go(current - 1)}
-              disabled={current === 0}
-              className="gap-2 border-white/20 text-white hover:bg-white/10 bg-transparent"
-            >
-              <ChevronLeft className="h-4 w-4" /> Previous
-            </Button>
-
-            <div className="flex items-center gap-1 overflow-x-auto max-w-[50vw] pb-1">
-              {SLIDES.map((_, i) => {
-                const sec = sectionOf(i);
-                const isActive = i === current;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => go(i)}
-                    className={`rounded-full transition-all shrink-0 ${
-                      isActive ? "w-5 h-3" : "w-2.5 h-2.5 opacity-30 hover:opacity-60"
-                    }`}
-                    style={{ background: sec.color }}
-                    title={SLIDES[i].title}
-                  />
-                );
-              })}
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={() => go(current + 1)}
-              disabled={current === total - 1}
-              className="gap-2 border-white/20 text-white hover:bg-white/10 bg-transparent"
-            >
-              Next <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="text-center">
-            <span className="text-xs text-white/30">
-              <span className="font-medium" style={{ color: section.color }}>{section.label}</span>
-              {" · "}{SLIDES[current].title}{" · "}Slide {current + 1} of {total}
-            </span>
-          </div>
-        </div>
-      </div>
-    </>
+    <DeckShell
+      title="Agriculture Clients"
+      subtitle="TAQA Arabia · Integrated Agri-Energy & Water Solutions · Jun 2026"
+      sections={SECTIONS}
+      slides={SLIDES}
+      pdf="agriculture-clients.pdf"
+    />
   );
 }
