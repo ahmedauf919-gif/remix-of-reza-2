@@ -1,42 +1,176 @@
 import { DeckShell } from "./DeckShell";
-import { Flame, Zap, Droplets, Truck, Battery, Globe, CheckCircle2, SunMedium } from "lucide-react";
+
+const MEDIA = import.meta.env.BASE_URL + "presentations/media/";
+import {
+  Flame, Zap, Droplets, Truck, Battery, Globe, CheckCircle2, SunMedium,
+  ArrowRight, MapPin,
+} from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.png";
 
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
 const P: Record<string, string> = {
-  cover:   "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=80",
-  farm:    "https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=1400&q=80",
-  water:   "https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=1400&q=80",
-  solar:   "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1400&q=80",
-  battery: "https://images.unsplash.com/photo-1548407260-da850faa41e3?auto=format&fit=crop&w=1400&q=80",
-  cng:     "https://images.unsplash.com/photo-1568605135229-43af0a9bc4e8?auto=format&fit=crop&w=1400&q=80",
-  dina:    "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1400&q=80",
-  energy:  "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=1400&q=80",
+  cover:   MEDIA + "crops-field.jpg",
+  farm:    MEDIA + "integrated-farm.jpg",
+  water:   MEDIA + "ro-plant.jpg",
+  solar:   MEDIA + "solar-farm-aerial.jpg",
+  battery: MEDIA + "site-containers.jpg",
+  cng:     MEDIA + "cng-farm-truck.jpg",
+  dina:    MEDIA + "farm-solar-containers.jpg",
+  energy:  MEDIA + "solar-irrigation.jpg",
+};
+
+const ALT: Record<string, string> = {
+  [P.cover]:   "Rolling farmland under a golden sky at sunset",
+  [P.farm]:    "Tractor working long rows of crops on a large farm",
+  [P.water]:   "Irrigation water flowing across cultivated fields",
+  [P.solar]:   "Rows of solar photovoltaic panels under a clear sky",
+  [P.battery]: "Utility-scale battery energy storage enclosures",
+  [P.cng]:     "Rural road leading to agricultural facilities",
+  [P.dina]:    "Sunlit green field on a large agricultural estate",
+  [P.energy]:  "Power transmission infrastructure at dusk",
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GREEN = "#15803d";
+const LIME  = "#84cc16";
 const GOLD  = "#FFC10E";
 const NAVY  = "#002060";
+const SKY   = "#0095C8";
 
-// ─── PhotoBanner ──────────────────────────────────────────────────────────────
+/** Lighter tone per section color — used for gradient text endpoints. */
+const TONE: Record<string, string> = {
+  "#15803d": "#84cc16",
+  "#0095C8": "#5bc9f2",
+  "#d97706": "#fbbf24",
+  "#7B35C2": "#c084fc",
+  "#E68A00": "#ffb84d",
+  "#002060": "#4f7dd9",
+  "#dc2626": "#f87171",
+};
+const tone = (c: string) => TONE[c] ?? LIME;
 
-function PhotoBanner({ src, height = 148 }: { src: string; height?: number }) {
+/** Gradient-text style helper. */
+const gt = (from: string, to: string): React.CSSProperties => ({
+  backgroundImage: `linear-gradient(100deg, ${from}, ${to})`,
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+});
+
+// ─── Motion / shared atoms ────────────────────────────────────────────────────
+
+function AgxStyles() {
   return (
-    <div className="relative overflow-hidden -mx-10 -mt-10 mb-5 shrink-0" style={{ height }}>
-      <img
-        src={src}
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover"
-        loading="lazy"
-        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+    <style>{`
+      @keyframes agx-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes agx-in { from { opacity: 0; } to { opacity: 1; } }
+      .agx-up { animation: agx-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+      .agx-in { animation: agx-in 0.3s ease-out both; }
+      @media (prefers-reduced-motion: reduce) {
+        .agx-up, .agx-in { animation: none; }
+      }
+    `}</style>
+  );
+}
+
+/** Staggered fade-up wrapper. */
+function Rise({ i = 0, className = "", children }: { i?: number; className?: string; children: React.ReactNode }) {
+  return (
+    <div className={`agx-up ${className}`} style={{ animationDelay: `${i * 65}ms` }}>
+      {children}
+    </div>
+  );
+}
+
+/** Kicker chip — colored dot + uppercase label. */
+function Kicker({ color, dark = false, children }: { color: string; dark?: boolean; children: React.ReactNode }) {
+  return (
+    <div
+      className={`inline-flex items-center gap-2.5 rounded-full px-4 h-7 ${dark ? "bg-white/10 ring-1 ring-white/15 backdrop-blur-md" : ""}`}
+      style={dark ? undefined : { background: color + "0F", boxShadow: `inset 0 0 0 1px ${color}30` }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: dark ? tone(color) : color }} />
+      <span
+        className={`font-display text-[14px] font-semibold uppercase tracking-[0.22em] whitespace-nowrap ${dark ? "text-white/85" : ""}`}
+        style={dark ? undefined : { color }}
+      >
+        {children}
+      </span>
+    </div>
+  );
+}
+
+/** Oversized ghost numeral watermark. */
+function Ghost({ text, color }: { text: string; color: string }) {
+  return (
+    <div
+      aria-hidden
+      className="absolute -bottom-14 right-2 font-display font-bold leading-none select-none pointer-events-none"
+      style={{ fontSize: 230, color, opacity: 0.05, letterSpacing: "-0.04em" }}
+    >
+      {text}
+    </div>
+  );
+}
+
+/** Light content-slide chrome: soft wash + optional ghost numeral. */
+function LightSlide({ color, num, children }: { color: string; num?: string; children: React.ReactNode }) {
+  return (
+    <div className="relative h-full w-full overflow-hidden font-deck bg-[#f9fbf9] p-14 flex flex-col">
+      <AgxStyles />
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: `radial-gradient(720px 440px at 100% 0%, ${color}0D, transparent 65%)` }}
+      />
+      {num && <Ghost text={num} color={color} />}
+      <div className="relative z-10 flex h-full min-h-0 flex-col">{children}</div>
+    </div>
+  );
+}
+
+/** Dark "moment" slide chrome: forest gradient + duotone photo + accent glow. */
+function DarkSlide({ photo, tint = GREEN, children }: { photo?: string; tint?: string; children: React.ReactNode }) {
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden font-deck p-14 flex flex-col"
+      style={{ background: "linear-gradient(135deg, #04150c 0%, #0c2f1a 62%, #0a2a18 100%)" }}
+    >
+      <AgxStyles />
+      {photo && (
+        <img
+          src={photo}
+          alt={ALT[photo] ?? "Agricultural landscape"}
+          className="absolute inset-0 h-full w-full object-cover opacity-30"
+          style={{ mixBlendMode: "luminosity" }}
+        />
+      )}
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{ background: `linear-gradient(115deg, rgba(4,21,12,0.94) 0%, rgba(7,30,17,0.78) 50%, ${tint}38 100%)` }}
       />
       <div
-        className="absolute inset-0"
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(255,255,255,1) 90%)" }}
+        aria-hidden
+        className="absolute -right-44 -bottom-56 h-[600px] w-[600px] rounded-full pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${tone(tint)}22, transparent 65%)` }}
       />
+      <div className="relative z-10 flex h-full min-h-0 flex-col">{children}</div>
+    </div>
+  );
+}
+
+/** Small framed photo card with deck-hue gradient backdrop (never a white gap). */
+function PhotoCard({ src, className = "" }: { src: string; className?: string }) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl ring-1 ring-black/10 shadow-lg shrink-0 ${className}`}
+      style={{ background: "linear-gradient(135deg, #0c2f1a, #15803d)" }}
+    >
+      <img src={src} alt={ALT[src] ?? "Agricultural landscape"} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+      <div aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(4,21,12,0.05), rgba(4,21,12,0.28))" }} />
     </div>
   );
 }
@@ -62,32 +196,81 @@ function sectionOf(slideIdx: number) {
 // ─── Slide 0: Cover ───────────────────────────────────────────────────────────
 
 function CoverSlide() {
+  const pillars = [
+    { icon: <Droplets className="w-4 h-4" />, label: "Water Solutions", color: SKY },
+    { icon: <SunMedium className="w-4 h-4" />, label: "Solar", color: "#d97706" },
+    { icon: <Battery className="w-4 h-4" />, label: "Battery Storage", color: "#7B35C2" },
+    { icon: <Truck className="w-4 h-4" />, label: "Mobile CNG", color: "#E68A00" },
+  ];
   return (
-    <div className="flex flex-col h-full justify-between relative overflow-hidden" style={{ background: "#001a0d" }}>
+    <div
+      className="relative h-full w-full overflow-hidden font-deck flex flex-col"
+      style={{ background: "linear-gradient(135deg, #04150c 0%, #0c2f1a 60%, #0a2a18 100%)" }}
+    >
+      <AgxStyles />
       <img
         src={P.cover}
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ opacity: 0.35, mixBlendMode: "luminosity" }}
+        alt={ALT[P.cover]}
+        className="absolute inset-0 h-full w-full object-cover opacity-40"
+        style={{ mixBlendMode: "luminosity" }}
       />
       <div
+        aria-hidden
         className="absolute inset-0"
-        style={{ background: "linear-gradient(135deg, #001a0dee 0%, #002060cc 40%, #003a1aaa 70%, #15803d66 100%)" }}
+        style={{ background: "linear-gradient(112deg, rgba(4,21,12,0.96) 0%, rgba(6,28,16,0.84) 46%, rgba(21,128,61,0.34) 100%)" }}
       />
-      <div className="flex items-center gap-3 p-8 relative z-10">
-        <img src={taqaLogo} alt="TAQA Arabia" className="h-12 object-contain bg-white/90 rounded px-3 py-1" />
-      </div>
-      <div className="px-12 pb-4 relative z-10">
-        <div className="w-16 h-1 rounded-full mb-6" style={{ background: GOLD }} />
-        <h1 className="text-5xl font-bold text-white leading-tight mb-4">
-          Agriculture<br />
-          <span style={{ color: GOLD }}>Clients</span>
-        </h1>
-        <p className="text-white/70 text-xl mb-2">Integrated Energy &amp; Utility Solutions</p>
-        <p className="text-white/40 text-sm">Jan 2026</p>
-      </div>
-      <div className="px-12 py-8 border-t border-white/10 relative z-10">
-        <p className="text-white/30 text-xs">TAQA Arabia · Confidential</p>
+      <div
+        aria-hidden
+        className="absolute -right-40 -top-52 h-[560px] w-[560px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(132,204,22,0.16), transparent 65%)" }}
+      />
+
+      <div className="relative z-10 flex h-full flex-col px-14 pt-12 pb-10">
+        {/* Top row */}
+        <Rise i={0} className="flex items-center justify-between">
+          <div className="rounded-xl bg-white/95 px-4 py-2 shadow-lg ring-1 ring-black/10">
+            <img src={taqaLogo} alt="TAQA Arabia logo" className="h-9 object-contain" />
+          </div>
+          <Kicker color={GREEN} dark>Client Presentation · Jan 2026</Kicker>
+        </Rise>
+
+        {/* Title block */}
+        <div className="flex-1 flex flex-col justify-center">
+          <Rise i={1}>
+            <div className="mb-6 h-[3px] w-20 rounded-full" style={{ background: `linear-gradient(90deg, ${GREEN}, ${LIME})` }} />
+          </Rise>
+          <Rise i={2}>
+            <h1 className="font-display font-bold tracking-tight text-white leading-[0.98]" style={{ fontSize: 74 }}>
+              Agriculture
+              <br />
+              <span style={gt("#4ade80", "#bef264")}>Clients</span>
+            </h1>
+          </Rise>
+          <Rise i={3}>
+            <p className="mt-5 text-[21px] text-white/85">Integrated Energy &amp; Utility Solutions</p>
+          </Rise>
+          <Rise i={4} className="mt-8 flex items-center gap-3">
+            {pillars.map(p => (
+              <div key={p.label} className="flex items-center gap-2.5 rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur-md pl-2.5 pr-4 h-10">
+                <span
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-white"
+                  style={{ background: `linear-gradient(135deg, ${p.color}, ${tone(p.color)})` }}
+                >
+                  {p.icon}
+                </span>
+                <span className="text-[16px] font-semibold text-white/90">{p.label}</span>
+              </div>
+            ))}
+          </Rise>
+        </div>
+
+        {/* Footer */}
+        <Rise i={5} className="flex items-center justify-between border-t border-white/10 pt-5">
+          <p className="text-[14px] uppercase tracking-[0.22em] font-display font-semibold text-white/50">
+            TAQA Arabia · Confidential
+          </p>
+          <p className="text-[14px] text-white/50">Jan 2026</p>
+        </Rise>
       </div>
     </div>
   );
@@ -96,52 +279,61 @@ function CoverSlide() {
 // ─── Slide 1: About TAQA Arabia ───────────────────────────────────────────────
 
 function AboutSlide() {
+  const divisions = [
+    { label: "Gas",       icon: <Flame className="w-5 h-5" />,    desc: "Distribution, EPC & virtual pipeline",                       color: "#E68A00" },
+    { label: "Power",     icon: <Zap className="w-5 h-5" />,      desc: "Generation & distribution, solar PV, EV",                   color: "#d97706" },
+    { label: "Petroleum", icon: <Truck className="w-5 h-5" />,    desc: "Oil-marketing stations, lubricants",                        color: GREEN },
+    { label: "Water",     icon: <Droplets className="w-5 h-5" />, desc: "Reverse-osmosis desalination, filtration, smart solar ops", color: SKY },
+  ];
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={P.farm} />
-      <div className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: GREEN }}>
-          TAQA Arabia · Who We Are
-        </p>
-        <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
+    <LightSlide color={GREEN}>
+      <Rise i={0}><Kicker color={GREEN}>TAQA Arabia · Who We Are</Kicker></Rise>
+      <Rise i={1}>
+        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.08] text-[42px] max-w-[980px]" style={{ color: NAVY }}>
           Egypt's leading integrated energy infrastructure developer
         </h2>
-      </div>
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-3 text-sm text-gray-600 leading-relaxed">
-          <p>
-            Founded in 2006 and listed on the EGX since 2023, TAQA Arabia is Egypt's largest
-            private-sector energy and utility developer.
-          </p>
-          <p>
-            Across four divisions — Gas, Power, Petroleum and Water — TAQA finances, builds,
-            owns and operates the utility backbone of residential communities, industrial zones
-            and touristic destinations.
-          </p>
+      </Rise>
+
+      <div className="mt-8 flex-1 min-h-0 grid grid-cols-2 gap-10">
+        {/* Narrative + photo */}
+        <div className="flex flex-col min-h-0">
+          <Rise i={2} className="space-y-4 text-[16px] leading-relaxed text-slate-600">
+            <p>
+              Founded in 2006 and listed on the EGX since 2023, TAQA Arabia is Egypt's largest
+              private-sector energy and utility developer.
+            </p>
+            <p>
+              Across four divisions — Gas, Power, Petroleum and Water — TAQA finances, builds,
+              owns and operates the utility backbone of residential communities, industrial zones
+              and touristic destinations.
+            </p>
+          </Rise>
+          <Rise i={3} className="mt-6 flex-1 min-h-0">
+            <PhotoCard src={P.farm} className="h-full w-full rounded-3xl" />
+          </Rise>
         </div>
-        <div className="space-y-3">
-          {[
-            { label: "Gas",       icon: <Flame className="w-4 h-4" />,    desc: "Distribution, EPC & virtual pipeline" },
-            { label: "Power",     icon: <Zap className="w-4 h-4" />,      desc: "Generation & distribution, solar PV, EV" },
-            { label: "Petroleum", icon: <Truck className="w-4 h-4" />,    desc: "Oil-marketing stations, lubricants" },
-            { label: "Water",     icon: <Droplets className="w-4 h-4" />, desc: "Reverse-osmosis desalination, filtration, smart solar ops" },
-          ].map(d => (
-            <div key={d.label} className="flex items-center gap-3 p-3 rounded-xl bg-[#f0f7f2] border border-[#15803d]/10">
-              <div
-                className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: GREEN, color: GOLD }}
-              >
-                {d.icon}
+
+        {/* Division cards */}
+        <div className="flex flex-col justify-between gap-3">
+          {divisions.map((d, idx) => (
+            <Rise key={d.label} i={3 + idx} className="flex-1">
+              <div className="flex h-full items-center gap-4 rounded-2xl bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)]">
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-md"
+                  style={{ background: `linear-gradient(135deg, ${d.color}, ${tone(d.color)})` }}
+                >
+                  {d.icon}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-display text-[18px] font-bold" style={{ color: NAVY }}>{d.label}</div>
+                  <div className="text-[16px] text-slate-500 leading-snug">{d.desc}</div>
+                </div>
               </div>
-              <div>
-                <div className="font-semibold text-sm" style={{ color: NAVY }}>{d.label}</div>
-                <div className="text-xs text-gray-500">{d.desc}</div>
-              </div>
-            </div>
+            </Rise>
           ))}
         </div>
       </div>
-    </div>
+    </LightSlide>
   );
 }
 
@@ -149,274 +341,340 @@ function AboutSlide() {
 
 function RegionalSlide() {
   const metrics = [
-    { value: "8",      label: "Countries",            sub: "Egypt, GCC, Africa & Greece" },
-    { value: "4",      label: "Operating divisions",  sub: "Gas · Power · Petroleum · Water" },
-    { value: "20+",    label: "Governorates in Egypt",sub: "Full customer spectrum" },
-    { value: "3,400+", label: "Employees",            sub: "Across all divisions" },
+    { value: "8",      label: "Countries",             sub: "Egypt, GCC, Africa & Greece" },
+    { value: "4",      label: "Operating divisions",   sub: "Gas · Power · Petroleum · Water" },
+    { value: "20+",    label: "Governorates in Egypt", sub: "Full customer spectrum" },
+    { value: "3,400+", label: "Employees",             sub: "Across all divisions" },
+  ];
+  const regions = [
+    { name: "GCC",    desc: "Partnered with Al Ghaneim & WETICO for Sovereign water-desalination projects." },
+    { name: "Africa", desc: "Pursuing gas and power opportunities across sub-Saharan markets." },
+    { name: "Greece", desc: "Expanding into European energy infrastructure." },
+  ];
+  const customers = [
+    "Agricultural farms & agribusiness",
+    "Residential communities & compounds",
+    "Industrial zones & factories",
+    "Touristic destinations & resorts",
   ];
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={P.energy} />
-      <div className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: GREEN }}>
-          TAQA Arabia · Regional Presence
-        </p>
-        <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
+    <LightSlide color={GREEN}>
+      <Rise i={0}><Kicker color={GREEN}>TAQA Arabia · Regional Presence</Kicker></Rise>
+      <Rise i={1}>
+        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.08] text-[38px] max-w-[1020px]" style={{ color: NAVY }}>
           A growing platform across Egypt, the GCC, Africa and Greece
         </h2>
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        {metrics.map(m => (
-          <div key={m.label} className="rounded-xl p-4 text-white text-center" style={{ background: NAVY }}>
-            <div className="text-3xl font-bold" style={{ color: GOLD }}>{m.value}</div>
-            <div className="text-xs font-semibold mt-1">{m.label}</div>
-            <div className="text-[10px] text-white/50 mt-0.5">{m.sub}</div>
-          </div>
+      </Rise>
+
+      {/* Metric strip */}
+      <div className="mt-7 grid grid-cols-4 gap-4">
+        {metrics.map((m, idx) => (
+          <Rise key={m.label} i={2 + idx}>
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)]">
+              <div className="h-[3px] w-9 rounded-full mb-3" style={{ background: `linear-gradient(90deg, ${GREEN}, ${LIME})` }} />
+              <div className="font-display text-[38px] font-bold leading-none" style={gt(GREEN, "#4d9d2a")}>{m.value}</div>
+              <div className="mt-1.5 text-[16px] font-semibold" style={{ color: NAVY }}>{m.label}</div>
+              <div className="text-[14px] text-slate-500">{m.sub}</div>
+            </div>
+          </Rise>
         ))}
       </div>
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-xl bg-[#f0f7f2] p-5 border border-[#15803d]/10">
-          <div className="flex items-center gap-2 mb-3">
-            <Globe className="w-4 h-4" style={{ color: GREEN }} />
-            <h3 className="font-bold text-sm" style={{ color: NAVY }}>International Expansion</h3>
-          </div>
-          <p className="text-xs text-gray-600 leading-relaxed">
-            <strong>GCC</strong> — Partnered with Al Ghaneim &amp; WETICO for Sovereign water-desalination
-            projects.<br /><br />
-            <strong>Africa</strong> — Pursuing gas and power opportunities across sub-Saharan markets.<br /><br />
-            <strong>Greece</strong> — Expanding into European energy infrastructure.
-          </p>
-        </div>
-        <div className="rounded-xl p-5 text-white" style={{ background: NAVY }}>
-          <h3 className="font-bold text-sm mb-3" style={{ color: GOLD }}>Geographic Footprint</h3>
-          <p className="text-xs text-white/70 leading-relaxed mb-3">
-            Concessions in 8 Egyptian governorates renewed for 15 years. TAQA serves the full
-            spectrum of customer types:
-          </p>
-          {[
-            "Agricultural farms & agribusiness",
-            "Residential communities & compounds",
-            "Industrial zones & factories",
-            "Touristic destinations & resorts",
-          ].map(i => (
-            <div key={i} className="flex items-center gap-2 text-xs text-white/80 mb-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: GOLD }} />
-              {i}
+
+      <div className="mt-5 flex-1 min-h-0 grid grid-cols-2 gap-5">
+        {/* International expansion */}
+        <Rise i={6} className="min-h-0">
+          <div className="h-full rounded-3xl bg-white p-6 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)] flex flex-col">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg text-white" style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }}>
+                <Globe className="w-4 h-4" />
+              </div>
+              <h3 className="font-display text-[17px] font-bold" style={{ color: NAVY }}>International Expansion</h3>
             </div>
-          ))}
-        </div>
+            <div className="flex-1 flex flex-col justify-between gap-2.5">
+              {regions.map(r => (
+                <div key={r.name} className="flex items-start gap-3 rounded-xl p-3" style={{ background: GREEN + "0A" }}>
+                  <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: GREEN }} />
+                  <p className="text-[16px] leading-snug text-slate-600">
+                    <span className="font-bold" style={{ color: NAVY }}>{r.name}</span> — {r.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Rise>
+
+        {/* Geographic footprint */}
+        <Rise i={7} className="min-h-0">
+          <div
+            className="h-full rounded-3xl p-6 text-white flex flex-col shadow-[0_18px_44px_-18px_rgba(0,32,96,0.55)]"
+            style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #0c2f1a 100%)` }}
+          >
+            <h3 className="font-display text-[17px] font-bold mb-2.5" style={gt(GOLD, "#ffe08a")}>Geographic Footprint</h3>
+            <p className="text-[16px] text-white/85 leading-snug mb-3.5">
+              Concessions in 8 Egyptian governorates renewed for 15 years. TAQA serves the full spectrum of customer types:
+            </p>
+            <div className="flex-1 flex flex-col justify-between">
+              {customers.map(c => (
+                <div key={c} className="flex items-center gap-2.5 text-[16px] text-white/90">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: GOLD }} />
+                  {c}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Rise>
       </div>
-    </div>
+    </LightSlide>
   );
 }
 
 // ─── Slide 3: In Numbers ──────────────────────────────────────────────────────
 
 function NumbersSlide() {
+  const heroes = [
+    { value: "EGP 13.4bn", label: "Revenue",       sub: "FY 2025" },
+    { value: "EGP 1.5bn",  label: "EBITDA",        sub: "FY 2025" },
+    { value: "~6.5M",      label: "Gas customers", sub: "Active connections" },
+  ];
+  const divisions = [
+    { div: "GAS",          icon: <Flame className="w-4 h-4" />,    stats: ["+10,000 km", "8 governorates, 15yr"],    color: "#E68A00" },
+    { div: "POWER",        icon: <Zap className="w-4 h-4" />,      stats: ["+1,600 MVA", "+150 MW"],                 color: "#d97706" },
+    { div: "WATER",        icon: <Droplets className="w-4 h-4" />, stats: ["+47,000 m³/day", "15 locations"],        color: SKY },
+    { div: "MOBILITY/CNG", icon: <Truck className="w-4 h-4" />,    stats: ["86 stations", "1st private EV licence"], color: "#7B35C2" },
+  ];
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={P.solar} />
-      <div className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: GREEN }}>
-          TAQA Arabia · In Numbers
-        </p>
-        <h2 className="text-2xl font-bold" style={{ color: NAVY }}>
+    <LightSlide color={GREEN}>
+      <Rise i={0}><Kicker color={GREEN}>TAQA Arabia · In Numbers</Kicker></Rise>
+      <Rise i={1}>
+        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.08] text-[38px] max-w-[1040px]" style={{ color: NAVY }}>
           The scale behind a single integrated energy partner — FY 2025
         </h2>
-      </div>
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        {[
-          { value: "EGP 13.4bn", label: "Revenue",      sub: "FY 2025" },
-          { value: "EGP 1.5bn",  label: "EBITDA",       sub: "FY 2025" },
-          { value: "~6.5M",      label: "Gas customers", sub: "Active connections" },
-        ].map(m => (
-          <div
-            key={m.label}
-            className="rounded-xl p-5 text-white text-center"
-            style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${GREEN} 100%)` }}
-          >
-            <div className="text-xl font-bold" style={{ color: GOLD }}>{m.value}</div>
-            <div className="text-xs font-semibold mt-1">{m.label}</div>
-            <div className="text-[10px] text-white/50 mt-0.5">{m.sub}</div>
-          </div>
-        ))}
-      </div>
-      <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { div: "GAS",          icon: <Flame className="w-4 h-4" />,    stats: ["+10,000 km", "8 governorates, 15yr"],     color: "#E68A00" },
-          { div: "POWER",        icon: <Zap className="w-4 h-4" />,      stats: ["+1,600 MVA", "+150 MW"],                  color: GOLD },
-          { div: "WATER",        icon: <Droplets className="w-4 h-4" />, stats: ["+47,000 m³/day", "15 locations"],         color: "#0095C8" },
-          { div: "MOBILITY/CNG", icon: <Truck className="w-4 h-4" />,    stats: ["86 stations", "1st private EV licence"],  color: "#7B35C2" },
-        ].map(d => (
-          <div key={d.div} className="rounded-xl bg-[#f0f7f2] p-4 border border-[#15803d]/10">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: d.color }}>
-                <span className="text-white">{d.icon}</span>
-              </div>
-              <span className="font-bold text-xs" style={{ color: NAVY }}>{d.div}</span>
+      </Rise>
+
+      {/* Hero financials */}
+      <div className="mt-7 grid grid-cols-3 gap-4">
+        {heroes.map((m, idx) => (
+          <Rise key={m.label} i={2 + idx}>
+            <div
+              className="relative overflow-hidden rounded-3xl p-6 text-white shadow-[0_18px_44px_-18px_rgba(4,21,12,0.6)]"
+              style={{ background: "linear-gradient(135deg, #04150c 0%, #0c2f1a 70%, #14532d 100%)" }}
+            >
+              <div
+                aria-hidden
+                className="absolute -right-10 -top-14 h-40 w-40 rounded-full pointer-events-none"
+                style={{ background: "radial-gradient(circle, rgba(132,204,22,0.22), transparent 65%)" }}
+              />
+              <div className="font-display text-[36px] font-bold leading-none" style={gt("#a3e635", "#fde047")}>{m.value}</div>
+              <div className="mt-2 text-[17px] font-semibold text-white/95">{m.label}</div>
+              <div className="text-[14px] text-white/60">{m.sub}</div>
             </div>
-            {d.stats.map(s => (
-              <div key={s} className="flex items-start gap-1.5 mb-1">
-                <div className="w-1 h-1 rounded-full mt-1.5 shrink-0" style={{ background: d.color }} />
-                <span className="text-[11px] text-gray-600">{s}</span>
-              </div>
-            ))}
-          </div>
+          </Rise>
         ))}
       </div>
-    </div>
+
+      {/* Division bento */}
+      <div className="mt-5 flex-1 min-h-0 grid grid-cols-4 gap-4">
+        {divisions.map((d, idx) => (
+          <Rise key={d.div} i={5 + idx} className="min-h-0">
+            <div className="h-full rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)] flex flex-col">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm"
+                  style={{ background: `linear-gradient(135deg, ${d.color}, ${tone(d.color)})` }}
+                >
+                  {d.icon}
+                </div>
+                <span className="font-display text-[16px] font-bold tracking-tight" style={{ color: NAVY }}>{d.div}</span>
+              </div>
+              <div className="space-y-2.5">
+                {d.stats.map(s => (
+                  <div key={s} className="flex items-start gap-2">
+                    <span className="mt-[7px] h-1.5 w-1.5 rounded-full shrink-0" style={{ background: d.color }} />
+                    <span className="text-[16px] font-medium text-slate-600 leading-snug">{s}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Rise>
+        ))}
+      </div>
+    </LightSlide>
   );
 }
 
 // ─── Slide 4: The Challenge ───────────────────────────────────────────────────
 
 function ChallengeSlide() {
+  const pains = [
+    {
+      label: "Power",
+      icon: <Zap className="w-5 h-5" />,
+      color: "#dc2626",
+      desc: "Pivots and pumps run on diesel gensets — the biggest operating cost, volatile price, CO₂ exposure.",
+    },
+    {
+      label: "Water",
+      icon: <Droplets className="w-5 h-5" />,
+      color: SKY,
+      desc: "Groundwater depletion and poor-quality feed water threaten long-term irrigation security.",
+    },
+    {
+      label: "Fragmentation",
+      icon: <Globe className="w-5 h-5" />,
+      color: "#c084fc",
+      desc: "Water, fuel and power come from separate suppliers with no unified view or accountability.",
+    },
+  ];
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={P.farm} />
-      <div className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#dc2626] mb-1">
-          Agriculture · The Challenge
-        </p>
-        <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
+    <DarkSlide photo={P.farm} tint="#dc2626">
+      <Rise i={0}><Kicker color="#dc2626" dark>Agriculture · The Challenge</Kicker></Rise>
+      <Rise i={1}>
+        <h2 className="mt-5 font-display font-bold tracking-tight text-white leading-[1.06] text-[44px] max-w-[980px]">
           Energy and water — the two biggest costs on any farm
         </h2>
-      </div>
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        {[
-          {
-            label: "Power",
-            icon: <Zap className="w-5 h-5 text-white" />,
-            color: "#dc2626",
-            desc: "Pivots and pumps run on diesel gensets — the biggest operating cost, volatile price, CO₂ exposure.",
-          },
-          {
-            label: "Water",
-            icon: <Droplets className="w-5 h-5 text-white" />,
-            color: "#0095C8",
-            desc: "Groundwater depletion and poor-quality feed water threaten long-term irrigation security.",
-          },
-          {
-            label: "Fragmentation",
-            icon: <Globe className="w-5 h-5 text-white" />,
-            color: "#7B35C2",
-            desc: "Water, fuel and power come from separate suppliers with no unified view or accountability.",
-          },
-        ].map(c => (
-          <div key={c.label} className="rounded-xl p-5 border-2" style={{ borderColor: c.color + "40", background: c.color + "08" }}>
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-3" style={{ background: c.color }}>
-              {c.icon}
+      </Rise>
+
+      <div className="mt-8 grid grid-cols-3 gap-5">
+        {pains.map((c, idx) => (
+          <Rise key={c.label} i={2 + idx}>
+            <div className="h-full rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-6">
+              <div
+                className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${c.color}, ${tone(c.color)})` }}
+              >
+                {c.icon}
+              </div>
+              <h3 className="font-display text-[19px] font-bold text-white mb-2">{c.label}</h3>
+              <p className="text-[17px] leading-relaxed text-white/85">{c.desc}</p>
             </div>
-            <h3 className="font-bold mb-2" style={{ color: NAVY }}>{c.label}</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">{c.desc}</p>
-          </div>
+          </Rise>
         ))}
       </div>
-      <div
-        className="rounded-xl p-5 text-white"
-        style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${GREEN} 100%)` }}
-      >
-        <div className="flex items-center gap-2 mb-2">
-          <CheckCircle2 className="w-5 h-5" style={{ color: GOLD }} />
-          <h3 className="font-bold" style={{ color: GOLD }}>TAQA's Integrated Answer</h3>
+
+      <Rise i={5} className="mt-auto">
+        <div className="relative overflow-hidden rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-6 pl-8">
+          <div aria-hidden className="absolute left-0 top-0 h-full w-[4px]" style={{ background: `linear-gradient(180deg, ${GREEN}, ${LIME})` }} />
+          <div className="mb-1.5 flex items-center gap-2.5">
+            <CheckCircle2 className="w-5 h-5" style={{ color: LIME }} />
+            <h3 className="font-display text-[18px] font-bold" style={gt("#4ade80", "#bef264")}>TAQA's Integrated Answer</h3>
+          </div>
+          <p className="text-[17px] leading-relaxed text-white/90 max-w-[1020px]">
+            One operator delivers clean water + a smart, multi-source power stack — solar by day, batteries after
+            sunset, gas gensets for firming, diesel only as backup — all under a single BOO/BOOT agreement
+            with no farm capex.
+          </p>
         </div>
-        <p className="text-sm text-white/85 leading-relaxed">
-          One operator delivers clean water + a smart, multi-source power stack — solar by day, batteries after
-          sunset, gas gensets for firming, diesel only as backup — all under a single BOO/BOOT agreement
-          with no farm capex.
-        </p>
-      </div>
-    </div>
+      </Rise>
+    </DarkSlide>
   );
 }
 
 // ─── Slide 5: Integrated Farm Solution ───────────────────────────────────────
 
 function IntegratedSolutionSlide() {
+  const sources = [
+    { icon: <SunMedium className="w-4 h-4" />, label: "Solar",          desc: "Cheapest day power",  color: "#d97706" },
+    { icon: <Battery className="w-4 h-4" />,   label: "Battery",        desc: "Solar after sunset",  color: "#7B35C2" },
+    { icon: <Truck className="w-4 h-4" />,     label: "Mobile CNG",     desc: "Clean gas firming",   color: "#E68A00" },
+    { icon: <Flame className="w-4 h-4" />,     label: "Diesel Gensets", desc: "Backup / peaks only", color: "#6B6B6B" },
+  ];
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={P.farm} />
-      <div className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: GREEN }}>
-          TAQA · Integrated Farm Solution
-        </p>
-        <h2 className="text-2xl font-bold" style={{ color: NAVY }}>
+    <LightSlide color={GREEN}>
+      <Rise i={0}><Kicker color={GREEN}>TAQA · Integrated Farm Solution</Kicker></Rise>
+      <Rise i={1}>
+        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.1] text-[30px] max-w-[1060px]" style={{ color: NAVY }}>
           One partner connects water and a smart, multi-source power stack to keep every pivot turning
         </h2>
-      </div>
-      <div className="flex-1 flex flex-col gap-4">
-        {/* Flow diagram */}
-        <div className="flex items-stretch gap-3">
-          {/* Energy Sources */}
-          <div className="flex-1 rounded-xl bg-[#f0f7f2] p-4 border border-[#15803d]/15">
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: GREEN }}>
-              Energy Sources
-            </p>
-            {[
-              { icon: <SunMedium className="w-4 h-4" />, label: "Solar",         desc: "Cheapest day power",   color: "#d97706" },
-              { icon: <Battery className="w-4 h-4" />,   label: "Battery",       desc: "Solar after sunset",   color: "#7B35C2" },
-              { icon: <Truck className="w-4 h-4" />,     label: "Mobile CNG",    desc: "Clean gas firming",    color: "#E68A00" },
-              { icon: <Flame className="w-4 h-4" />,     label: "Diesel Gensets",desc: "Backup / peaks only",  color: "#6B6B6B" },
-            ].map(s => (
-              <div key={s.label} className="flex items-center gap-2 mb-2">
-                <div
-                  className="h-7 w-7 rounded-lg flex items-center justify-center text-white shrink-0"
-                  style={{ background: s.color }}
-                >
-                  {s.icon}
-                </div>
-                <div>
-                  <div className="text-xs font-semibold" style={{ color: NAVY }}>{s.label}</div>
-                  <div className="text-[10px] text-gray-500">{s.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+      </Rise>
 
-          {/* Arrow + EMS */}
-          <div className="flex flex-col items-center justify-center gap-2 px-1">
-            <div className="text-gray-400 text-xl font-bold">→</div>
-            <div
-              className="rounded-xl p-3 text-center text-white shrink-0"
-              style={{ background: GREEN, minWidth: 100 }}
-            >
-              <Zap className="w-5 h-5 mx-auto mb-1" style={{ color: GOLD }} />
-              <div className="text-[9px] font-bold leading-tight">TAQA Smart<br />Energy Mgmt</div>
+      <div className="mt-6 flex-1 min-h-0 flex flex-col gap-4">
+        {/* Flow diagram */}
+        <div className="flex-1 min-h-0 flex items-stretch gap-4">
+          {/* Energy sources */}
+          <Rise i={2} className="flex-1 min-h-0">
+            <div className="h-full rounded-3xl bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)] flex flex-col">
+              <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-3" style={{ color: GREEN }}>
+                Energy Sources
+              </p>
+              <div className="flex-1 flex flex-col justify-between gap-2">
+                {sources.map(s => (
+                  <div key={s.label} className="flex items-center gap-3 rounded-xl px-3 py-2" style={{ background: s.color + "0C" }}>
+                    <div
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
+                      style={{ background: `linear-gradient(135deg, ${s.color}, ${tone(s.color)})` }}
+                    >
+                      {s.icon}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[17px] font-semibold leading-tight" style={{ color: NAVY }}>{s.label}</div>
+                      <div className="text-[12.5px] text-slate-500 leading-tight">{s.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="text-gray-400 text-xl font-bold">→</div>
-          </div>
+          </Rise>
+
+          {/* Connector → EMS → connector */}
+          <Rise i={3} className="flex items-center shrink-0">
+            <div className="flex items-center">
+              <div className="h-[2px] w-8" style={{ background: `linear-gradient(90deg, ${GREEN}30, ${GREEN})` }} />
+              <ArrowRight className="w-4 h-4 -ml-1.5" style={{ color: GREEN }} />
+              <div
+                className="mx-1 flex h-[150px] w-[150px] flex-col items-center justify-center rounded-full text-center text-white shadow-[0_18px_40px_-14px_rgba(21,128,61,0.55)]"
+                style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }}
+              >
+                <Zap className="w-6 h-6 mb-1.5" style={{ color: "#fef9c3" }} />
+                <div className="font-display text-[15px] font-bold leading-tight px-4">TAQA Smart<br />Energy Mgmt</div>
+              </div>
+              <div className="h-[2px] w-8" style={{ background: `linear-gradient(90deg, ${GREEN}, ${GREEN}30)` }} />
+              <ArrowRight className="w-4 h-4 -ml-1.5" style={{ color: GREEN }} />
+            </div>
+          </Rise>
 
           {/* Output */}
-          <div className="flex-1 rounded-xl p-4 text-white" style={{ background: NAVY }}>
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: GOLD }}>
-              Powered Pivots 24/7
-            </p>
-            <p className="text-xs text-white/70 leading-relaxed">
-              Round-the-clock irrigation — optimised source mix, always on, minimum cost.
-            </p>
-          </div>
+          <Rise i={4} className="flex-1 min-h-0">
+            <div
+              className="relative h-full overflow-hidden rounded-3xl p-6 text-white flex flex-col justify-center shadow-[0_18px_44px_-18px_rgba(0,32,96,0.55)]"
+              style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #0c2f1a 100%)` }}
+            >
+              <div
+                aria-hidden
+                className="absolute -right-12 -bottom-16 h-48 w-48 rounded-full pointer-events-none"
+                style={{ background: "radial-gradient(circle, rgba(132,204,22,0.2), transparent 65%)" }}
+              />
+              <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-2.5" style={{ color: GOLD }}>
+                Powered Pivots 24/7
+              </p>
+              <p className="text-[17px] leading-relaxed text-white/90">
+                Round-the-clock irrigation — optimised source mix, always on, minimum cost.
+              </p>
+            </div>
+          </Rise>
         </div>
 
-        {/* Water */}
-        <div
-          className="rounded-xl p-4 flex items-center gap-3"
-          style={{ background: "#0095C808", border: "2px solid #0095C840" }}
-        >
-          <Droplets className="w-5 h-5 shrink-0" style={{ color: "#0095C8" }} />
-          <div>
-            <span className="font-bold text-sm" style={{ color: NAVY }}>Water Solutions</span>
-            <span className="text-xs text-gray-500 ml-2">Desalination · Wells · Pumping</span>
+        {/* Water strip */}
+        <Rise i={5}>
+          <div className="flex items-center gap-4 rounded-2xl px-5 py-3.5 ring-1 ring-black/5 bg-white shadow-[0_10px_30px_-14px_rgba(0,149,200,0.25)]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${SKY}, ${tone(SKY)})` }}>
+              <Droplets className="w-4 h-4" />
+            </div>
+            <span className="font-display text-[16px] font-bold" style={{ color: NAVY }}>Water Solutions</span>
+            <span className="text-[16px] text-slate-500">Desalination · Wells · Pumping</span>
           </div>
-        </div>
+        </Rise>
 
-        <div
-          className="rounded-xl p-3 text-center text-sm font-semibold"
-          style={{ background: GREEN + "12", border: `1.5px solid ${GREEN}30`, color: GREEN }}
-        >
-          "TAQA delivers the whole farm energy-and-water backbone as one system."
-        </div>
+        {/* Quote */}
+        <Rise i={6}>
+          <div
+            className="rounded-2xl px-5 py-3.5 text-center font-display text-[16px] font-semibold"
+            style={{ background: GREEN + "0D", boxShadow: `inset 0 0 0 1px ${GREEN}26`, color: "#14532d" }}
+          >
+            "TAQA delivers the whole farm energy-and-water backbone as one system."
+          </div>
+        </Rise>
       </div>
-    </div>
+    </LightSlide>
   );
 }
 
@@ -424,52 +682,57 @@ function IntegratedSolutionSlide() {
 
 function SmartEnergyMixSlide() {
   const steps = [
-    { n: "1", icon: <SunMedium className="w-5 h-5" />, color: "#d97706", title: "Solar first",       desc: "Cheapest, cleanest power runs the pivots all day." },
-    { n: "2", icon: <Battery className="w-5 h-5" />,   color: "#7B35C2", title: "Then batteries",    desc: "Stored daytime solar carries irrigation into the evening and early morning." },
-    { n: "3", icon: <Truck className="w-5 h-5" />,     color: "#E68A00", title: "Gas gensets firm",  desc: "Mobile-CNG gensets fill gaps at ~40% less than diesel." },
-    { n: "4", icon: <Flame className="w-5 h-5" />,     color: "#6B6B6B", title: "Diesel last",       desc: "Runs only for peaks and backup — minimised, not relied on." },
+    { n: "01", icon: <SunMedium className="w-5 h-5" />, color: "#d97706", title: "Solar first",      desc: "Cheapest, cleanest power runs the pivots all day." },
+    { n: "02", icon: <Battery className="w-5 h-5" />,   color: "#7B35C2", title: "Then batteries",   desc: "Stored daytime solar carries irrigation into the evening and early morning." },
+    { n: "03", icon: <Truck className="w-5 h-5" />,     color: "#E68A00", title: "Gas gensets firm", desc: "Mobile-CNG gensets fill gaps at ~40% less than diesel." },
+    { n: "04", icon: <Flame className="w-5 h-5" />,     color: "#6B6B6B", title: "Diesel last",      desc: "Runs only for peaks and backup — minimised, not relied on." },
   ];
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={P.energy} />
-      <div className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: GREEN }}>
-          TAQA · Smart Energy Mix
-        </p>
-        <h2 className="text-2xl font-bold" style={{ color: NAVY }}>
+    <LightSlide color={GREEN}>
+      <Rise i={0}><Kicker color={GREEN}>TAQA · Smart Energy Mix</Kicker></Rise>
+      <Rise i={1}>
+        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.1] text-[30px] max-w-[1080px]" style={{ color: NAVY }}>
           Solar by day, batteries after sunset, gas and diesel for firming — least-cost, lowest-carbon, always on
         </h2>
-      </div>
-      <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {steps.map(s => (
-          <div
-            key={s.n}
-            className="rounded-xl p-5 border-2 flex flex-col gap-3"
-            style={{ borderColor: s.color + "40", background: s.color + "08" }}
-          >
-            <div className="flex items-center justify-between">
-              <div
-                className="h-10 w-10 rounded-xl flex items-center justify-center text-white"
-                style={{ background: s.color }}
-              >
-                {s.icon}
+      </Rise>
+
+      {/* Step flow with connecting line */}
+      <div className="relative mt-9 flex-1 min-h-0">
+        <div
+          aria-hidden
+          className="absolute left-[8%] right-[8%] top-[26px] h-[2px]"
+          style={{ background: "linear-gradient(90deg, #d97706, #7B35C2, #E68A00, #6B6B6B)", opacity: 0.35 }}
+        />
+        <div className="grid h-full grid-cols-4 gap-5">
+          {steps.map((s, idx) => (
+            <Rise key={s.n} i={2 + idx} className="min-h-0">
+              <div className="flex h-full flex-col">
+                <div
+                  className="relative z-10 mx-auto mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-2xl text-white shadow-lg"
+                  style={{ background: `linear-gradient(135deg, ${s.color}, ${tone(s.color)})` }}
+                >
+                  {s.icon}
+                </div>
+                <div className="flex-1 rounded-3xl bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)]">
+                  <div className="font-display text-[30px] font-bold leading-none mb-2" style={gt(s.color, tone(s.color))}>{s.n}</div>
+                  <h3 className="font-display text-[17px] font-bold mb-1.5" style={{ color: NAVY }}>{s.title}</h3>
+                  <p className="text-[16px] leading-relaxed text-slate-600">{s.desc}</p>
+                </div>
               </div>
-              <span className="text-3xl font-black opacity-10" style={{ color: NAVY }}>{s.n}</span>
-            </div>
-            <div>
-              <h3 className="font-bold text-sm" style={{ color: NAVY }}>{s.title}</h3>
-              <p className="text-xs text-gray-500 mt-1 leading-relaxed">{s.desc}</p>
-            </div>
-          </div>
-        ))}
+            </Rise>
+          ))}
+        </div>
       </div>
-      <div
-        className="mt-4 rounded-xl p-4 text-center text-sm font-medium"
-        style={{ background: GREEN + "10", border: `1.5px solid ${GREEN}30`, color: GREEN }}
-      >
-        One TAQA energy-management system optimises the mix every minute — least cost, lowest carbon, always on.
-      </div>
-    </div>
+
+      <Rise i={6} className="mt-5">
+        <div
+          className="rounded-2xl px-5 py-3.5 text-center text-[17px] font-medium"
+          style={{ background: GREEN + "0D", boxShadow: `inset 0 0 0 1px ${GREEN}26`, color: "#14532d" }}
+        >
+          One TAQA energy-management system optimises the mix every minute — least cost, lowest carbon, always on.
+        </div>
+      </Rise>
+    </LightSlide>
   );
 }
 
@@ -477,49 +740,61 @@ function SmartEnergyMixSlide() {
 
 function SolutionsOverviewSlide() {
   const solutions = [
-    { num: "01", label: "Water Solutions", desc: "Desalination, groundwater treatment and smart, solar-powered irrigation pumping.",           icon: <Droplets className="w-5 h-5" />, color: "#0095C8" },
-    { num: "02", label: "Solar",           desc: "Tailored solar PV via PPA to power pivots and pumps by day — no farm capex.",               icon: <SunMedium className="w-5 h-5" />, color: "#d97706" },
-    { num: "03", label: "Battery Storage", desc: "Shifts solar into the night and firms the stack so pivots never stop.",                      icon: <Battery className="w-5 h-5" />,   color: "#7B35C2" },
-    { num: "04", label: "Mobile CNG",      desc: "Portable natural gas to fuel farm gensets — ~40% cheaper than diesel.",                     icon: <Truck className="w-5 h-5" />,     color: "#E68A00" },
+    { num: "01", label: "Water Solutions", desc: "Desalination, groundwater treatment and smart, solar-powered irrigation pumping.", icon: <Droplets className="w-5 h-5" />,  color: SKY },
+    { num: "02", label: "Solar",           desc: "Tailored solar PV via PPA to power pivots and pumps by day — no farm capex.",      icon: <SunMedium className="w-5 h-5" />, color: "#d97706" },
+    { num: "03", label: "Battery Storage", desc: "Shifts solar into the night and firms the stack so pivots never stop.",            icon: <Battery className="w-5 h-5" />,   color: "#7B35C2" },
+    { num: "04", label: "Mobile CNG",      desc: "Portable natural gas to fuel farm gensets — ~40% cheaper than diesel.",            icon: <Truck className="w-5 h-5" />,     color: "#E68A00" },
   ];
+  const journey = ["Scope & How It Works", "Value Proposition", "Implementation Timeline", "Proven Track Record"];
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={P.farm} />
-      <div className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: GREEN }}>
-          Agriculture Clients · Solutions Overview
-        </p>
-        <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
+    <LightSlide color={GREEN}>
+      <Rise i={0}><Kicker color={GREEN}>Agriculture Clients · Solutions Overview</Kicker></Rise>
+      <Rise i={1}>
+        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.08] text-[34px] max-w-[1060px]" style={{ color: NAVY }}>
           The following slides detail every solution TAQA Arabia offers to farms and agribusiness
         </h2>
-        <p className="text-gray-500 text-sm mt-1">
-          Each solution: Scope &amp; How It Works → Value Proposition → Implementation Timeline → Proven Track Record
-        </p>
-      </div>
-      <div className="flex-1 grid grid-cols-2 gap-6">
-        {solutions.map(s => (
-          <div
-            key={s.num}
-            className="rounded-xl border-2 p-6 flex flex-col gap-3"
-            style={{ borderColor: s.color + "30" }}
-          >
-            <div className="flex items-center justify-between">
+      </Rise>
+      <Rise i={2} className="mt-4 flex items-center gap-2 flex-wrap">
+        <span className="text-[15px] font-medium text-slate-500 mr-1">Each solution:</span>
+        {journey.map((j, idx) => (
+          <span key={j} className="flex items-center gap-2">
+            <span className="rounded-full bg-white px-3.5 h-7 inline-flex items-center text-[15px] font-semibold ring-1 ring-black/5 shadow-sm" style={{ color: NAVY }}>
+              {j}
+            </span>
+            {idx < journey.length - 1 && <ArrowRight className="w-3.5 h-3.5 text-slate-400" />}
+          </span>
+        ))}
+      </Rise>
+
+      <div className="mt-6 flex-1 min-h-0 grid grid-cols-2 grid-rows-2 gap-5">
+        {solutions.map((s, idx) => (
+          <Rise key={s.num} i={3 + idx} className="min-h-0">
+            <div className="relative h-full overflow-hidden rounded-3xl bg-white p-6 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)]">
+              <div aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${s.color}, ${tone(s.color)})` }} />
               <div
-                className="h-12 w-12 rounded-xl flex items-center justify-center text-white"
-                style={{ background: s.color }}
+                aria-hidden
+                className="absolute -bottom-7 right-3 font-display font-bold leading-none select-none"
+                style={{ fontSize: 110, color: s.color, opacity: 0.08, letterSpacing: "-0.04em" }}
               >
-                {s.icon}
+                {s.num}
               </div>
-              <span className="text-4xl font-black opacity-10" style={{ color: NAVY }}>{s.num}</span>
+              <div className="flex items-start gap-4">
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-md"
+                  style={{ background: `linear-gradient(135deg, ${s.color}, ${tone(s.color)})` }}
+                >
+                  {s.icon}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-display text-[19px] font-bold" style={{ color: NAVY }}>{s.label}</h3>
+                  <p className="mt-1.5 text-[17px] leading-relaxed text-slate-600 max-w-[420px]">{s.desc}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold" style={{ color: NAVY }}>{s.label}</h3>
-              <p className="text-sm text-gray-500 mt-1 leading-relaxed">{s.desc}</p>
-            </div>
-          </div>
+          </Rise>
         ))}
       </div>
-    </div>
+    </LightSlide>
   );
 }
 
@@ -542,74 +817,98 @@ function AgriScopeSlide({
   sectionLabel, title, subtitle, tagline, color, icon,
   taqaInvests, steps, whatYouReceive, photo,
 }: AgriScopeSlideProps) {
+  const num = "0" + sectionLabel.trim().charAt(0);
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={photo} height={120} />
-      <div className="mb-3 flex items-center gap-3">
-        <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center text-white shrink-0"
-          style={{ background: color }}
-        >
-          {icon}
+    <LightSlide color={color} num={num}>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-6">
+        <div className="min-w-0">
+          <Rise i={0}><Kicker color={color}>{sectionLabel}</Kicker></Rise>
+          <Rise i={1}>
+            <h2 className="mt-3.5 font-display font-bold tracking-tight leading-[1.08] text-[30px] max-w-[840px]" style={{ color: NAVY }}>
+              {title}
+            </h2>
+            <p className="mt-1.5 text-[16px] text-slate-500">{subtitle}</p>
+          </Rise>
         </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color }}>
-            {sectionLabel}
-          </p>
-          <h2 className="text-xl font-bold" style={{ color: NAVY }}>{title}</h2>
-          <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+        <Rise i={1}><PhotoCard src={photo} className="h-[96px] w-[210px]" /></Rise>
+      </div>
+
+      {/* Tagline */}
+      <Rise i={2} className="mt-4">
+        <div className="relative overflow-hidden rounded-2xl bg-white px-5 py-3 ring-1 ring-black/5 shadow-sm">
+          <div aria-hidden className="absolute left-0 top-0 h-full w-[3px]" style={{ background: `linear-gradient(180deg, ${color}, ${tone(color)})` }} />
+          <p className="text-[17px] font-medium leading-snug" style={{ color: NAVY }}>{tagline}</p>
         </div>
-      </div>
-      <div
-        className="rounded-xl p-3 mb-3 text-sm font-medium"
-        style={{ background: color + "12", borderLeft: `3px solid ${color}`, color: NAVY }}
-      >
-        {tagline}
-      </div>
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4">
+      </Rise>
+
+      {/* Three columns */}
+      <div className="mt-4 flex-1 min-h-0 grid grid-cols-3 gap-4">
         {/* TAQA Invests */}
-        <div className="rounded-xl p-4" style={{ background: color + "08", border: `1.5px solid ${color}20` }}>
-          <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color }}>
-            TAQA Invests
-          </p>
-          {taqaInvests.map(i => (
-            <div key={i} className="flex items-start gap-1.5 mb-1.5">
-              <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: color }} />
-              <span className="text-xs text-gray-600">{i}</span>
+        <Rise i={3} className="min-h-0">
+          <div className="h-full rounded-3xl p-5 ring-1 ring-black/5 bg-white shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] flex flex-col">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg text-white" style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }}>
+                {icon}
+              </span>
+              <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em]" style={{ color }}>TAQA Invests</p>
             </div>
-          ))}
-        </div>
-        {/* Steps */}
-        <div className="rounded-xl p-4 bg-[#f8f8f8]">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">How It Works</p>
-          <div className="relative pl-5 border-l-2 border-gray-200">
-            {steps.map((s, i) => (
-              <div key={i} className="relative mb-3">
-                <div
-                  className="absolute -left-[22px] top-0 w-4 h-4 rounded-full border-2 bg-white text-[9px] font-bold flex items-center justify-center"
-                  style={{ borderColor: color, color }}
-                >
-                  {i + 1}
+            <div className="flex-1 flex flex-col justify-evenly">
+              {taqaInvests.map(t => (
+                <div key={t} className="flex items-start gap-2.5 py-1">
+                  <span className="mt-[7px] h-1.5 w-1.5 rounded-full shrink-0" style={{ background: color }} />
+                  <span className="text-[16px] leading-snug text-slate-600">{t}</span>
                 </div>
-                <span className="text-xs text-gray-600 leading-relaxed">{s}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* What You Receive */}
-        <div className="rounded-xl p-4 text-white" style={{ background: NAVY }}>
-          <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: GOLD }}>
-            What You Receive
-          </p>
-          {whatYouReceive.map(w => (
-            <div key={w} className="flex items-start gap-2 mb-2.5">
-              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: GOLD }} />
-              <span className="text-xs text-white/80">{w}</span>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        </Rise>
+
+        {/* How it works */}
+        <Rise i={4} className="min-h-0">
+          <div className="h-full rounded-3xl p-5 ring-1 ring-black/5 flex flex-col" style={{ background: color + "08" }}>
+            <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-3" style={{ color }}>How It Works</p>
+            <div className="relative flex-1 flex flex-col justify-evenly pl-9">
+              <div aria-hidden className="absolute left-[13px] top-2 bottom-2 w-[2px] rounded-full" style={{ background: color + "30" }} />
+              {steps.map((s, i) => (
+                <div key={i} className="relative py-1">
+                  <div
+                    className="absolute -left-9 top-1 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-white text-[14px] font-bold font-display ring-2"
+                    style={{ color, boxShadow: `0 0 0 2px ${color}` }}
+                  >
+                    {i + 1}
+                  </div>
+                  <span className="text-[16px] leading-snug text-slate-600">{s}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Rise>
+
+        {/* What you receive */}
+        <Rise i={5} className="min-h-0">
+          <div
+            className="relative h-full overflow-hidden rounded-3xl p-5 text-white flex flex-col shadow-[0_18px_44px_-18px_rgba(0,32,96,0.55)]"
+            style={{ background: `linear-gradient(150deg, ${NAVY} 0%, #0c2f1a 100%)` }}
+          >
+            <div
+              aria-hidden
+              className="absolute -right-12 -top-14 h-44 w-44 rounded-full pointer-events-none"
+              style={{ background: `radial-gradient(circle, ${tone(color)}30, transparent 65%)` }}
+            />
+            <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-3" style={{ color: GOLD }}>What You Receive</p>
+            <div className="flex-1 flex flex-col justify-evenly">
+              {whatYouReceive.map(w => (
+                <div key={w} className="flex items-start gap-2.5 py-1">
+                  <CheckCircle2 className="mt-0.5 w-4 h-4 shrink-0" style={{ color: GOLD }} />
+                  <span className="text-[16px] leading-snug text-white/90">{w}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Rise>
       </div>
-    </div>
+    </LightSlide>
   );
 }
 
@@ -626,61 +925,75 @@ interface AgriValueSlideProps {
 }
 
 function AgriValueSlide({ sectionLabel, title, color, icon, gains, edge, photo }: AgriValueSlideProps) {
+  const num = "0" + sectionLabel.trim().charAt(0);
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={photo} />
-      <div className="mb-4 flex items-center gap-3">
-        <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center text-white shrink-0"
-          style={{ background: color }}
-        >
-          {icon}
+    <LightSlide color={color} num={num}>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-6">
+        <div className="min-w-0">
+          <Rise i={0}><Kicker color={color}>{sectionLabel}</Kicker></Rise>
+          <Rise i={1} className="mt-3.5 flex items-center gap-3.5">
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-md"
+              style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }}
+            >
+              {icon}
+            </div>
+            <h2 className="font-display font-bold tracking-tight leading-[1.08] text-[32px]" style={{ color: NAVY }}>
+              {title}
+            </h2>
+          </Rise>
         </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color }}>
-            {sectionLabel}
-          </p>
-          <h2 className="text-2xl font-bold" style={{ color: NAVY }}>{title}</h2>
-        </div>
+        <Rise i={1}><PhotoCard src={photo} className="h-[96px] w-[210px]" /></Rise>
       </div>
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">What You Gain</p>
-          <div className="space-y-2">
-            {gains.map(g => (
-              <div
-                key={g.label}
-                className="flex items-start gap-3 p-3 rounded-xl"
-                style={{ background: color + "0D" }}
-              >
-                <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color }} />
-                <div>
-                  <div className="font-semibold text-sm" style={{ color: NAVY }}>{g.label}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{g.desc}</div>
+
+      <div className="mt-6 flex-1 min-h-0 grid grid-cols-2 gap-6">
+        {/* Gains */}
+        <div className="flex flex-col min-h-0">
+          <Rise i={2}>
+            <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-3" style={{ color }}>What You Gain</p>
+          </Rise>
+          <div className="flex-1 flex flex-col justify-between gap-2.5">
+            {gains.map((g, idx) => (
+              <Rise key={g.label} i={3 + idx} className="flex-1">
+                <div className="flex h-full items-start gap-3 rounded-2xl p-3.5 ring-1 ring-black/5 bg-white shadow-sm">
+                  <span
+                    className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
+                    style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="font-display text-[15.5px] font-bold leading-tight" style={{ color: NAVY }}>{g.label}</div>
+                    <div className="mt-0.5 text-[16px] leading-snug text-slate-600">{g.desc}</div>
+                  </div>
                 </div>
-              </div>
+              </Rise>
             ))}
           </div>
         </div>
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">TAQA Arabia Edge</p>
-          <div className="space-y-2">
-            {edge.map(e => (
-              <div
-                key={e.label}
-                className="flex items-start gap-3 p-3 rounded-xl bg-[#f0f7f2] border border-[#15803d]/10"
-              >
-                <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: GREEN }} />
-                <div>
-                  <div className="font-semibold text-sm" style={{ color: NAVY }}>{e.label}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{e.desc}</div>
+
+        {/* Edge */}
+        <div className="flex flex-col min-h-0">
+          <Rise i={3}>
+            <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-3" style={{ color: GREEN }}>TAQA Arabia Edge</p>
+          </Rise>
+          <div className="flex-1 flex flex-col justify-between gap-2.5">
+            {edge.map((e, idx) => (
+              <Rise key={e.label} i={4 + idx} className="flex-1">
+                <div className="flex h-full items-start gap-3 rounded-2xl p-3.5" style={{ background: GREEN + "0A", boxShadow: `inset 0 0 0 1px ${GREEN}1f` }}>
+                  <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full" style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }} />
+                  <div className="min-w-0">
+                    <div className="font-display text-[15.5px] font-bold leading-tight" style={{ color: NAVY }}>{e.label}</div>
+                    <div className="mt-0.5 text-[16px] leading-snug text-slate-600">{e.desc}</div>
+                  </div>
                 </div>
-              </div>
+              </Rise>
             ))}
           </div>
         </div>
       </div>
-    </div>
+    </LightSlide>
   );
 }
 
@@ -707,60 +1020,68 @@ interface AgriTimelineSlideProps {
 }
 
 function AgriTimelineSlide({ sectionLabel, title, color, icon, phases, groups, photo }: AgriTimelineSlideProps) {
+  const num = "0" + sectionLabel.trim().charAt(0);
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={photo} height={110} />
-      <div className="mb-4 flex items-center gap-3">
-        <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center text-white shrink-0"
-          style={{ background: color }}
-        >
-          {icon}
+    <LightSlide color={color} num={num}>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-6">
+        <div className="min-w-0">
+          <Rise i={0}><Kicker color={color}>{sectionLabel}</Kicker></Rise>
+          <Rise i={1} className="mt-3.5 flex items-center gap-3.5">
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-md"
+              style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }}
+            >
+              {icon}
+            </div>
+            <h2 className="font-display font-bold tracking-tight leading-[1.08] text-[32px]" style={{ color: NAVY }}>
+              {title}
+            </h2>
+          </Rise>
         </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color }}>
-            {sectionLabel}
-          </p>
-          <h2 className="text-2xl font-bold" style={{ color: NAVY }}>{title}</h2>
-        </div>
+        <Rise i={1}><PhotoCard src={photo} className="h-[96px] w-[210px]" /></Rise>
       </div>
 
       {/* Phase group bands */}
-      <div
-        className="grid gap-2 mb-5"
-        style={{ gridTemplateColumns: `repeat(${groups.length}, 1fr)` }}
-      >
+      <div className="mt-5 grid gap-3" style={{ gridTemplateColumns: `repeat(${groups.length}, 1fr)` }}>
         {groups.map((g, i) => (
-          <div
-            key={i}
-            className="rounded-lg p-3 text-center text-white"
-            style={{ background: g.color ?? color }}
-          >
-            <div className="text-[10px] font-bold uppercase tracking-widest">{g.label}</div>
-            <div className="text-xs mt-0.5 opacity-80">{g.range}</div>
-          </div>
+          <Rise key={i} i={2 + i}>
+            <div
+              className="rounded-2xl px-4 py-3 text-white shadow-md flex items-baseline justify-between gap-2"
+              style={{ background: `linear-gradient(135deg, ${g.color ?? color}, ${color})` }}
+            >
+              <span className="font-display text-[14px] font-semibold uppercase tracking-[0.18em]">{g.label}</span>
+              <span className="text-[15px] font-medium text-white/85 whitespace-nowrap">{g.range}</span>
+            </div>
+          </Rise>
         ))}
       </div>
 
-      {/* Phase list */}
-      <div className="flex-1 relative pl-5 border-l-2" style={{ borderColor: color + "40" }}>
+      {/* Vertical phase timeline */}
+      <div className="relative mt-5 flex-1 min-h-0 flex flex-col justify-evenly pl-10">
+        <div aria-hidden className="absolute left-[13px] top-2 bottom-2 w-[2px] rounded-full" style={{ background: `linear-gradient(180deg, ${color}, ${color}20)` }} />
         {phases.map((p, i) => (
-          <div key={i} className="relative mb-3">
+          <Rise key={i} i={3 + i} className="relative py-0.5">
             <div
-              className="absolute -left-[22px] top-0.5 w-4 h-4 rounded-full border-2 bg-white flex items-center justify-center"
-              style={{ borderColor: color }}
+              className="absolute -left-10 top-0.5 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-white ring-2"
+              style={{ boxShadow: `0 0 0 2px ${color}` }}
             >
-              <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+              <span className="h-2 w-2 rounded-full" style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }} />
             </div>
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-[10px] font-bold shrink-0" style={{ color }}>{p.day}</span>
-              <span className="font-semibold text-xs" style={{ color: NAVY }}>{p.label}</span>
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span
+                className="rounded-full px-2.5 py-0.5 font-display text-[14px] font-bold whitespace-nowrap"
+                style={{ background: color + "12", color }}
+              >
+                {p.day}
+              </span>
+              <span className="font-display text-[15.5px] font-bold" style={{ color: NAVY }}>{p.label}</span>
+              <span className="text-[16px] text-slate-500">{p.desc}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{p.desc}</p>
-          </div>
+          </Rise>
         ))}
       </div>
-    </div>
+    </LightSlide>
   );
 }
 
@@ -781,44 +1102,49 @@ function AgriTrackRecordSlide({
   sectionLabel, title, subheadline, body, color, icon, stats, photo,
 }: AgriTrackRecordSlideProps) {
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={photo} />
-      <div className="mb-5 flex items-center gap-3">
+    <DarkSlide photo={photo} tint={color}>
+      <Rise i={0} className="flex items-center gap-3">
+        <Kicker color={color} dark>{sectionLabel}</Kicker>
+      </Rise>
+      <Rise i={1} className="mt-5 flex items-center gap-4">
         <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center text-white shrink-0"
-          style={{ background: color }}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg"
+          style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }}
         >
           {icon}
         </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color }}>
-            {sectionLabel}
-          </p>
-          <h2 className="text-2xl font-bold" style={{ color: NAVY }}>{title}</h2>
+        <h2 className="font-display font-bold tracking-tight text-white leading-[1.06] text-[38px]">
+          {title}
+        </h2>
+      </Rise>
+
+      <div className="mt-9 flex-1 min-h-0 grid grid-cols-5 gap-8">
+        {/* Story */}
+        <div className="col-span-3 flex flex-col justify-center">
+          <Rise i={2}>
+            <div className="mb-4 h-[3px] w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${color}, ${tone(color)})` }} />
+            <h3 className="font-display text-[24px] font-bold leading-snug" style={gt(tone(color), "#ffffff")}>
+              {subheadline}
+            </h3>
+          </Rise>
+          <Rise i={3}>
+            <p className="mt-4 text-[16px] leading-relaxed text-white/90">{body}</p>
+          </Rise>
         </div>
-      </div>
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div
-          className="lg:col-span-2 rounded-xl p-6"
-          style={{ background: color + "08", border: `1.5px solid ${color}20` }}
-        >
-          <h3 className="font-bold mb-2" style={{ color: NAVY }}>{subheadline}</h3>
-          <p className="text-sm text-gray-600 leading-relaxed">{body}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3 content-start">
-          {stats.map(s => (
-            <div
-              key={s.label}
-              className="rounded-xl text-center p-4"
-              style={{ background: NAVY }}
-            >
-              <div className="text-base font-black" style={{ color }}>{s.value}</div>
-              <div className="text-[10px] text-white/70 mt-1 leading-tight">{s.label}</div>
-            </div>
+
+        {/* Glass stats */}
+        <div className="col-span-2 grid grid-cols-2 grid-rows-2 gap-4 content-center">
+          {stats.map((s, idx) => (
+            <Rise key={s.label} i={4 + idx} className="min-h-0">
+              <div className="flex h-full flex-col justify-center rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-4">
+                <div className="font-display text-[21px] font-bold leading-tight" style={gt(tone(color), "#ffffff")}>{s.value}</div>
+                <div className="mt-1.5 text-[12.5px] leading-snug text-white/80">{s.label}</div>
+              </div>
+            </Rise>
           ))}
         </div>
       </div>
-    </div>
+    </DarkSlide>
   );
 }
 
@@ -826,56 +1152,77 @@ function AgriTrackRecordSlide({
 
 function WhyOnePartnerSlide() {
   const benefits = [
-    { label: "One SLA",                   desc: "A single agreement covers water, solar, storage, gas and diesel — one uptime guarantee for the whole farm." },
-    { label: "One Communication Point",   desc: "A single account team and 24/7 hotline — no chasing separate water and power contractors." },
-    { label: "One Commercial Relationship",desc: "Consolidated billing and aligned BOO/BOOT terms instead of separate procurement cycles." },
-    { label: "One Smart System",           desc: "Water and the full power stack run on one TAQA energy-management platform — optimised together." },
-    { label: "One Accountable Owner",      desc: "End-to-end responsibility removes interface risk — TAQA owns the farm's water-and-energy uptime." },
+    { label: "One SLA",                     desc: "A single agreement covers water, solar, storage, gas and diesel — one uptime guarantee for the whole farm." },
+    { label: "One Communication Point",     desc: "A single account team and 24/7 hotline — no chasing separate water and power contractors." },
+    { label: "One Commercial Relationship", desc: "Consolidated billing and aligned BOO/BOOT terms instead of separate procurement cycles." },
+    { label: "One Smart System",            desc: "Water and the full power stack run on one TAQA energy-management platform — optimised together." },
+    { label: "One Accountable Owner",       desc: "End-to-end responsibility removes interface risk — TAQA owns the farm's water-and-energy uptime." },
   ];
   const solutions = ["Water Solutions", "Solar", "Storage", "Mobile CNG", "Diesel", "Smart EMS"];
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={P.farm} />
-      <div className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: NAVY }}>
-          Why One Partner
-        </p>
-        <h2 className="text-3xl font-bold" style={{ color: NAVY }}>The TAQA One-Stop-Shop</h2>
-        <p className="text-gray-500 text-sm mt-1">
+    <LightSlide color={NAVY}>
+      <Rise i={0}><Kicker color={NAVY}>Why One Partner</Kicker></Rise>
+      <Rise i={1} className="mt-4 flex items-baseline gap-4 flex-wrap">
+        <h2 className="font-display font-bold tracking-tight leading-[1.05] text-[40px]" style={{ color: NAVY }}>
+          The TAQA One-Stop-Shop
+        </h2>
+        <p className="text-[17px] text-slate-500">
           One SLA, one communication point, one accountable operator — for the farm's water and power.
         </p>
-      </div>
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="rounded-xl p-5 text-white" style={{ background: NAVY }}>
-          <h3 className="font-bold text-sm mb-3" style={{ color: GOLD }}>TAQA Arabia — All Farm Solutions</h3>
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {solutions.map(s => (
-              <div key={s} className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: GOLD }} />
-                <span className="text-white text-xs font-medium">{s}</span>
-              </div>
-            ))}
-          </div>
-          <div className="pt-3 border-t border-white/10">
-            <p className="text-xs text-white/60">From Fragmented Vendors → One Integrated Operator</p>
-          </div>
-        </div>
-        <div className="space-y-2">
-          {benefits.map(b => (
+      </Rise>
+
+      <div className="mt-6 flex-1 min-h-0 grid grid-cols-2 gap-6">
+        {/* Solutions hub */}
+        <Rise i={2} className="min-h-0">
+          <div
+            className="relative h-full overflow-hidden rounded-3xl p-6 text-white flex flex-col shadow-[0_18px_44px_-18px_rgba(0,32,96,0.55)]"
+            style={{ background: `linear-gradient(140deg, ${NAVY} 0%, #0c2f1a 100%)` }}
+          >
             <div
-              key={b.label}
-              className="flex items-start gap-3 p-3 rounded-xl bg-[#f0f7f2] border border-[#15803d]/10"
-            >
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: GREEN }} />
-              <div>
-                <div className="font-bold text-sm" style={{ color: NAVY }}>{b.label}</div>
-                <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">{b.desc}</div>
-              </div>
+              aria-hidden
+              className="absolute -right-16 -top-20 h-56 w-56 rounded-full pointer-events-none"
+              style={{ background: "radial-gradient(circle, rgba(132,204,22,0.22), transparent 65%)" }}
+            />
+            <h3 className="font-display text-[18px] font-bold mb-4" style={gt(GOLD, "#ffe08a")}>
+              TAQA Arabia — All Farm Solutions
+            </h3>
+            <div className="grid grid-cols-2 gap-2.5">
+              {solutions.map(s => (
+                <div key={s} className="flex items-center gap-2.5 rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur-md px-3.5 py-2.5">
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: `linear-gradient(135deg, ${GOLD}, ${LIME})` }} />
+                  <span className="text-[16px] font-semibold text-white/95">{s}</span>
+                </div>
+              ))}
             </div>
+            <div className="mt-auto flex items-center gap-2.5 border-t border-white/15 pt-4">
+              <span className="text-[16px] text-white/70">From Fragmented Vendors</span>
+              <ArrowRight className="w-4 h-4" style={{ color: LIME }} />
+              <span className="text-[16px] font-semibold text-white/95">One Integrated Operator</span>
+            </div>
+          </div>
+        </Rise>
+
+        {/* Benefits */}
+        <div className="flex flex-col justify-between gap-2.5 min-h-0">
+          {benefits.map((b, idx) => (
+            <Rise key={b.label} i={3 + idx} className="flex-1">
+              <div className="flex h-full items-center gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-black/5 shadow-sm">
+                <span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white"
+                  style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                </span>
+                <div className="min-w-0">
+                  <div className="font-display text-[17px] font-bold leading-tight" style={{ color: NAVY }}>{b.label}</div>
+                  <div className="text-[16px] leading-snug text-slate-600">{b.desc}</div>
+                </div>
+              </div>
+            </Rise>
           ))}
         </div>
       </div>
-    </div>
+    </LightSlide>
   );
 }
 
@@ -895,130 +1242,139 @@ function IntegratedEconomicsSlide() {
     { label: "One accountable partner",      desc: "Single SLA for water + power, zero capex under BOO/BOOT, one smart system." },
   ];
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={P.energy} />
-      <div className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: NAVY }}>
-          Integrated Economics
-        </p>
-        <h2 className="text-2xl font-bold" style={{ color: NAVY }}>
+    <LightSlide color={NAVY}>
+      <Rise i={0}><Kicker color={NAVY}>Integrated Economics</Kicker></Rise>
+      <Rise i={1}>
+        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.08] text-[34px]" style={{ color: NAVY }}>
           The Integrated Economics: Diesel-Only vs. TAQA
         </h2>
-        <p className="text-gray-500 text-xs mt-1">
+        <p className="mt-1 text-[16px] text-slate-500">
           What changes when one partner runs an optimised water-and-power stack — illustrative
         </p>
-      </div>
-      <div className="flex-1 grid grid-cols-2 gap-5">
-        {/* Today */}
-        <div className="rounded-xl p-5 border-2 border-red-200 bg-red-50">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-8 w-8 rounded-lg bg-red-500 flex items-center justify-center">
-              <Flame className="w-4 h-4 text-white" />
-            </div>
-            <h3 className="font-bold text-red-800">Today — Diesel-Only Farm</h3>
-          </div>
-          <div className="space-y-2">
-            {today.map(t => (
-              <div key={t.label} className="flex items-start gap-2 p-2 rounded-lg bg-white border border-red-100">
-                <div className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-red-400" />
-                <div>
-                  <div className="font-semibold text-xs text-red-800">{t.label}</div>
-                  <div className="text-[11px] text-red-600 mt-0.5">{t.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* With TAQA */}
+      </Rise>
+
+      <div className="relative mt-5 flex-1 min-h-0 grid grid-cols-2 gap-6">
+        {/* VS badge */}
         <div
-          className="rounded-xl p-5 border-2"
-          style={{ borderColor: GREEN + "50", background: GREEN + "08" }}
+          aria-hidden
+          className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white font-display text-[17px] font-bold shadow-xl ring-1 ring-black/10"
+          style={{ color: NAVY }}
         >
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: GREEN }}>
-              <Zap className="w-4 h-4 text-white" />
-            </div>
-            <h3 className="font-bold" style={{ color: GREEN }}>With TAQA — Integrated Stack</h3>
-          </div>
-          <div className="space-y-2">
-            {withTaqa.map(t => (
-              <div
-                key={t.label}
-                className="flex items-start gap-2 p-2 rounded-lg bg-white"
-                style={{ border: `1px solid ${GREEN}20` }}
-              >
-                <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: GREEN }} />
-                <div>
-                  <div className="font-semibold text-xs" style={{ color: NAVY }}>{t.label}</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">{t.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          VS
         </div>
+
+        {/* Today */}
+        <Rise i={2} className="min-h-0">
+          <div className="h-full rounded-3xl p-5 ring-1 ring-red-200 bg-red-50/70 flex flex-col">
+            <div className="mb-3.5 flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm" style={{ background: "linear-gradient(135deg, #dc2626, #f87171)" }}>
+                <Flame className="w-4 h-4" />
+              </div>
+              <h3 className="font-display text-[17px] font-bold text-red-800">Today — Diesel-Only Farm</h3>
+            </div>
+            <div className="flex-1 flex flex-col justify-between gap-2">
+              {today.map(t => (
+                <div key={t.label} className="flex flex-1 items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-red-100">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-red-400" />
+                  <div className="min-w-0">
+                    <div className="text-[14.5px] font-bold leading-tight text-red-800">{t.label}</div>
+                    <div className="text-[16px] leading-snug text-slate-600">{t.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Rise>
+
+        {/* With TAQA */}
+        <Rise i={3} className="min-h-0">
+          <div className="h-full rounded-3xl p-5 flex flex-col" style={{ background: GREEN + "0A", boxShadow: `inset 0 0 0 1px ${GREEN}30` }}>
+            <div className="mb-3.5 flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm" style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }}>
+                <Zap className="w-4 h-4" />
+              </div>
+              <h3 className="font-display text-[17px] font-bold" style={{ color: "#14532d" }}>With TAQA — Integrated Stack</h3>
+            </div>
+            <div className="flex-1 flex flex-col justify-between gap-2">
+              {withTaqa.map(t => (
+                <div key={t.label} className="flex flex-1 items-center gap-3 rounded-xl bg-white p-3" style={{ boxShadow: `inset 0 0 0 1px ${GREEN}1f` }}>
+                  <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: GREEN }} />
+                  <div className="min-w-0">
+                    <div className="text-[14.5px] font-bold leading-tight" style={{ color: NAVY }}>{t.label}</div>
+                    <div className="text-[16px] leading-snug text-slate-600">{t.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Rise>
       </div>
-      <p className="text-[10px] text-gray-400 text-center mt-3">
-        Figures are illustrative / market-based and depend on farm size, crop, irrigation schedule and fuel prices.
-      </p>
-    </div>
+
+      <Rise i={4}>
+        <p className="mt-3.5 text-center text-[14px] text-slate-500">
+          Figures are illustrative / market-based and depend on farm size, crop, irrigation schedule and fuel prices.
+        </p>
+      </Rise>
+    </LightSlide>
   );
 }
 
 // ─── Slide 26: Proven on the Ground (Closing) ─────────────────────────────────
 
 function ClosingSlide() {
+  const pillars = [
+    { label: "Water Solutions", color: SKY },
+    { label: "Solar",           color: "#d97706" },
+    { label: "Battery Storage", color: "#7B35C2" },
+    { label: "Mobile CNG",      color: "#E68A00" },
+  ];
+  const stats = [
+    { value: "Dina Farms", label: "Live agricultural solar project" },
+    { value: "Benban",     label: "Landmark solar development" },
+    { value: "~1,000 t",   label: "CO₂/MWp/yr avoided" },
+    { value: "Zero Capex", label: "Under BOO/BOOT" },
+  ];
   return (
-    <div className="flex flex-col h-full bg-white p-10">
-      <PhotoBanner src={P.dina} height={180} />
-      <div className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: GREEN }}>
-          Proven on the Ground
-        </p>
-        <h2 className="text-2xl font-bold" style={{ color: NAVY }}>Dina Farms &amp; Beyond</h2>
-        <p className="text-gray-500 text-sm mt-1">
+    <DarkSlide photo={P.dina} tint={GREEN}>
+      <Rise i={0}><Kicker color={GREEN} dark>Proven on the Ground</Kicker></Rise>
+      <Rise i={1}>
+        <h2 className="mt-5 font-display font-bold tracking-tight leading-[1.02] text-[52px] text-white">
+          Dina Farms <span style={gt("#4ade80", "#bef264")}>&amp; Beyond</span>
+        </h2>
+        <p className="mt-3 text-[16px] text-white/80">
           Real agricultural renewable projects — the foundation for the fully integrated farm.
         </p>
-      </div>
-      <p className="text-sm text-gray-600 leading-relaxed mb-4">
-        TAQA Arabia operates renewable-energy projects at Dina Farms — one of Egypt's largest integrated
-        agricultural operations — alongside its landmark Benban solar developments. These projects prove
-        TAQA can deploy and run clean energy at true agricultural scale. The next step is the fully
-        integrated stack: pairing that solar with storage, gas and water under one operator.
-      </p>
-      <div className="grid grid-cols-4 gap-3 mb-4">
-        {[
-          { label: "Water Solutions", color: "#0095C8" },
-          { label: "Solar",           color: "#d97706" },
-          { label: "Battery Storage", color: "#7B35C2" },
-          { label: "Mobile CNG",      color: "#E68A00" },
-        ].map(s => (
-          <div
-            key={s.label}
-            className="rounded-xl p-3 text-center text-white text-xs font-semibold"
-            style={{ background: s.color }}
-          >
-            {s.label}
+      </Rise>
+
+      <Rise i={2}>
+        <p className="mt-6 max-w-[980px] text-[16px] leading-relaxed text-white/90">
+          TAQA Arabia operates renewable-energy projects at Dina Farms — one of Egypt's largest integrated
+          agricultural operations — alongside its landmark Benban solar developments. These projects prove
+          TAQA can deploy and run clean energy at true agricultural scale. The next step is the fully
+          integrated stack: pairing that solar with storage, gas and water under one operator.
+        </p>
+      </Rise>
+
+      <Rise i={3} className="mt-7 flex items-center gap-3">
+        {pillars.map(s => (
+          <div key={s.label} className="flex items-center gap-2.5 rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur-md px-4 h-10">
+            <span className="h-2 w-2 rounded-full shrink-0" style={{ background: `linear-gradient(135deg, ${s.color}, ${tone(s.color)})` }} />
+            <span className="text-[16px] font-semibold text-white/95">{s.label}</span>
           </div>
         ))}
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { value: "Dina Farms",  label: "Live agricultural solar project" },
-          { value: "Benban",      label: "Landmark solar development" },
-          { value: "~1,000 t",    label: "CO₂/MWp/yr avoided" },
-          { value: "Zero Capex",  label: "Under BOO/BOOT" },
-        ].map(s => (
-          <div
-            key={s.label}
-            className="rounded-xl p-4 text-center"
-            style={{ background: GREEN + "0F", border: `1.5px solid ${GREEN}25` }}
-          >
-            <div className="text-sm font-black" style={{ color: GREEN }}>{s.value}</div>
-            <div className="text-[10px] text-gray-500 mt-1">{s.label}</div>
-          </div>
+      </Rise>
+
+      <div className="mt-auto grid grid-cols-4 gap-4">
+        {stats.map((s, idx) => (
+          <Rise key={s.label} i={4 + idx}>
+            <div className="rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-5">
+              <div className="font-display text-[22px] font-bold leading-tight" style={gt("#a3e635", "#fde047")}>{s.value}</div>
+              <div className="mt-1.5 text-[15px] leading-snug text-white/80">{s.label}</div>
+            </div>
+          </Rise>
         ))}
       </div>
-    </div>
+    </DarkSlide>
   );
 }
 
@@ -1051,7 +1407,7 @@ const SLIDES = [
         subtitle="Desalination, groundwater treatment and smart irrigation pumping"
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the water you use — little to no upfront CapEx."
         color="#0095C8"
-        icon={<Droplets className="w-5 h-5" />}
+        icon={<Droplets className="w-4 h-4" />}
         taqaInvests={[
           "Brackish/seawater RO desalination units",
           "Pre-treatment & filtration",
@@ -1158,7 +1514,7 @@ const SLIDES = [
         subtitle="Integrated with storage and diesel for round-the-clock supply"
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the solar power you use — little to no upfront CapEx."
         color="#d97706"
-        icon={<SunMedium className="w-5 h-5" />}
+        icon={<SunMedium className="w-4 h-4" />}
         taqaInvests={[
           "Ground-mount & pump-side PV arrays",
           "Solar inverters & mounting",
@@ -1265,7 +1621,7 @@ const SLIDES = [
         subtitle="Firms the power stack — so irrigation never stops"
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the service — little to no upfront CapEx."
         color="#7B35C2"
-        icon={<Battery className="w-5 h-5" />}
+        icon={<Battery className="w-4 h-4" />}
         taqaInvests={[
           "Battery energy-storage units",
           "Power-conversion system & inverters",
@@ -1372,7 +1728,7 @@ const SLIDES = [
         subtitle="A cleaner, cheaper alternative to diesel where there is no pipeline"
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the gas you use — little to no upfront CapEx."
         color="#E68A00"
-        icon={<Truck className="w-5 h-5" />}
+        icon={<Truck className="w-4 h-4" />}
         taqaInvests={[
           "Mother station & compression",
           "CNG/virtual-pipeline trailers",
