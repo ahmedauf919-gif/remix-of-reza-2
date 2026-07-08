@@ -4,7 +4,7 @@ import {
   Wind, SunMedium, Droplets, Truck, ArrowRight, Plus,
   TrendingUp, Layers, FileDown, Shield, Zap, Briefcase,
   Ruler, Presentation, ChevronRight, BarChart2, Flame, FolderOpen,
-  Gauge, Battery, Waves,
+  Gauge, Battery, Waves, Car,
 } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.jpg";
 import { DirectoryPanel } from "@/components/directory/DirectoryPanel";
@@ -124,7 +124,7 @@ const categories = [
     label: "Sizing Models",
     description: "Technical sizing tools for capacity planning and equipment specification.",
     icon: Ruler,
-    count: 4,
+    count: 8,
     iconBg: "bg-emerald-700",
     iconColor: "text-white",
     accent: "border-emerald-300/40 hover:border-emerald-400/60",
@@ -494,27 +494,67 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* CNG Station Sizing */}
-              <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm overflow-hidden border-border opacity-80">
-                <div className="flex items-start justify-between mb-4">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-emerald-50 text-emerald-700">
-                    Gas
-                  </span>
-                  <div className="flex flex-col items-end gap-1.5">
-                    <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-emerald-700">
-                      <Gauge className="h-5 w-5 text-white" />
+              {/* Engineering sizing tools */}
+              {[
+                {
+                  to: "/sizing/gas-load", group: "Gas", color: "#E68A00", icon: Gauge,
+                  title: "Gas Load Profiling", sub: "Demand Calculator",
+                  desc: "Build a facility demand curve, compute peak flow and pick the Mobile CNG capacity tier — Starter (500 Nm³/d) to Heavy (5,000+ Nm³/d).",
+                },
+                {
+                  to: "/sizing/gas-network", group: "Gas", color: "#009045", icon: Flame,
+                  title: "Gas Network Hydraulics", sub: "Pipe & Regulator Sizing",
+                  desc: "Route-plan distribution grids: pressure-drop modeling, pipe diameter selection and regulator capacity for industrial sites and compounds.",
+                },
+                {
+                  to: "/sizing/pv-yield", group: "Renewables", color: "#d97706", icon: SunMedium,
+                  title: "Solar Yield Simulator", sub: "Irradiation & CAPEX",
+                  desc: "Irradiation, load and roof/land surveys — optimise array layout, estimate specific yield, monthly generation and CAPEX per Wp.",
+                },
+                {
+                  to: "/sizing/bess", group: "Storage", color: "#7B35C2", icon: Battery,
+                  title: "BESS Optimization", sub: "Peak Shaving & Solar Firming",
+                  desc: "Size storage capacity and power from peak profile and tariff analysis — solar firming, peak shaving, DoD and round-trip efficiency.",
+                },
+                {
+                  to: "/sizing/grid-load-flow", group: "Power", color: "#1d4ed8", icon: Zap,
+                  title: "Grid Integration & Load Flow", sub: "EHV → MV/LV Modeling",
+                  desc: "Load studies and interconnection planning — transformer MVA sizing with N-1, losses, voltage drop and 220 kV vs 500 kV evacuation limits.",
+                },
+                {
+                  to: "/sizing/chp", group: "Power", color: "#c2410c", icon: Flame,
+                  title: "CHP & Tri-Gen Simulator", sub: "Thermal Load Matching",
+                  desc: "Power and thermal load profiling to size a cogeneration plant — heat recovery, absorption cooling and ~85% total fuel efficiency.",
+                },
+                {
+                  to: "/sizing/ev-chargers", group: "Mobility", color: "#0369a1", icon: Car,
+                  title: "EV Charger Mix", sub: "Duty-Cycle Calculator",
+                  desc: "Fleet duty-cycle analysis, parking and grid capacity — the optimal blend of AC, DC fast and golf-car chargers for a site.",
+                },
+              ].map(t => (
+                <Link key={t.to} to={t.to} className="group block animate-fade-in-up">
+                  <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm transition-all duration-300 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 border-border" style={{ borderColor: undefined }}>
+                    <div className="flex items-start justify-between mb-4 relative z-10">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide" style={{ background: `${t.color}14`, color: t.color }}>
+                        {t.group}
+                      </span>
+                      <div className="h-11 w-11 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:shadow-md" style={{ background: t.color }}>
+                        <t.icon className="h-5 w-5 text-white" />
+                      </div>
                     </div>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Coming Soon</span>
+                    <div className="relative z-10">
+                      <h3 className="font-bold text-[#002060] text-base leading-snug">{t.title}</h3>
+                      <p className="text-[11px] font-medium mt-0.5 mb-2.5" style={{ color: t.color }}>{t.sub}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{t.desc}</p>
+                    </div>
+                    <div className="relative z-10 mt-5 flex items-center gap-1.5 text-xs font-semibold opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" style={{ color: t.color }}>
+                      Open Tool
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 rounded-b-xl" style={{ background: t.color }} />
                   </div>
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#002060] text-base leading-snug">CNG Station Sizing</h3>
-                  <p className="text-[11px] text-emerald-700 font-medium mt-0.5 mb-2.5">Technical Sizing Tool</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Size compressors, cascade storage, dispensers and priority panels based on vehicle count, fill patterns and daily throughput targets.
-                  </p>
-                </div>
-              </div>
+                </Link>
+              ))}
 
               {/* SWRO Membrane Sizing */}
               <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm overflow-hidden border-border opacity-80">
@@ -538,27 +578,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* BESS Sizing */}
-              <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm overflow-hidden border-border opacity-80">
-                <div className="flex items-start justify-between mb-4">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-violet-50 text-violet-700">
-                    Storage
-                  </span>
-                  <div className="flex flex-col items-end gap-1.5">
-                    <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-violet-700">
-                      <Battery className="h-5 w-5 text-white" />
-                    </div>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Coming Soon</span>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#002060] text-base leading-snug">BESS Sizing</h3>
-                  <p className="text-[11px] text-violet-700 font-medium mt-0.5 mb-2.5">Technical Sizing Tool</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Calculate battery capacity (MWh) and power (MW) from peak shaving targets, backup hours, depth of discharge and round-trip efficiency.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         )}

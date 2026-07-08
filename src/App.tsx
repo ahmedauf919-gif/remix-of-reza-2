@@ -22,6 +22,14 @@ import { PasswordGate } from "./components/PasswordGate";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { NabqDashboardProvider } from "./contexts/NabqDashboardContext";
 
+const GasLoadProfiling = lazy(() => import("./pages/sizing/GasLoadProfiling.tsx"));
+const GasNetwork       = lazy(() => import("./pages/sizing/GasNetwork.tsx"));
+const PvYield          = lazy(() => import("./pages/sizing/PvYield.tsx"));
+const BessSizing       = lazy(() => import("./pages/sizing/BessSizing.tsx"));
+const GridLoadFlow     = lazy(() => import("./pages/sizing/GridLoadFlow.tsx"));
+const ChpSizing        = lazy(() => import("./pages/sizing/ChpSizing.tsx"));
+const EvChargerMix     = lazy(() => import("./pages/sizing/EvChargerMix.tsx"));
+
 const NabqDiesel       = lazy(() => import("./pages/nabq/NabqDiesel.tsx"));
 const NabqBattery      = lazy(() => import("./pages/nabq/NabqBattery.tsx"));
 const NabqClients      = lazy(() => import("./pages/nabq/NabqClients.tsx"));
@@ -52,6 +60,24 @@ const App = () => (
             <Route path="/presentations/agriculture-clients" element={<AgricultureClients />} />
             <Route path="/presentations/industrial-clients" element={<IndustrialClients />} />
             <Route path="/presentations/residential-clients" element={<ResidentialClientsNew />} />
+            {/* Sizing tools — lazy loaded with error boundary */}
+            {[
+              { path: "/sizing/gas-load", label: "Gas Load Profiling", El: GasLoadProfiling },
+              { path: "/sizing/gas-network", label: "Gas Network Hydraulics", El: GasNetwork },
+              { path: "/sizing/pv-yield", label: "PV Yield Simulator", El: PvYield },
+              { path: "/sizing/bess", label: "BESS Sizing", El: BessSizing },
+              { path: "/sizing/grid-load-flow", label: "Grid Load Flow", El: GridLoadFlow },
+              { path: "/sizing/chp", label: "CHP Sizing", El: ChpSizing },
+              { path: "/sizing/ev-chargers", label: "EV Charger Mix", El: EvChargerMix },
+            ].map(({ path, label, El }) => (
+              <Route key={path} path={path} element={
+                <ErrorBoundary label={label}>
+                  <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>}>
+                    <El />
+                  </Suspense>
+                </ErrorBoundary>
+              } />
+            ))}
             {/* NABQ Routes — lazy loaded with error boundary */}
             <Route path="/sizing/nabq" element={<ErrorBoundary label="NABQ Diesel"><NabqDashboardProvider><Suspense fallback={<div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>}><NabqDiesel /></Suspense></NabqDashboardProvider></ErrorBoundary>} />
             <Route path="/sizing/nabq/battery" element={<ErrorBoundary label="NABQ Battery"><NabqDashboardProvider><Suspense fallback={<div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>}><NabqBattery /></Suspense></NabqDashboardProvider></ErrorBoundary>} />
