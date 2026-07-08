@@ -114,7 +114,7 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
   const chromeBtn = "inline-flex items-center gap-1.5 rounded-lg px-2.5 h-8 text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap";
 
   return (
-    <div ref={rootRef} className="h-[100dvh] w-full flex flex-col overflow-hidden bg-[#0a0d12] relative select-none">
+    <div ref={rootRef} className="h-[100dvh] w-full flex flex-col overflow-hidden bg-[#0a0d12] relative select-none font-deck">
       <style>{`
         @keyframes deck-fwd { from { opacity:0; transform:translateX(28px) scale(0.985); } to { opacity:1; transform:translateX(0) scale(1); } }
         @keyframes deck-bwd { from { opacity:0; transform:translateX(-28px) scale(0.985); } to { opacity:1; transform:translateX(0) scale(1); } }
@@ -122,6 +122,10 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
         .deck-bwd { animation: deck-bwd 0.38s cubic-bezier(0.16,1,0.3,1) both; }
         .deck-edge-nav { opacity: 0; transition: opacity 0.25s; }
         .deck-stage:hover .deck-edge-nav:not(:disabled) { opacity: 1; }
+        @media (prefers-reduced-motion: reduce) {
+          .deck-fwd, .deck-bwd { animation: none; }
+          .deck-stage * { animation: none !important; }
+        }
       `}</style>
 
       {/* Ambient glow tinted by current section */}
@@ -143,7 +147,7 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
           <span className="hidden sm:inline">Home</span>
         </Link>
         <div className="min-w-0 border-l border-white/15 pl-3">
-          <p className="text-white text-[13px] font-bold leading-tight truncate">{title}</p>
+          <p className="text-white text-[13px] font-bold leading-tight truncate font-display">{title}</p>
           <p className="text-white/35 text-[10px] leading-tight truncate hidden sm:block">{subtitle}</p>
         </div>
 
