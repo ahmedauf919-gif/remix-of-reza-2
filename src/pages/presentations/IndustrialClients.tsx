@@ -6,6 +6,7 @@ import {
   Star, Sun, Layers, MapPin,
 } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.png";
+import { SlideStyles, Kicker, CornerWash, GhostNum, Bracket, BlueprintGrid, ColHead, ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide, d, hideImg, lighter } from "./slides";
 
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
@@ -19,163 +20,6 @@ const P: Record<string, string> = {
   solar:    MEDIA + "solar-farm-aerial.jpg",
   battery:  MEDIA + "site-containers.jpg",
 };
-
-// ─── Design-system primitives — "Forged Steel" ───────────────────────────────
-
-/** Lighter companion tone for each section color (gradient endpoints). */
-const LIGHTER: Record<string, string> = {
-  "#c2410c": "#fb923c",
-  "#1d4ed8": "#60a5fa",
-  "#059669": "#34d399",
-  "#b45309": "#fbbf24",
-  "#ca8a04": "#facc15",
-  "#7c3aed": "#a78bfa",
-  "#002060": "#60a5fa",
-};
-const lighter = (c: string) => LIGHTER[c] ?? "#f59e0b";
-
-/** Entrance animation keyframes — remounted with every slide, so they replay. */
-function InxStyles() {
-  return (
-    <style>{`
-      @keyframes inx-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes inx-in { from { opacity: 0; } to { opacity: 1; } }
-      .inx-up { animation: inx-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
-      .inx-in { animation: inx-in 0.5s ease both; }
-      @media (prefers-reduced-motion: reduce) {
-        .inx-up, .inx-in { animation: none; }
-      }
-    `}</style>
-  );
-}
-
-/** Stagger-delay helper. */
-const d = (ms: number) => ({ animationDelay: `${ms}ms` });
-
-const hideImg = (e: React.SyntheticEvent<HTMLImageElement>) => {
-  e.currentTarget.style.display = "none";
-};
-
-/** Subtle blueprint grid overlay. */
-function BlueprintGrid({ light = false }: { light?: boolean }) {
-  const c = light ? "rgba(0,32,96,0.035)" : "rgba(255,255,255,0.04)";
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0"
-      style={{
-        backgroundImage:
-          `repeating-linear-gradient(0deg, ${c} 0 1px, transparent 1px 48px),` +
-          `repeating-linear-gradient(90deg, ${c} 0 1px, transparent 1px 48px)`,
-      }}
-    />
-  );
-}
-
-/** Kicker chip — colored dot + uppercase label. */
-function Kicker({ color, dark = false, children }: { color: string; dark?: boolean; children: React.ReactNode }) {
-  return (
-    <span
-      className={`inline-flex w-fit items-center gap-2 rounded-full px-3.5 py-1.5 font-display text-[14px] font-semibold uppercase tracking-[0.22em] ${
-        dark
-          ? "bg-white/10 text-white/90 ring-1 ring-white/15 backdrop-blur-md"
-          : "bg-white text-slate-600 ring-1 ring-black/10 shadow-sm"
-      }`}
-    >
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: dark ? lighter(color) : color }} />
-      {children}
-    </span>
-  );
-}
-
-/** Soft section-color wash for a corner of light slides. */
-function CornerWash({ color }: { color: string }) {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute -right-28 -top-28 h-[440px] w-[440px] rounded-full"
-      style={{ background: `radial-gradient(circle, ${color}12, transparent 65%)` }}
-    />
-  );
-}
-
-/** Oversized ghost numeral watermark for solution content slides. */
-function GhostNum({ n }: { n: number }) {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute -top-10 right-2 select-none font-display text-[210px] font-bold leading-none text-[#002060] opacity-[0.045]"
-    >
-      {String(n).padStart(2, "0")}
-    </div>
-  );
-}
-
-/** Angular corner bracket accent for cards. */
-function Bracket({ color, pos = "tl" }: { color: string; pos?: "tl" | "br" }) {
-  const cls = pos === "tl" ? "left-3 top-3 border-l-2 border-t-2" : "bottom-3 right-3 border-b-2 border-r-2";
-  return <span aria-hidden className={`pointer-events-none absolute h-4 w-4 ${cls}`} style={{ borderColor: `${color}55` }} />;
-}
-
-/** Full-height photo rail on the left of every solution slide. */
-function SolutionRail({
-  num, label, kicker, color, photo, alt,
-}: { num: number; label: string; kicker: string; color: string; photo: string; alt: string }) {
-  return (
-    <div
-      className="relative h-full w-[300px] shrink-0 overflow-hidden"
-      style={{ background: `linear-gradient(165deg, ${color} 0%, #1c1917 60%, #0c0a09 100%)` }}
-    >
-      <img
-        src={photo}
-        alt={alt}
-        loading="lazy"
-        onError={hideImg}
-        className="absolute inset-0 h-full w-full object-cover opacity-50"
-        style={{ mixBlendMode: "luminosity" }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{ background: `linear-gradient(180deg, ${color}8c 0%, rgba(12,10,9,0.35) 42%, rgba(12,10,9,0.94) 100%)` }}
-      />
-      <BlueprintGrid />
-      <Bracket color={lighter(color)} pos="br" />
-      <div className="relative z-10 flex h-full flex-col justify-between p-7">
-        <span className="inx-up inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/20 backdrop-blur-md" style={d(0)}>
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: lighter(color) }} />
-          <span className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] text-white/90">
-            Solution {String(num).padStart(2, "0")}
-          </span>
-        </span>
-        <div>
-          <div className="inx-in select-none font-display text-[118px] font-bold leading-none text-white/10" style={d(100)}>
-            {String(num).padStart(2, "0")}
-          </div>
-          <div
-            className="inx-up mt-2 h-[3px] w-12 rounded-full"
-            style={{ ...d(140), background: `linear-gradient(90deg, ${lighter(color)}, #f59e0b)` }}
-          />
-          <h3 className="inx-up mt-3 font-display text-[26px] font-bold leading-tight tracking-tight text-white" style={d(180)}>
-            {label}
-          </h3>
-          <p className="inx-up mt-2 font-display text-[14px] font-semibold uppercase tracking-[0.2em] text-white/70" style={d(230)}>
-            {kicker}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Small uppercase column heading with a 3px accent bar. */
-function ColHead({ color, children }: { color: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-3">
-      <p className="font-display text-[14px] font-bold uppercase tracking-[0.2em] text-slate-500">{children}</p>
-      <div className="mt-1.5 h-[3px] w-8 rounded-full" style={{ background: `linear-gradient(90deg, ${color}, ${lighter(color)})` }} />
-    </div>
-  );
-}
 
 // ─── Sections ─────────────────────────────────────────────────────────────────
 
@@ -212,7 +56,7 @@ function CoverSlide() {
       className="relative h-full w-full overflow-hidden font-deck"
       style={{ background: "linear-gradient(140deg, #0c0a09 0%, #1c1917 55%, #292524 100%)" }}
     >
-      <InxStyles />
+      <SlideStyles />
       <img
         src={P.cover}
         alt="Industrial energy plant glowing at dusk"
@@ -234,7 +78,7 @@ function CoverSlide() {
 
       <div className="relative z-10 flex h-full flex-col px-16 py-12">
         {/* Top row */}
-        <div className="inx-up flex items-center justify-between" style={d(0)}>
+        <div className="sx-up flex items-center justify-between" style={d(0)}>
           <img src={taqaLogo} alt="TAQA Arabia logo" className="h-12 rounded-lg bg-white/95 px-3 py-1.5 object-contain shadow-lg" />
           <Kicker color="#c2410c" dark>TAQA Arabia · Client Presentation</Kicker>
         </div>
@@ -244,10 +88,10 @@ function CoverSlide() {
         {/* Title block */}
         <div>
           <div
-            className="inx-up h-[3px] w-16 rounded-full"
+            className="sx-up h-[3px] w-16 rounded-full"
             style={{ ...d(80), background: "linear-gradient(90deg, #c2410c, #f59e0b)" }}
           />
-          <h1 className="inx-up mt-6 font-display text-[76px] font-bold leading-[1.02] tracking-tight text-white" style={d(140)}>
+          <h1 className="sx-up mt-6 font-display text-[76px] font-bold leading-[1.02] tracking-tight text-white" style={d(140)}>
             Industrial
             <br />
             <span
@@ -257,7 +101,7 @@ function CoverSlide() {
               Clients
             </span>
           </h1>
-          <p className="inx-up mt-5 text-[19px] text-white/85" style={d(220)}>
+          <p className="sx-up mt-5 text-[19px] text-white/85" style={d(220)}>
             Integrated Energy &amp; Utility Solutions · Jan 2026
           </p>
         </div>
@@ -267,7 +111,7 @@ function CoverSlide() {
           {SOLUTION_CHIPS.map((c, i) => (
             <span
               key={c.s}
-              className="inx-up inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[15px] font-medium text-white/90 ring-1 ring-white/15 backdrop-blur-md"
+              className="sx-up inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[15px] font-medium text-white/90 ring-1 ring-white/15 backdrop-blur-md"
               style={d(300 + i * 55)}
             >
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: lighter(c.c) }} />
@@ -277,7 +121,7 @@ function CoverSlide() {
         </div>
 
         {/* Footer */}
-        <div className="inx-in mt-8 flex items-center justify-between border-t border-white/10 pt-5" style={d(500)}>
+        <div className="sx-in mt-8 flex items-center justify-between border-t border-white/10 pt-5" style={d(500)}>
           <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] text-white/55">
             TAQA Arabia · Confidential
           </p>
@@ -301,24 +145,24 @@ function AboutSlide() {
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
-      <InxStyles />
+      <SlideStyles />
       <CornerWash color="#c2410c" />
       <BlueprintGrid light />
 
       <div className="relative z-10 flex h-full gap-10 p-14">
         {/* Left — narrative */}
         <div className="flex w-[530px] shrink-0 flex-col">
-          <div className="inx-up" style={d(0)}>
+          <div className="sx-up" style={d(0)}>
             <Kicker color="#c2410c">TAQA Arabia · Who We Are</Kicker>
           </div>
-          <h2 className="inx-up mt-5 font-display text-[30px] font-bold leading-[1.15] tracking-tight text-[#002060]" style={d(60)}>
+          <h2 className="sx-up mt-5 font-display text-[30px] font-bold leading-[1.15] tracking-tight text-[#002060]" style={d(60)}>
             Egypt's leading integrated energy infrastructure developer — a true one-stop-shop for industrial utilities
           </h2>
           <div
-            className="inx-up mt-4 h-[3px] w-14 rounded-full"
+            className="sx-up mt-4 h-[3px] w-14 rounded-full"
             style={{ ...d(110), background: "linear-gradient(90deg, #c2410c, #f59e0b)" }}
           />
-          <p className="inx-up mt-5 text-[17px] leading-relaxed text-slate-600" style={d(160)}>
+          <p className="sx-up mt-5 text-[17px] leading-relaxed text-slate-600" style={d(160)}>
             Founded in 2006 and listed on the EGX since 2023, TAQA Arabia is Egypt's largest private-sector energy and utility
             developer. Across four divisions — Gas, Power, Petroleum and Water — TAQA finances, builds, owns and operates the
             utility backbone of industrial zones and touristic destinations. For an industrial developer, that means one
@@ -328,7 +172,7 @@ function AboutSlide() {
             {["Active member of the International Gas Union (IGU)", "Accredited by the IGEM"].map((b, i) => (
               <span
                 key={b}
-                className="inx-up rounded-full bg-[#c2410c]/10 px-3.5 py-1.5 text-[14px] font-semibold text-[#9a3412] ring-1 ring-[#c2410c]/15"
+                className="sx-up rounded-full bg-[#c2410c]/10 px-3.5 py-1.5 text-[14px] font-semibold text-[#9a3412] ring-1 ring-[#c2410c]/15"
                 style={d(240 + i * 60)}
               >
                 {b}
@@ -340,7 +184,7 @@ function AboutSlide() {
         {/* Right — photo + divisions */}
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div
-            className="inx-up relative h-[178px] shrink-0 overflow-hidden rounded-2xl ring-1 ring-black/5 shadow-md"
+            className="sx-up relative h-[178px] shrink-0 overflow-hidden rounded-2xl ring-1 ring-black/5 shadow-md"
             style={{ ...d(120), background: "linear-gradient(135deg, #7c2d12, #1c1917)" }}
           >
             <img
@@ -358,7 +202,7 @@ function AboutSlide() {
           {divisions.map((dv, i) => (
             <div
               key={dv.label}
-              className="inx-up relative flex items-center gap-3.5 rounded-2xl bg-white p-3.5 ring-1 ring-black/5 shadow-sm"
+              className="sx-up relative flex items-center gap-3.5 rounded-2xl bg-white p-3.5 ring-1 ring-black/5 shadow-sm"
               style={d(200 + i * 70)}
             >
               <span aria-hidden className="absolute inset-y-3 left-0 w-[3px] rounded-r-full" style={{ background: dv.color }} />
@@ -396,15 +240,15 @@ function RegionalSlide() {
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
-      <InxStyles />
+      <SlideStyles />
       <CornerWash color="#c2410c" />
       <BlueprintGrid light />
 
       <div className="relative z-10 flex h-full flex-col p-14">
-        <div className="inx-up" style={d(0)}>
+        <div className="sx-up" style={d(0)}>
           <Kicker color="#c2410c">TAQA Arabia · Regional Presence</Kicker>
         </div>
-        <h2 className="inx-up mt-4 font-display text-[34px] font-bold leading-tight tracking-tight text-[#002060]" style={d(60)}>
+        <h2 className="sx-up mt-4 font-display text-[34px] font-bold leading-tight tracking-tight text-[#002060]" style={d(60)}>
           A growing platform across Egypt, the GCC, Africa and Greece
         </h2>
 
@@ -413,7 +257,7 @@ function RegionalSlide() {
           {metrics.map((m, i) => (
             <div
               key={m.label}
-              className={`inx-up relative overflow-hidden rounded-2xl p-5 ${
+              className={`sx-up relative overflow-hidden rounded-2xl p-5 ${
                 m.hero ? "text-white shadow-lg" : "bg-white ring-1 ring-black/5 shadow-sm"
               }`}
               style={{
@@ -440,7 +284,7 @@ function RegionalSlide() {
 
         {/* Two feature cards */}
         <div className="mt-4 grid min-h-0 flex-1 grid-cols-2 gap-4">
-          <div className="inx-up relative overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-black/5 shadow-sm" style={d(380)}>
+          <div className="sx-up relative overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-black/5 shadow-sm" style={d(380)}>
             <Bracket color="#c2410c" pos="tl" />
             <div className="mb-3 flex items-center gap-2.5 pl-3">
               <Globe className="h-4.5 w-4.5 h-[18px] w-[18px] text-[#c2410c]" />
@@ -459,7 +303,7 @@ function RegionalSlide() {
           </div>
 
           <div
-            className="inx-up relative overflow-hidden rounded-2xl p-6 text-white shadow-lg"
+            className="sx-up relative overflow-hidden rounded-2xl p-6 text-white shadow-lg"
             style={{ ...d(440), background: "linear-gradient(140deg, #002060 0%, #0a2f7a 100%)" }}
           >
             <BlueprintGrid />
@@ -501,15 +345,15 @@ function NumbersSlide() {
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
-      <InxStyles />
+      <SlideStyles />
       <CornerWash color="#c2410c" />
       <BlueprintGrid light />
 
       <div className="relative z-10 flex h-full flex-col p-14">
-        <div className="inx-up" style={d(0)}>
+        <div className="sx-up" style={d(0)}>
           <Kicker color="#c2410c">TAQA Arabia · In Numbers</Kicker>
         </div>
-        <h2 className="inx-up mt-4 font-display text-[34px] font-bold leading-tight tracking-tight text-[#002060]" style={d(60)}>
+        <h2 className="sx-up mt-4 font-display text-[34px] font-bold leading-tight tracking-tight text-[#002060]" style={d(60)}>
           The scale behind a single integrated energy partner — FY 2025
         </h2>
 
@@ -518,7 +362,7 @@ function NumbersSlide() {
           {heroStats.map((m, i) => (
             <div
               key={m.label}
-              className={`inx-up relative overflow-hidden rounded-2xl p-6 ${
+              className={`sx-up relative overflow-hidden rounded-2xl p-6 ${
                 m.hero ? "col-span-2 text-white shadow-xl" : "bg-white ring-1 ring-black/5 shadow-sm"
               }`}
               style={{
@@ -549,7 +393,7 @@ function NumbersSlide() {
           {divCards.map((c, i) => (
             <div
               key={c.div}
-              className="inx-up relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-sm"
+              className="sx-up relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-sm"
               style={d(360 + i * 70)}
             >
               <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${c.color}, ${lighter(c.color)})` }} />
@@ -584,21 +428,21 @@ function SolutionsOverviewSlide() {
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
-      <InxStyles />
+      <SlideStyles />
       <CornerWash color="#c2410c" />
       <BlueprintGrid light />
 
       <div className="relative z-10 flex h-full flex-col p-14">
         <div className="flex items-end justify-between gap-8">
           <div>
-            <div className="inx-up" style={d(0)}>
+            <div className="sx-up" style={d(0)}>
               <Kicker color="#c2410c">Industrial Clients · Solutions Overview</Kicker>
             </div>
-            <h2 className="inx-up mt-4 font-display text-[40px] font-bold leading-none tracking-tight text-[#002060]" style={d(60)}>
+            <h2 className="sx-up mt-4 font-display text-[40px] font-bold leading-none tracking-tight text-[#002060]" style={d(60)}>
               Six integrated solutions
             </h2>
           </div>
-          <p className="inx-up max-w-[420px] pb-1 text-right text-[16px] leading-snug text-slate-500" style={d(120)}>
+          <p className="sx-up max-w-[420px] pb-1 text-right text-[16px] leading-snug text-slate-500" style={d(120)}>
             The following slides detail every solution TAQA Arabia offers to industrial sites, factories and parks.
           </p>
         </div>
@@ -607,7 +451,7 @@ function SolutionsOverviewSlide() {
           {solutions.map((s, i) => (
             <div
               key={s.num}
-              className="inx-up group relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_30px_-16px_rgba(0,32,96,0.25)]"
+              className="sx-up group relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_30px_-16px_rgba(0,32,96,0.25)]"
               style={d(160 + i * 60)}
             >
               <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${s.color}, ${lighter(s.color)})` }} />
@@ -638,423 +482,6 @@ function SolutionsOverviewSlide() {
   );
 }
 
-// ─── Reusable: ScopeSlide ────────────────────────────────────────────────────
-
-interface ScopeProps {
-  solutionNum: number;
-  solutionLabel: string;
-  subtitle: string;
-  tagline?: string;
-  color: string;
-  icon: React.ReactNode;
-  photo: string;
-  taqaInvests: string[];
-  steps: string[];
-  whatYouReceive: string[];
-}
-
-function ScopeSlide({ solutionNum, solutionLabel, subtitle, tagline, color, icon, photo, taqaInvests, steps, whatYouReceive }: ScopeProps) {
-  return (
-    <div className="flex h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
-      <InxStyles />
-      <SolutionRail
-        num={solutionNum}
-        label={solutionLabel}
-        kicker="Scope & How It Works"
-        color={color}
-        photo={photo}
-        alt={`${solutionLabel} infrastructure operated by TAQA Arabia`}
-      />
-
-      <div className="relative flex min-w-0 flex-1 flex-col p-12">
-        <GhostNum n={solutionNum} />
-        <CornerWash color={color} />
-
-        {/* Header */}
-        <div className="relative z-10 flex items-start gap-4">
-          <div
-            className="inx-up mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-md"
-            style={{ ...d(60), background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
-          >
-            {icon}
-          </div>
-          <div className="min-w-0">
-            <h2 className="inx-up font-display text-[24px] font-bold leading-snug tracking-tight text-[#002060]" style={d(100)}>
-              {subtitle}
-            </h2>
-            {tagline && (
-              <p className="inx-up mt-1.5 text-[16px] italic leading-snug text-slate-500" style={d(150)}>
-                {tagline}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Three columns */}
-        <div className="relative z-10 mt-6 grid min-h-0 flex-1 grid-cols-3 gap-4">
-          {/* TAQA Invests */}
-          <div className="inx-up relative overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-sm" style={d(200)}>
-            <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${lighter(color)})` }} />
-            <ColHead color={color}>TAQA Invests</ColHead>
-            <div className="space-y-2.5">
-              {taqaInvests.map(item => (
-                <div key={item} className="flex items-start gap-2.5">
-                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rotate-45" style={{ background: color }} />
-                  <span className="text-[16px] leading-snug text-slate-600">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* How It Works — numbered flow with connecting line */}
-          <div className="inx-up relative overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-sm" style={d(260)}>
-            <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${lighter(color)})` }} />
-            <ColHead color={color}>How It Works</ColHead>
-            <div className="relative">
-              <span aria-hidden className="absolute bottom-3 left-[11px] top-2 w-px" style={{ background: `${color}30` }} />
-              {steps.map((s, i) => (
-                <div key={i} className="relative mb-2.5 flex items-start gap-3 last:mb-0">
-                  <div
-                    className="relative z-10 flex h-[23px] w-[23px] shrink-0 items-center justify-center rounded-full text-[14px] font-bold text-white shadow"
-                    style={{ background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
-                  >
-                    {i + 1}
-                  </div>
-                  <span className="pt-0.5 text-[16px] leading-snug text-slate-600">{s}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* What You Receive — dark navy */}
-          <div
-            className="inx-up relative overflow-hidden rounded-2xl p-5 text-white shadow-lg"
-            style={{ ...d(320), background: "linear-gradient(150deg, #002060 0%, #0a2f7a 100%)" }}
-          >
-            <BlueprintGrid />
-            <Bracket color="#FFC10E" pos="br" />
-            <div className="relative">
-              <p className="font-display text-[14px] font-bold uppercase tracking-[0.2em] text-[#FFC10E]">What You Receive</p>
-              <div className="mt-1.5 h-[3px] w-8 rounded-full" style={{ background: "linear-gradient(90deg, #FFC10E, #fb923c)" }} />
-              <div className="mt-4 space-y-3">
-                {whatYouReceive.map(r => (
-                  <div key={r} className="flex items-start gap-2.5">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#FFC10E]" />
-                    <span className="text-[16px] leading-snug text-white/90">{r}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Reusable: ValuePropSlide ────────────────────────────────────────────────
-
-interface ValueItem { label: string; desc: string; }
-interface ValueProps {
-  solutionNum: number;
-  solutionLabel: string;
-  color: string;
-  icon: React.ReactNode;
-  photo: string;
-  whatYouGain: ValueItem[];
-  taqaEdge: ValueItem[];
-}
-
-function ValuePropSlide({ solutionNum, solutionLabel, color, icon, photo, whatYouGain, taqaEdge }: ValueProps) {
-  return (
-    <div className="flex h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
-      <InxStyles />
-      <SolutionRail
-        num={solutionNum}
-        label={solutionLabel}
-        kicker="Value Proposition"
-        color={color}
-        photo={photo}
-        alt={`${solutionLabel} infrastructure operated by TAQA Arabia`}
-      />
-
-      <div className="relative flex min-w-0 flex-1 flex-col p-12">
-        <GhostNum n={solutionNum} />
-        <CornerWash color={color} />
-
-        <div className="relative z-10 flex items-center gap-4">
-          <div
-            className="inx-up flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-md"
-            style={{ ...d(60), background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
-          >
-            {icon}
-          </div>
-          <h2 className="inx-up font-display text-[26px] font-bold leading-tight tracking-tight text-[#002060]" style={d(100)}>
-            What TAQA Arabia delivers for your site
-          </h2>
-        </div>
-
-        <div className="relative z-10 mt-5 grid min-h-0 flex-1 grid-cols-2 gap-5">
-          {/* What You Gain */}
-          <div className="flex min-h-0 flex-col">
-            <div className="inx-up" style={d(160)}>
-              <ColHead color={color}>What You Gain</ColHead>
-            </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-between gap-2.5">
-              {whatYouGain.map((v, i) => (
-                <div
-                  key={v.label}
-                  className="inx-up flex flex-1 items-start gap-3 rounded-xl bg-white p-3.5 ring-1 ring-black/5 shadow-sm"
-                  style={d(200 + i * 60)}
-                >
-                  <div
-                    className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                    style={{ background: `${color}14`, color }}
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[17px] font-bold leading-tight text-[#002060]">{v.label}</div>
-                    <div className="mt-1 text-[16px] leading-[1.4] text-slate-600">{v.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* TAQA Arabia Edge */}
-          <div className="flex min-h-0 flex-col">
-            <div className="inx-up" style={d(220)}>
-              <ColHead color="#002060">TAQA Arabia Edge</ColHead>
-            </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-between gap-2.5">
-              {taqaEdge.map((v, i) => (
-                <div
-                  key={v.label}
-                  className="inx-up relative flex flex-1 items-start gap-3 overflow-hidden rounded-xl p-3.5 shadow-md"
-                  style={{ ...d(260 + i * 60), background: "linear-gradient(140deg, #002060 0%, #0a2f7a 100%)" }}
-                >
-                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#FFC10E] ring-1 ring-white/10">
-                    <ArrowRight className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[17px] font-bold leading-tight text-[#FFC10E]">{v.label}</div>
-                    <div className="mt-1 text-[16px] leading-[1.4] text-white/80">{v.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Reusable: TimelineSlide ─────────────────────────────────────────────────
-
-interface Phase { days: string; label: string; }
-interface Group { label: string; range: string; }
-interface TimelineProps {
-  solutionNum: number;
-  solutionLabel: string;
-  color: string;
-  icon: React.ReactNode;
-  photo: string;
-  phases: Phase[];
-  groups: Group[];
-}
-
-function TimelineSlide({ solutionNum, solutionLabel, color, icon, photo, phases, groups }: TimelineProps) {
-  const tint = ["14", "1f", "2b"];
-  return (
-    <div className="flex h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
-      <InxStyles />
-      <SolutionRail
-        num={solutionNum}
-        label={solutionLabel}
-        kicker="Implementation Timeline"
-        color={color}
-        photo={photo}
-        alt={`${solutionLabel} infrastructure operated by TAQA Arabia`}
-      />
-
-      <div className="relative flex min-w-0 flex-1 flex-col p-12">
-        <GhostNum n={solutionNum} />
-        <CornerWash color={color} />
-
-        <div className="relative z-10 flex items-center gap-4">
-          <div
-            className="inx-up flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-md"
-            style={{ ...d(60), background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
-          >
-            {icon}
-          </div>
-          <h2 className="inx-up font-display text-[26px] font-bold leading-tight tracking-tight text-[#002060]" style={d(100)}>
-            From first contact to live supply
-          </h2>
-        </div>
-
-        <div className="relative z-10 mt-6 grid min-h-0 flex-1 grid-cols-[1fr_330px] gap-8">
-          {/* Numbered phase flow with connecting line */}
-          <div className="relative flex min-h-0 flex-col justify-between">
-            <span aria-hidden className="absolute bottom-4 left-[14px] top-3 w-px" style={{ background: `${color}30` }} />
-            {phases.map((p, i) => (
-              <div key={i} className="inx-up relative flex items-center gap-4 py-1" style={d(160 + i * 55)}>
-                <div
-                  className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[14px] font-bold text-white shadow"
-                  style={{ background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
-                >
-                  {i + 1}
-                </div>
-                <div className="min-w-0">
-                  <div className="font-display text-[14px] font-bold uppercase tracking-[0.18em]" style={{ color }}>{p.days}</div>
-                  <div className="text-[17px] font-semibold leading-snug text-[#002060]">{p.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Milestone groups */}
-          <div className="flex min-h-0 flex-col">
-            <div className="inx-up" style={d(220)}>
-              <ColHead color={color}>Milestone Groups</ColHead>
-            </div>
-            <div className="flex min-h-0 flex-1 flex-col gap-3">
-              {groups.map((g, i) => (
-                <div
-                  key={i}
-                  className="inx-up relative overflow-hidden rounded-2xl p-4 ring-1"
-                  style={{
-                    ...d(280 + i * 70),
-                    background: `${color}${tint[i] ?? "1f"}`,
-                    borderColor: `${color}30`,
-                    // @ts-expect-error -- CSS var for ring color via style not needed; ring uses default
-                    "--tw-ring-color": `${color}2e`,
-                  }}
-                >
-                  <span aria-hidden className="absolute inset-y-3 left-0 w-[3px] rounded-r-full" style={{ background: color }} />
-                  <div className="pl-2.5">
-                    <div className="font-display text-[17px] font-bold tracking-tight text-[#002060]">{g.label}</div>
-                    <div className="mt-0.5 font-display text-[15px] font-bold uppercase tracking-[0.14em]" style={{ color }}>{g.range}</div>
-                  </div>
-                </div>
-              ))}
-              <div
-                className="inx-up relative mt-auto overflow-hidden rounded-2xl p-4 shadow-md"
-                style={{ ...d(500), background: "linear-gradient(140deg, #002060 0%, #0a2f7a 100%)" }}
-              >
-                <p className="text-[15px] leading-snug text-white/80">
-                  Timelines are indicative and subject to site conditions, regulatory approvals and customer readiness.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Reusable: TrackRecordSlide — dark "moment" slide ────────────────────────
-
-interface TrackStat { value: string; label: string; }
-interface TrackProps {
-  solutionNum: number;
-  solutionLabel: string;
-  heading: string;
-  subheading: string;
-  body: string;
-  color: string;
-  icon: React.ReactNode;
-  photo: string;
-  stats: TrackStat[];
-}
-
-const statSize = (v: string) => (v.length > 8 ? "text-[24px]" : v.length > 5 ? "text-[32px]" : "text-[44px]");
-
-function TrackRecordSlide({ solutionNum, solutionLabel, heading, subheading, body, color, icon, photo, stats }: TrackProps) {
-  return (
-    <div
-      className="relative h-full w-full overflow-hidden font-deck"
-      style={{ background: "linear-gradient(140deg, #0c0a09 0%, #1c1917 55%, #292524 100%)" }}
-    >
-      <InxStyles />
-      <img
-        src={photo}
-        alt={`${solutionLabel} infrastructure operated by TAQA Arabia`}
-        loading="lazy"
-        onError={hideImg}
-        className="absolute inset-0 h-full w-full object-cover opacity-35"
-        style={{ mixBlendMode: "luminosity" }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{ background: `linear-gradient(115deg, rgba(12,10,9,0.95) 0%, rgba(28,25,23,0.85) 52%, ${color}59 100%)` }}
-      />
-      <BlueprintGrid />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-48 -left-40 h-[560px] w-[560px] rounded-full"
-        style={{ background: `radial-gradient(circle, ${color}30, transparent 65%)` }}
-      />
-
-      <div className="relative z-10 flex h-full flex-col p-14">
-        <div className="inx-up flex items-center gap-3" style={d(0)}>
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
-            style={{ background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
-          >
-            {icon}
-          </div>
-          <Kicker color={color} dark>
-            Solution {String(solutionNum).padStart(2, "0")} · {solutionLabel} · Proven Track Record
-          </Kicker>
-        </div>
-
-        <h2 className="inx-up mt-5 max-w-[1080px] font-display text-[38px] font-bold leading-[1.1] tracking-tight text-white" style={d(80)}>
-          {heading}
-        </h2>
-        <div className="inx-up mt-3 flex items-start gap-2.5" style={d(140)}>
-          <Star className="mt-0.5 h-5 w-5 shrink-0" style={{ color: lighter(color), fill: lighter(color) }} />
-          <p className="max-w-[1020px] text-[17px] font-medium leading-snug text-white/90">{subheading}</p>
-        </div>
-
-        <div className="mt-7 grid min-h-0 flex-1 grid-cols-[1fr_420px] gap-6">
-          {/* Body — glass narrative card */}
-          <div className="inx-up relative overflow-hidden rounded-2xl bg-white/[0.07] p-7 ring-1 ring-white/15 backdrop-blur-md" style={d(220)}>
-            <Bracket color={lighter(color)} pos="tl" />
-            <p className="pl-3 text-[16px] leading-relaxed text-white/90">{body}</p>
-            <div
-              className="absolute bottom-6 left-10 h-[3px] w-14 rounded-full"
-              style={{ background: `linear-gradient(90deg, ${lighter(color)}, #f59e0b)` }}
-            />
-          </div>
-
-          {/* Glass stat bento */}
-          <div className="grid grid-cols-2 gap-4">
-            {stats.map((s, i) => (
-              <div
-                key={s.label}
-                className="inx-up flex flex-col justify-center rounded-2xl bg-white/10 p-5 ring-1 ring-white/15 backdrop-blur-md"
-                style={d(280 + i * 70)}
-              >
-                <div
-                  className={`font-display font-bold leading-[1.05] tracking-tight bg-clip-text text-transparent ${statSize(s.value)}`}
-                  style={{ backgroundImage: `linear-gradient(105deg, #ffffff 0%, ${lighter(color)} 100%)` }}
-                >
-                  {s.value}
-                </div>
-                <div className="mt-1.5 text-[15px] leading-snug text-white/75">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Slide 29: Why One Partner ────────────────────────────────────────────────
 
 function WhyOnePartnerSlide() {
@@ -1067,21 +494,21 @@ function WhyOnePartnerSlide() {
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
-      <InxStyles />
+      <SlideStyles />
       <CornerWash color="#002060" />
       <BlueprintGrid light />
 
       <div className="relative z-10 flex h-full flex-col p-14">
         <div className="flex items-end justify-between gap-8">
           <div>
-            <div className="inx-up" style={d(0)}>
+            <div className="sx-up" style={d(0)}>
               <Kicker color="#002060">Why One Partner</Kicker>
             </div>
-            <h2 className="inx-up mt-4 font-display text-[38px] font-bold leading-none tracking-tight text-[#002060]" style={d(60)}>
+            <h2 className="sx-up mt-4 font-display text-[38px] font-bold leading-none tracking-tight text-[#002060]" style={d(60)}>
               The TAQA One-Stop-Shop
             </h2>
           </div>
-          <p className="inx-up max-w-[430px] pb-1 text-right text-[16px] leading-snug text-slate-500" style={d(120)}>
+          <p className="sx-up max-w-[430px] pb-1 text-right text-[16px] leading-snug text-slate-500" style={d(120)}>
             One SLA, one communication point, one accountable operator — across every utility on the site
           </p>
         </div>
@@ -1089,7 +516,7 @@ function WhyOnePartnerSlide() {
         <div className="mt-6 grid min-h-0 flex-1 grid-cols-2 gap-5">
           {/* All-solutions dark card */}
           <div
-            className="inx-up relative flex flex-col overflow-hidden rounded-2xl p-6 shadow-xl"
+            className="sx-up relative flex flex-col overflow-hidden rounded-2xl p-6 shadow-xl"
             style={{ ...d(180), background: "linear-gradient(145deg, #002060 0%, #0a2f7a 70%, #123c94 100%)" }}
           >
             <BlueprintGrid />
@@ -1099,7 +526,7 @@ function WhyOnePartnerSlide() {
               {SOLUTION_CHIPS.map((s, i) => (
                 <div
                   key={s.s}
-                  className="inx-up flex items-center gap-2.5 rounded-xl bg-white/10 px-3.5 py-3 ring-1 ring-white/10"
+                  className="sx-up flex items-center gap-2.5 rounded-xl bg-white/10 px-3.5 py-3 ring-1 ring-white/10"
                   style={d(240 + i * 55)}
                 >
                   <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: lighter(s.c) }} />
@@ -1119,7 +546,7 @@ function WhyOnePartnerSlide() {
             {benefits.map((b, i) => (
               <div
                 key={b.label}
-                className="inx-up relative flex flex-1 items-start gap-3 rounded-xl bg-white p-3 pl-4 ring-1 ring-black/5 shadow-sm"
+                className="sx-up relative flex flex-1 items-start gap-3 rounded-xl bg-white p-3 pl-4 ring-1 ring-black/5 shadow-sm"
                 style={d(220 + i * 60)}
               >
                 <span aria-hidden className="absolute inset-y-2.5 left-0 w-[3px] rounded-r-full bg-gradient-to-b from-[#c2410c] to-[#f59e0b]" />
@@ -1152,21 +579,21 @@ function BundleSlide() {
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
-      <InxStyles />
+      <SlideStyles />
       <CornerWash color="#002060" />
       <BlueprintGrid light />
 
       <div className="relative z-10 flex h-full flex-col p-14">
         <div className="flex items-end justify-between gap-8">
           <div>
-            <div className="inx-up" style={d(0)}>
+            <div className="sx-up" style={d(0)}>
               <Kicker color="#002060">The Power of the Bundle</Kicker>
             </div>
-            <h2 className="inx-up mt-4 font-display text-[38px] font-bold leading-none tracking-tight text-[#002060]" style={d(60)}>
+            <h2 className="sx-up mt-4 font-display text-[38px] font-bold leading-none tracking-tight text-[#002060]" style={d(60)}>
               Cross-Solution Benefits
             </h2>
           </div>
-          <p className="inx-up max-w-[440px] pb-1 text-right text-[16px] leading-snug text-slate-500" style={d(120)}>
+          <p className="sx-up max-w-[440px] pb-1 text-right text-[16px] leading-snug text-slate-500" style={d(120)}>
             How combining the solutions under one SLA creates value no single vendor can match
           </p>
         </div>
@@ -1175,7 +602,7 @@ function BundleSlide() {
           {bundles.map((b, i) => (
             <div
               key={b.combo}
-              className="inx-up relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_30px_-16px_rgba(0,32,96,0.25)]"
+              className="sx-up relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_30px_-16px_rgba(0,32,96,0.25)]"
               style={d(160 + i * 55)}
             >
               <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${b.color}, ${lighter(b.color)})` }} />
@@ -1189,7 +616,7 @@ function BundleSlide() {
         </div>
 
         <div
-          className="inx-up relative mt-4 overflow-hidden rounded-2xl px-7 py-4 text-center shadow-lg"
+          className="sx-up relative mt-4 overflow-hidden rounded-2xl px-7 py-4 text-center shadow-lg"
           style={{ ...d(520), background: "linear-gradient(120deg, #002060 0%, #0a2f7a 100%)" }}
         >
           <BlueprintGrid />
@@ -1225,7 +652,7 @@ function SuccessStorySlide() {
       className="relative h-full w-full overflow-hidden font-deck"
       style={{ background: "linear-gradient(140deg, #0c0a09 0%, #1c1917 55%, #292524 100%)" }}
     >
-      <InxStyles />
+      <SlideStyles />
       <img
         src={P.factory}
         alt="Integrated industrial energy site served by TAQA Arabia"
@@ -1246,10 +673,10 @@ function SuccessStorySlide() {
       />
 
       <div className="relative z-10 flex h-full flex-col p-14">
-        <div className="inx-up" style={d(0)}>
+        <div className="sx-up" style={d(0)}>
           <Kicker color="#f59e0b" dark>Success Story</Kicker>
         </div>
-        <h2 className="inx-up mt-4 font-display text-[42px] font-bold leading-none tracking-tight text-white" style={d(70)}>
+        <h2 className="sx-up mt-4 font-display text-[42px] font-bold leading-none tracking-tight text-white" style={d(70)}>
           Integrated{" "}
           <span
             className="bg-clip-text text-transparent"
@@ -1258,13 +685,13 @@ function SuccessStorySlide() {
             Industrial Energy
           </span>
         </h2>
-        <p className="inx-up mt-2.5 text-[17px] text-white/80" style={d(130)}>
+        <p className="sx-up mt-2.5 text-[17px] text-white/80" style={d(130)}>
           A single industrial client running on multiple TAQA solutions — the one-stop-shop, proven.
         </p>
 
         <div className="mt-6 grid min-h-0 flex-1 grid-cols-[1fr_430px] gap-6">
           {/* Narrative glass card */}
-          <div className="inx-up relative flex flex-col overflow-hidden rounded-2xl bg-white/[0.07] p-7 ring-1 ring-white/15 backdrop-blur-md" style={d(190)}>
+          <div className="sx-up relative flex flex-col overflow-hidden rounded-2xl bg-white/[0.07] p-7 ring-1 ring-white/15 backdrop-blur-md" style={d(190)}>
             <Bracket color="#f59e0b" pos="tl" />
             <div className="flex items-center gap-2.5 pl-3">
               <Star className="h-5 w-5 shrink-0 text-[#fbbf24]" style={{ fill: "#fbbf24" }} />
@@ -1288,7 +715,7 @@ function SuccessStorySlide() {
 
           {/* Solutions + stats */}
           <div className="flex min-h-0 flex-col gap-4">
-            <div className="inx-up rounded-2xl bg-white/10 p-5 ring-1 ring-white/15 backdrop-blur-md" style={d(260)}>
+            <div className="sx-up rounded-2xl bg-white/10 p-5 ring-1 ring-white/15 backdrop-blur-md" style={d(260)}>
               <p className="font-display text-[14px] font-semibold uppercase tracking-[0.2em] text-white/70">
                 Solutions combined on one site
               </p>
@@ -1305,7 +732,7 @@ function SuccessStorySlide() {
               {stats.map((s, i) => (
                 <div
                   key={s.label}
-                  className="inx-up flex flex-col justify-center rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-md"
+                  className="sx-up flex flex-col justify-center rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-md"
                   style={d(320 + i * 65)}
                 >
                   <div
