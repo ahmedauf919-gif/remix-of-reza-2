@@ -1,5 +1,6 @@
 import type { ReactNode, SyntheticEvent } from "react";
-import { CheckCircle2, ArrowRight, Star } from "lucide-react";
+import { CheckCircle2, ArrowRight, Star, Factory, Truck, Gauge, HandCoins, Layers, ChevronDown } from "lucide-react";
+import taqaLogo from "@/assets/taqa-logo.png";
 
 // ─── Shared solution-slide design system ─────────────────────────────────────
 // Extracted from the Industrial deck ("Forged Steel"). Every component takes
@@ -193,102 +194,117 @@ export interface ScopeProps {
   whatYouReceive: string[];
 }
 
-export function ScopeSlide({ solutionNum, solutionLabel, subtitle, tagline, color, icon, photo, taqaInvests, steps, whatYouReceive }: ScopeProps) {
+export const SCOPE_PUNCH: [RegExp, string][] = [
+  [/cng|natural gas|gas dist/i, "GRID GAS, NO GRID"],
+  [/solar|pv/i, "SUN IN, BILLS DOWN"],
+  [/water|desalin/i, "WATER SECURITY, DELIVERED"],
+  [/\bev\b|charg/i, "PLUG IN, MOVE ON"],
+  [/diesel|back-?up/i, "ALWAYS ON"],
+  [/battery|bess|storage/i, "ENERGY, ON DEMAND"],
+  [/chp|cogen|tri-?gen/i, "ONE FUEL, THREE OUTPUTS"],
+  [/fuel|station/i, "FUEL WITHOUT FRICTION"],
+  [/waqood|smart/i, "EVERY LITRE, VISIBLE"],
+  [/electric|power|grid/i, "POWER, END TO END"],
+];
+const punchFor = (label: string) => SCOPE_PUNCH.find(([re]) => re.test(label))?.[1] ?? "ONE PARTNER \u00b7 ONE SLA";
+
+const INVEST_ICONS = [Factory, Truck, Layers, Gauge, HandCoins];
+
+/** Emulates the source PPTX "Complete Investment to Client Delivery Process" layout:
+    dark title band + three numbered panels (green CAPEX / blue process flow / teal benefits). */
+export function ScopeSlide({ solutionLabel, taqaInvests, steps, whatYouReceive }: ScopeProps) {
+  const title = `${solutionLabel}: The Complete Investment to Client Delivery Process`.toUpperCase();
   return (
-    <div className="flex h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-white font-deck">
       <SlideStyles />
 
-      <div className="relative flex min-w-0 flex-1 flex-col px-12 py-10">
-        <GhostNum n={solutionNum} />
-        <CornerWash color={color} />
+      {/* Title band */}
+      <header className="relative flex h-[64px] shrink-0 items-center gap-4 bg-[#2f2f2f] pl-7 pr-5">
+        <span aria-hidden className="absolute left-0 top-0 h-full w-2.5 bg-[#009045]" />
+        <h2 className="sx-up min-w-0 flex-1 font-display text-[22px] font-bold uppercase leading-tight tracking-wide text-white" style={d(40)}>
+          {title}
+        </h2>
+        <img src={taqaLogo} alt="TAQA Arabia" className="h-9 shrink-0 rounded bg-white/95 p-1" onError={hideImg} />
+      </header>
+      <span aria-hidden className="h-1.5 w-full shrink-0 bg-[#009045]" />
 
-        {/* Header */}
-        <div className="relative z-10 flex items-start gap-4">
-          <div
-            className="sx-up mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-md"
-            style={{ ...d(60), background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
-          >
-            {icon}
-          </div>
-          <div className="min-w-0">
-            <h2 className="sx-up font-display text-[28px] font-bold leading-snug tracking-tight text-[#002060]" style={d(100)}>
-              {subtitle}
-            </h2>
-            {tagline && (
-              <p className="sx-up mt-1.5 text-[17px] italic leading-snug text-slate-500" style={d(150)}>
-                {tagline}
-              </p>
-            )}
-          </div>
-        </div>
+      {/* Three panels on a faint engineering grid */}
+      <div
+        className="relative min-h-0 flex-1 px-7 py-5"
+        style={{ background: "repeating-linear-gradient(0deg, #f1f5f9 0 1px, transparent 1px 44px), repeating-linear-gradient(90deg, #f1f5f9 0 1px, transparent 1px 44px), #ffffff" }}
+      >
+        <div className="grid h-full min-h-0 grid-cols-[1fr_1.25fr_1fr] gap-5">
 
-        {/* Three columns — stretch to the bottom margin */}
-        <div className="relative z-10 mt-6 grid min-h-0 flex-1 grid-cols-[1fr_1.2fr_1fr] gap-5">
-          {/* TAQA Invests */}
-          <div className="sx-up relative flex h-full flex-col overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-black/5 shadow-sm" style={d(200)}>
-            <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${lighter(color)})` }} />
-            <ColHead color={color}>TAQA Invests</ColHead>
-            <div className="space-y-3">
-              {taqaInvests.map(item => (
-                <div key={item} className="flex items-start gap-2.5">
-                  <span className="mt-[10px] h-1.5 w-1.5 shrink-0 rotate-45" style={{ background: color }} />
-                  <span className="text-[17px] leading-relaxed text-slate-600">{item}</span>
-                </div>
-              ))}
+          {/* 1 \u00b7 CAPEX investment */}
+          <div className="sx-up flex min-h-0 flex-col overflow-hidden rounded-lg bg-[#eef7f0] shadow-sm ring-2 ring-[#009045]" style={d(120)}>
+            <div className="bg-[#009045] px-4 py-2.5">
+              <p className="font-display text-[16px] font-bold leading-snug text-white">1. TAQA CAPEX INVESTMENT &amp; INFRASTRUCTURE BUILD-OUT</p>
+            </div>
+            <div className="bg-[#007a3a] px-4 py-1.5">
+              <p className="text-[13.5px] font-semibold text-white/95">TAQA Funds, Builds, Owns &amp; Operates the Assets</p>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col justify-evenly px-4 py-3">
+              {taqaInvests.map((item, i) => {
+                const Ic = INVEST_ICONS[i % INVEST_ICONS.length];
+                return (
+                  <div key={item} className="flex items-center gap-3 py-1">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white ring-1 ring-[#009045]/40">
+                      <Ic className="h-5 w-5 text-[#009045]" />
+                    </span>
+                    <span className="text-[16px] font-medium leading-snug text-slate-700">{item}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* How It Works — numbered flow with connecting line */}
-          <div className="sx-up relative flex h-full flex-col overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-black/5 shadow-sm" style={d(260)}>
-            <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${lighter(color)})` }} />
-            <ColHead color={color}>How It Works</ColHead>
-            <div className="relative flex min-h-0 flex-1 flex-col justify-between">
-              <span aria-hidden className="absolute bottom-3 left-[11px] top-2 w-px" style={{ background: `${color}30` }} />
+          {/* 2 \u00b7 Operational process flow */}
+          <div className="sx-up flex min-h-0 flex-col overflow-hidden rounded-lg bg-white shadow-sm ring-2 ring-[#005298]" style={d(200)}>
+            <div className="bg-[#005298] px-4 py-2.5">
+              <p className="font-display text-[16px] font-bold leading-snug text-white">2. STEP-BY-STEP OPERATIONAL PROCESS</p>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col justify-between px-4 py-2.5">
               {steps.map((s, i) => (
-                <div key={i} className="relative mb-2 flex items-start gap-3 last:mb-0">
-                  <div
-                    className="relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[14px] font-bold text-white shadow"
-                    style={{ background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
-                  >
-                    {i + 1}
+                <div key={i} className="flex flex-col">
+                  <div className="flex items-stretch overflow-hidden rounded-md bg-[#dbeafe]">
+                    <span className="flex w-10 shrink-0 items-center justify-center bg-[#005298] font-display text-[19px] font-bold text-white">{i + 1}</span>
+                    <span className="px-3 py-2 text-[15.5px] font-medium leading-snug text-[#0f2f5c]">{s}</span>
                   </div>
-                  <span className="text-[17px] leading-relaxed text-slate-600">{s}</span>
+                  {i < steps.length - 1 && <ChevronDown className="mx-auto h-5 w-5 shrink-0 text-[#005298]" strokeWidth={3.5} />}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* What You Receive — dark navy */}
-          <div
-            className="sx-up relative flex h-full flex-col overflow-hidden rounded-2xl p-6 text-white shadow-lg"
-            style={{ ...d(320), background: "linear-gradient(150deg, #002060 0%, #0a2f7a 100%)" }}
-          >
-            <BlueprintGrid />
-            <Bracket color="#FFC10E" pos="br" />
-            <div className="relative">
-              <p className="font-display text-[16px] font-bold uppercase tracking-[0.2em] text-[#FFC10E]">What You Receive</p>
-              <div className="mt-1.5 h-[3px] w-10 rounded-full" style={{ background: "linear-gradient(90deg, #FFC10E, #fb923c)" }} />
-              <div className="mt-4 space-y-3.5">
-                {whatYouReceive.map(r => (
-                  <div key={r} className="flex items-start gap-2.5">
-                    <CheckCircle2 className="mt-1 h-[18px] w-[18px] shrink-0 text-[#FFC10E]" />
-                    <span className="text-[17px] leading-relaxed text-white/90">{r}</span>
-                  </div>
-                ))}
+          {/* 3 \u00b7 Client reception & benefits */}
+          <div className="sx-up flex min-h-0 flex-col overflow-hidden rounded-lg bg-[#eaf6f7] shadow-sm ring-2 ring-[#0E7C86]" style={d(280)}>
+            <div className="bg-[#0E7C86] px-4 py-2.5">
+              <p className="font-display text-[16px] font-bold leading-snug text-white">3. CLIENT RECEPTION &amp; BENEFITS</p>
+            </div>
+            <div className="bg-[#0a6a73] px-4 py-1.5">
+              <p className="text-[13.5px] font-semibold text-white/95">What You Receive &amp; Customer Value</p>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col justify-evenly px-4 py-3">
+              {whatYouReceive.map(r => (
+                <div key={r} className="flex items-start gap-2.5 py-1">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#0E7C86]" />
+                  <span className="text-[16px] font-medium leading-snug text-slate-700">{r}</span>
+                </div>
+              ))}
+              <div className="mt-2 rounded-lg bg-gradient-to-r from-[#009045] to-[#00b155] px-4 py-3 text-center shadow-md">
+                <p className="font-display text-[20px] font-bold uppercase tracking-wide text-white">{punchFor(solutionLabel)}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <SolutionRail
-        num={solutionNum}
-        label={solutionLabel}
-        kicker="Scope & How It Works"
-        color={color}
-        photo={photo}
-        alt={`${solutionLabel} infrastructure operated by TAQA Arabia`}
-      />
+      {/* Footer band */}
+      <span aria-hidden className="h-1 w-full shrink-0 bg-[#009045]" />
+      <footer className="flex h-[34px] shrink-0 items-center justify-between bg-[#2f2f2f] px-7">
+        <span className="font-display text-[12px] font-bold tracking-[0.18em] text-white/80">TAQA ARABIA</span>
+        <span className="text-[12px] italic text-white/60">A World <span className="font-bold text-white/85">of Energy</span></span>
+      </footer>
     </div>
   );
 }
