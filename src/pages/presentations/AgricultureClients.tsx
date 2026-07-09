@@ -1,11 +1,16 @@
 import { DeckShell } from "./DeckShell";
 
 const MEDIA = import.meta.env.BASE_URL + "presentations/media/";
+import type { CSSProperties } from "react";
 import {
   Flame, Zap, Droplets, Truck, Battery, Globe, CheckCircle2, SunMedium,
   ArrowRight, MapPin,
 } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.png";
+import {
+  SlideStyles, Kicker, CornerWash, Bracket, BlueprintGrid, ColHead,
+  ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide, d, hideImg, lighter,
+} from "./slides";
 
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
@@ -39,7 +44,7 @@ const GOLD  = "#FFC10E";
 const NAVY  = "#002060";
 const SKY   = "#0095C8";
 
-/** Lighter tone per section color — used for gradient text endpoints. */
+/** Lighter tone per section color — used for gradient endpoints on local slides. */
 const TONE: Record<string, string> = {
   "#15803d": "#84cc16",
   "#0095C8": "#5bc9f2",
@@ -49,84 +54,26 @@ const TONE: Record<string, string> = {
   "#002060": "#4f7dd9",
   "#dc2626": "#f87171",
 };
-const tone = (c: string) => TONE[c] ?? LIME;
+const tone = (c: string) => TONE[c] ?? lighter(c);
 
 /** Gradient-text style helper. */
-const gt = (from: string, to: string): React.CSSProperties => ({
+const gt = (from: string, to: string): CSSProperties => ({
   backgroundImage: `linear-gradient(100deg, ${from}, ${to})`,
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
 });
 
-// ─── Motion / shared atoms ────────────────────────────────────────────────────
+// ─── Local slide chrome (built on the shared system) ──────────────────────────
 
-function AgxStyles() {
+/** Light content-slide chrome: shared styles + corner wash + blueprint grid. */
+function LightSlide({ color, children }: { color: string; children: React.ReactNode }) {
   return (
-    <style>{`
-      @keyframes agx-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes agx-in { from { opacity: 0; } to { opacity: 1; } }
-      .agx-up { animation: agx-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
-      .agx-in { animation: agx-in 0.3s ease-out both; }
-      @media (prefers-reduced-motion: reduce) {
-        .agx-up, .agx-in { animation: none; }
-      }
-    `}</style>
-  );
-}
-
-/** Staggered fade-up wrapper. */
-function Rise({ i = 0, className = "", children }: { i?: number; className?: string; children: React.ReactNode }) {
-  return (
-    <div className={`agx-up ${className}`} style={{ animationDelay: `${i * 65}ms` }}>
-      {children}
-    </div>
-  );
-}
-
-/** Kicker chip — colored dot + uppercase label. */
-function Kicker({ color, dark = false, children }: { color: string; dark?: boolean; children: React.ReactNode }) {
-  return (
-    <div
-      className={`inline-flex items-center gap-2.5 rounded-full px-4 h-7 ${dark ? "bg-white/10 ring-1 ring-white/15 backdrop-blur-md" : ""}`}
-      style={dark ? undefined : { background: color + "0F", boxShadow: `inset 0 0 0 1px ${color}30` }}
-    >
-      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: dark ? tone(color) : color }} />
-      <span
-        className={`font-display text-[14px] font-semibold uppercase tracking-[0.22em] whitespace-nowrap ${dark ? "text-white/85" : ""}`}
-        style={dark ? undefined : { color }}
-      >
-        {children}
-      </span>
-    </div>
-  );
-}
-
-/** Oversized ghost numeral watermark. */
-function Ghost({ text, color }: { text: string; color: string }) {
-  return (
-    <div
-      aria-hidden
-      className="absolute -bottom-14 right-2 font-display font-bold leading-none select-none pointer-events-none"
-      style={{ fontSize: 230, color, opacity: 0.05, letterSpacing: "-0.04em" }}
-    >
-      {text}
-    </div>
-  );
-}
-
-/** Light content-slide chrome: soft wash + optional ghost numeral. */
-function LightSlide({ color, num, children }: { color: string; num?: string; children: React.ReactNode }) {
-  return (
-    <div className="relative h-full w-full overflow-hidden font-deck bg-[#f9fbf9] p-14 flex flex-col">
-      <AgxStyles />
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: `radial-gradient(720px 440px at 100% 0%, ${color}0D, transparent 65%)` }}
-      />
-      {num && <Ghost text={num} color={color} />}
-      <div className="relative z-10 flex h-full min-h-0 flex-col">{children}</div>
+    <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
+      <SlideStyles />
+      <CornerWash color={color} />
+      <BlueprintGrid light />
+      <div className="relative z-10 flex h-full min-h-0 flex-col p-14">{children}</div>
     </div>
   );
 }
@@ -135,14 +82,16 @@ function LightSlide({ color, num, children }: { color: string; num?: string; chi
 function DarkSlide({ photo, tint = GREEN, children }: { photo?: string; tint?: string; children: React.ReactNode }) {
   return (
     <div
-      className="relative h-full w-full overflow-hidden font-deck p-14 flex flex-col"
+      className="relative h-full w-full overflow-hidden font-deck"
       style={{ background: "linear-gradient(135deg, #04150c 0%, #0c2f1a 62%, #0a2a18 100%)" }}
     >
-      <AgxStyles />
+      <SlideStyles />
       {photo && (
         <img
           src={photo}
           alt={ALT[photo] ?? "Agricultural landscape"}
+          loading="lazy"
+          onError={hideImg}
           className="absolute inset-0 h-full w-full object-cover opacity-30"
           style={{ mixBlendMode: "luminosity" }}
         />
@@ -152,12 +101,13 @@ function DarkSlide({ photo, tint = GREEN, children }: { photo?: string; tint?: s
         className="absolute inset-0"
         style={{ background: `linear-gradient(115deg, rgba(4,21,12,0.94) 0%, rgba(7,30,17,0.78) 50%, ${tint}38 100%)` }}
       />
+      <BlueprintGrid />
       <div
         aria-hidden
-        className="absolute -right-44 -bottom-56 h-[600px] w-[600px] rounded-full pointer-events-none"
+        className="pointer-events-none absolute -bottom-56 -right-44 h-[600px] w-[600px] rounded-full"
         style={{ background: `radial-gradient(circle, ${tone(tint)}22, transparent 65%)` }}
       />
-      <div className="relative z-10 flex h-full min-h-0 flex-col">{children}</div>
+      <div className="relative z-10 flex h-full min-h-0 flex-col p-14">{children}</div>
     </div>
   );
 }
@@ -169,7 +119,7 @@ function PhotoCard({ src, className = "" }: { src: string; className?: string })
       className={`relative overflow-hidden rounded-2xl ring-1 ring-black/10 shadow-lg shrink-0 ${className}`}
       style={{ background: "linear-gradient(135deg, #0c2f1a, #15803d)" }}
     >
-      <img src={src} alt={ALT[src] ?? "Agricultural landscape"} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+      <img src={src} alt={ALT[src] ?? "Agricultural landscape"} className="absolute inset-0 h-full w-full object-cover" loading="lazy" onError={hideImg} />
       <div aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(4,21,12,0.05), rgba(4,21,12,0.28))" }} />
     </div>
   );
@@ -204,13 +154,15 @@ function CoverSlide() {
   ];
   return (
     <div
-      className="relative h-full w-full overflow-hidden font-deck flex flex-col"
+      className="relative h-full w-full overflow-hidden font-deck"
       style={{ background: "linear-gradient(135deg, #04150c 0%, #0c2f1a 60%, #0a2a18 100%)" }}
     >
-      <AgxStyles />
+      <SlideStyles />
       <img
         src={P.cover}
         alt={ALT[P.cover]}
+        loading="lazy"
+        onError={hideImg}
         className="absolute inset-0 h-full w-full object-cover opacity-40"
         style={{ mixBlendMode: "luminosity" }}
       />
@@ -219,39 +171,41 @@ function CoverSlide() {
         className="absolute inset-0"
         style={{ background: "linear-gradient(112deg, rgba(4,21,12,0.96) 0%, rgba(6,28,16,0.84) 46%, rgba(21,128,61,0.34) 100%)" }}
       />
+      <BlueprintGrid />
       <div
         aria-hidden
-        className="absolute -right-40 -top-52 h-[560px] w-[560px] rounded-full pointer-events-none"
+        className="pointer-events-none absolute -right-40 -top-52 h-[560px] w-[560px] rounded-full"
         style={{ background: "radial-gradient(circle, rgba(132,204,22,0.16), transparent 65%)" }}
       />
 
       <div className="relative z-10 flex h-full flex-col px-14 pt-12 pb-10">
         {/* Top row */}
-        <Rise i={0} className="flex items-center justify-between">
+        <div className="sx-up flex items-center justify-between" style={d(0)}>
           <div className="rounded-xl bg-white/95 px-4 py-2 shadow-lg ring-1 ring-black/10">
             <img src={taqaLogo} alt="TAQA Arabia logo" className="h-9 object-contain" />
           </div>
           <Kicker color={GREEN} dark>Client Presentation · Jan 2026</Kicker>
-        </Rise>
+        </div>
 
         {/* Title block */}
         <div className="flex-1 flex flex-col justify-center">
-          <Rise i={1}>
-            <div className="mb-6 h-[3px] w-20 rounded-full" style={{ background: `linear-gradient(90deg, ${GREEN}, ${LIME})` }} />
-          </Rise>
-          <Rise i={2}>
-            <h1 className="font-display font-bold tracking-tight text-white leading-[0.98]" style={{ fontSize: 74 }}>
-              Agriculture
-              <br />
-              <span style={gt("#4ade80", "#bef264")}>Clients</span>
-            </h1>
-          </Rise>
-          <Rise i={3}>
-            <p className="mt-5 text-[21px] text-white/85">Integrated Energy &amp; Utility Solutions</p>
-          </Rise>
-          <Rise i={4} className="mt-8 flex items-center gap-3">
-            {pillars.map(p => (
-              <div key={p.label} className="flex items-center gap-2.5 rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur-md pl-2.5 pr-4 h-10">
+          <div
+            className="sx-up h-[3px] w-20 rounded-full"
+            style={{ ...d(80), background: `linear-gradient(90deg, ${GREEN}, ${LIME})` }}
+          />
+          <h1 className="sx-up mt-6 font-display text-[74px] font-bold leading-[0.98] tracking-tight text-white" style={d(140)}>
+            Agriculture
+            <br />
+            <span style={gt("#4ade80", "#bef264")}>Clients</span>
+          </h1>
+          <p className="sx-up mt-5 text-[21px] text-white/85" style={d(220)}>Integrated Energy &amp; Utility Solutions</p>
+          <div className="mt-8 flex items-center gap-3">
+            {pillars.map((p, i) => (
+              <div
+                key={p.label}
+                className="sx-up flex items-center gap-2.5 rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur-md pl-2.5 pr-4 h-10"
+                style={d(300 + i * 55)}
+              >
                 <span
                   className="flex h-6 w-6 items-center justify-center rounded-full text-white"
                   style={{ background: `linear-gradient(135deg, ${p.color}, ${tone(p.color)})` }}
@@ -261,16 +215,16 @@ function CoverSlide() {
                 <span className="text-[16px] font-semibold text-white/90">{p.label}</span>
               </div>
             ))}
-          </Rise>
+          </div>
         </div>
 
         {/* Footer */}
-        <Rise i={5} className="flex items-center justify-between border-t border-white/10 pt-5">
-          <p className="text-[14px] uppercase tracking-[0.22em] font-display font-semibold text-white/50">
+        <div className="sx-in flex items-center justify-between border-t border-white/10 pt-5" style={d(500)}>
+          <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] text-white/50">
             TAQA Arabia · Confidential
           </p>
           <p className="text-[14px] text-white/50">Jan 2026</p>
-        </Rise>
+        </div>
       </div>
     </div>
   );
@@ -287,17 +241,15 @@ function AboutSlide() {
   ];
   return (
     <LightSlide color={GREEN}>
-      <Rise i={0}><Kicker color={GREEN}>TAQA Arabia · Who We Are</Kicker></Rise>
-      <Rise i={1}>
-        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.08] text-[42px] max-w-[980px]" style={{ color: NAVY }}>
-          Egypt's leading integrated energy infrastructure developer
-        </h2>
-      </Rise>
+      <div className="sx-up" style={d(0)}><Kicker color={GREEN}>TAQA Arabia · Who We Are</Kicker></div>
+      <h2 className="sx-up mt-4 max-w-[980px] font-display text-[42px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
+        Egypt's leading integrated energy infrastructure developer
+      </h2>
 
       <div className="mt-8 flex-1 min-h-0 grid grid-cols-2 gap-10">
         {/* Narrative + photo */}
         <div className="flex flex-col min-h-0">
-          <Rise i={2} className="space-y-4 text-[16px] leading-relaxed text-slate-600">
+          <div className="sx-up space-y-4 text-[17px] leading-relaxed text-slate-600" style={d(140)}>
             <p>
               Founded in 2006 and listed on the EGX since 2023, TAQA Arabia is Egypt's largest
               private-sector energy and utility developer.
@@ -307,29 +259,30 @@ function AboutSlide() {
               owns and operates the utility backbone of residential communities, industrial zones
               and touristic destinations.
             </p>
-          </Rise>
-          <Rise i={3} className="mt-6 flex-1 min-h-0">
+          </div>
+          <div className="sx-up mt-6 flex-1 min-h-0" style={d(200)}>
             <PhotoCard src={P.farm} className="h-full w-full rounded-3xl" />
-          </Rise>
+          </div>
         </div>
 
         {/* Division cards */}
         <div className="flex flex-col justify-between gap-3">
-          {divisions.map((d, idx) => (
-            <Rise key={d.label} i={3 + idx} className="flex-1">
-              <div className="flex h-full items-center gap-4 rounded-2xl bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)]">
+          {divisions.map((dv, idx) => (
+            <div key={dv.label} className="sx-up flex-1" style={d(200 + idx * 65)}>
+              <div className="relative flex h-full items-center gap-4 rounded-2xl bg-white p-4 ring-1 ring-black/5 shadow-sm">
+                <span aria-hidden className="absolute inset-y-3 left-0 w-[3px] rounded-r-full" style={{ background: dv.color }} />
                 <div
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-md"
-                  style={{ background: `linear-gradient(135deg, ${d.color}, ${tone(d.color)})` }}
+                  style={{ background: `linear-gradient(135deg, ${dv.color}, ${tone(dv.color)})` }}
                 >
-                  {d.icon}
+                  {dv.icon}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-display text-[18px] font-bold" style={{ color: NAVY }}>{d.label}</div>
-                  <div className="text-[16px] text-slate-500 leading-snug">{d.desc}</div>
+                  <div className="font-display text-[18px] font-bold" style={{ color: NAVY }}>{dv.label}</div>
+                  <div className="text-[16px] text-slate-500 leading-snug">{dv.desc}</div>
                 </div>
               </div>
-            </Rise>
+            </div>
           ))}
         </div>
       </div>
@@ -359,32 +312,31 @@ function RegionalSlide() {
   ];
   return (
     <LightSlide color={GREEN}>
-      <Rise i={0}><Kicker color={GREEN}>TAQA Arabia · Regional Presence</Kicker></Rise>
-      <Rise i={1}>
-        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.08] text-[38px] max-w-[1020px]" style={{ color: NAVY }}>
-          A growing platform across Egypt, the GCC, Africa and Greece
-        </h2>
-      </Rise>
+      <div className="sx-up" style={d(0)}><Kicker color={GREEN}>TAQA Arabia · Regional Presence</Kicker></div>
+      <h2 className="sx-up mt-4 max-w-[1020px] font-display text-[38px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
+        A growing platform across Egypt, the GCC, Africa and Greece
+      </h2>
 
       {/* Metric strip */}
       <div className="mt-7 grid grid-cols-4 gap-4">
         {metrics.map((m, idx) => (
-          <Rise key={m.label} i={2 + idx}>
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)]">
+          <div key={m.label} className="sx-up" style={d(120 + idx * 60)}>
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-black/5 shadow-sm">
               <div className="h-[3px] w-9 rounded-full mb-3" style={{ background: `linear-gradient(90deg, ${GREEN}, ${LIME})` }} />
               <div className="font-display text-[38px] font-bold leading-none" style={gt(GREEN, "#4d9d2a")}>{m.value}</div>
               <div className="mt-1.5 text-[16px] font-semibold" style={{ color: NAVY }}>{m.label}</div>
               <div className="text-[14px] text-slate-500">{m.sub}</div>
             </div>
-          </Rise>
+          </div>
         ))}
       </div>
 
       <div className="mt-5 flex-1 min-h-0 grid grid-cols-2 gap-5">
         {/* International expansion */}
-        <Rise i={6} className="min-h-0">
-          <div className="h-full rounded-3xl bg-white p-6 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)] flex flex-col">
-            <div className="flex items-center gap-2.5 mb-4">
+        <div className="sx-up min-h-0" style={d(380)}>
+          <div className="relative h-full rounded-2xl bg-white p-6 ring-1 ring-black/5 shadow-sm flex flex-col overflow-hidden">
+            <Bracket color={GREEN} pos="tr" />
+            <div className="flex items-center gap-2.5 mb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg text-white" style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }}>
                 <Globe className="w-4 h-4" />
               </div>
@@ -401,19 +353,21 @@ function RegionalSlide() {
               ))}
             </div>
           </div>
-        </Rise>
+        </div>
 
         {/* Geographic footprint */}
-        <Rise i={7} className="min-h-0">
+        <div className="sx-up min-h-0" style={d(440)}>
           <div
-            className="h-full rounded-3xl p-6 text-white flex flex-col shadow-[0_18px_44px_-18px_rgba(0,32,96,0.55)]"
+            className="relative h-full overflow-hidden rounded-2xl p-6 text-white flex flex-col shadow-lg"
             style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #0c2f1a 100%)` }}
           >
-            <h3 className="font-display text-[17px] font-bold mb-2.5" style={gt(GOLD, "#ffe08a")}>Geographic Footprint</h3>
-            <p className="text-[16px] text-white/85 leading-snug mb-3.5">
+            <BlueprintGrid />
+            <Bracket color={GOLD} pos="br" />
+            <h3 className="relative font-display text-[17px] font-bold mb-2.5" style={gt(GOLD, "#ffe08a")}>Geographic Footprint</h3>
+            <p className="relative text-[16px] text-white/85 leading-snug mb-3.5">
               Concessions in 8 Egyptian governorates renewed for 15 years. TAQA serves the full spectrum of customer types:
             </p>
-            <div className="flex-1 flex flex-col justify-between">
+            <div className="relative flex-1 flex flex-col justify-between">
               {customers.map(c => (
                 <div key={c} className="flex items-center gap-2.5 text-[16px] text-white/90">
                   <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: GOLD }} />
@@ -422,7 +376,7 @@ function RegionalSlide() {
               ))}
             </div>
           </div>
-        </Rise>
+        </div>
       </div>
     </LightSlide>
   );
@@ -444,58 +398,58 @@ function NumbersSlide() {
   ];
   return (
     <LightSlide color={GREEN}>
-      <Rise i={0}><Kicker color={GREEN}>TAQA Arabia · In Numbers</Kicker></Rise>
-      <Rise i={1}>
-        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.08] text-[38px] max-w-[1040px]" style={{ color: NAVY }}>
-          The scale behind a single integrated energy partner — FY 2025
-        </h2>
-      </Rise>
+      <div className="sx-up" style={d(0)}><Kicker color={GREEN}>TAQA Arabia · In Numbers</Kicker></div>
+      <h2 className="sx-up mt-4 max-w-[1040px] font-display text-[38px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
+        The scale behind a single integrated energy partner — FY 2025
+      </h2>
 
       {/* Hero financials */}
       <div className="mt-7 grid grid-cols-3 gap-4">
         {heroes.map((m, idx) => (
-          <Rise key={m.label} i={2 + idx}>
+          <div key={m.label} className="sx-up" style={d(120 + idx * 70)}>
             <div
-              className="relative overflow-hidden rounded-3xl p-6 text-white shadow-[0_18px_44px_-18px_rgba(4,21,12,0.6)]"
+              className="relative overflow-hidden rounded-2xl p-6 text-white shadow-lg"
               style={{ background: "linear-gradient(135deg, #04150c 0%, #0c2f1a 70%, #14532d 100%)" }}
             >
+              <BlueprintGrid />
               <div
                 aria-hidden
                 className="absolute -right-10 -top-14 h-40 w-40 rounded-full pointer-events-none"
                 style={{ background: "radial-gradient(circle, rgba(132,204,22,0.22), transparent 65%)" }}
               />
-              <div className="font-display text-[36px] font-bold leading-none" style={gt("#a3e635", "#fde047")}>{m.value}</div>
-              <div className="mt-2 text-[17px] font-semibold text-white/95">{m.label}</div>
-              <div className="text-[14px] text-white/60">{m.sub}</div>
+              <div className="relative font-display text-[36px] font-bold leading-none" style={gt("#a3e635", "#fde047")}>{m.value}</div>
+              <div className="relative mt-2 text-[17px] font-semibold text-white/95">{m.label}</div>
+              <div className="relative text-[14px] text-white/60">{m.sub}</div>
             </div>
-          </Rise>
+          </div>
         ))}
       </div>
 
       {/* Division bento */}
       <div className="mt-5 flex-1 min-h-0 grid grid-cols-4 gap-4">
-        {divisions.map((d, idx) => (
-          <Rise key={d.div} i={5 + idx} className="min-h-0">
-            <div className="h-full rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)] flex flex-col">
+        {divisions.map((dv, idx) => (
+          <div key={dv.div} className="sx-up min-h-0" style={d(360 + idx * 60)}>
+            <div className="relative h-full overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-sm flex flex-col">
+              <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${dv.color}, ${tone(dv.color)})` }} />
               <div className="flex items-center gap-2.5 mb-4">
                 <div
                   className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm"
-                  style={{ background: `linear-gradient(135deg, ${d.color}, ${tone(d.color)})` }}
+                  style={{ background: `linear-gradient(135deg, ${dv.color}, ${tone(dv.color)})` }}
                 >
-                  {d.icon}
+                  {dv.icon}
                 </div>
-                <span className="font-display text-[16px] font-bold tracking-tight" style={{ color: NAVY }}>{d.div}</span>
+                <span className="font-display text-[16px] font-bold tracking-tight" style={{ color: NAVY }}>{dv.div}</span>
               </div>
               <div className="space-y-2.5">
-                {d.stats.map(s => (
+                {dv.stats.map(s => (
                   <div key={s} className="flex items-start gap-2">
-                    <span className="mt-[7px] h-1.5 w-1.5 rounded-full shrink-0" style={{ background: d.color }} />
+                    <span className="mt-[7px] h-1.5 w-1.5 rounded-full shrink-0" style={{ background: dv.color }} />
                     <span className="text-[16px] font-medium text-slate-600 leading-snug">{s}</span>
                   </div>
                 ))}
               </div>
             </div>
-          </Rise>
+          </div>
         ))}
       </div>
     </LightSlide>
@@ -527,19 +481,17 @@ function ChallengeSlide() {
   ];
   return (
     <DarkSlide photo={P.farm} tint="#dc2626">
-      <Rise i={0}><Kicker color="#dc2626" dark>Agriculture · The Challenge</Kicker></Rise>
-      <Rise i={1}>
-        <h2 className="mt-5 font-display font-bold tracking-tight text-white leading-[1.06] text-[44px] max-w-[980px]">
-          Energy and water — the two biggest costs on any farm
-        </h2>
-      </Rise>
+      <div className="sx-up" style={d(0)}><Kicker color="#dc2626" dark>Agriculture · The Challenge</Kicker></div>
+      <h2 className="sx-up mt-5 max-w-[980px] font-display text-[44px] font-bold leading-[1.06] tracking-tight text-white" style={d(70)}>
+        Energy and water — the two biggest costs on any farm
+      </h2>
 
       <div className="mt-8 grid grid-cols-3 gap-5">
         {pains.map((c, idx) => (
-          <Rise key={c.label} i={2 + idx}>
-            <div className="h-full rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-6">
+          <div key={c.label} className="sx-up" style={d(150 + idx * 65)}>
+            <div className="h-full rounded-2xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-6">
               <div
-                className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-lg"
+                className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-lg"
                 style={{ background: `linear-gradient(135deg, ${c.color}, ${tone(c.color)})` }}
               >
                 {c.icon}
@@ -547,12 +499,13 @@ function ChallengeSlide() {
               <h3 className="font-display text-[19px] font-bold text-white mb-2">{c.label}</h3>
               <p className="text-[17px] leading-relaxed text-white/85">{c.desc}</p>
             </div>
-          </Rise>
+          </div>
         ))}
       </div>
 
-      <Rise i={5} className="mt-auto">
-        <div className="relative overflow-hidden rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-6 pl-8">
+      <div className="sx-up mt-auto" style={d(380)}>
+        <div className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-6 pl-8">
+          <Bracket color={LIME} pos="br" />
           <div aria-hidden className="absolute left-0 top-0 h-full w-[4px]" style={{ background: `linear-gradient(180deg, ${GREEN}, ${LIME})` }} />
           <div className="mb-1.5 flex items-center gap-2.5">
             <CheckCircle2 className="w-5 h-5" style={{ color: LIME }} />
@@ -564,7 +517,7 @@ function ChallengeSlide() {
             with no farm capex.
           </p>
         </div>
-      </Rise>
+      </div>
     </DarkSlide>
   );
 }
@@ -580,22 +533,19 @@ function IntegratedSolutionSlide() {
   ];
   return (
     <LightSlide color={GREEN}>
-      <Rise i={0}><Kicker color={GREEN}>TAQA · Integrated Farm Solution</Kicker></Rise>
-      <Rise i={1}>
-        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.1] text-[30px] max-w-[1060px]" style={{ color: NAVY }}>
-          One partner connects water and a smart, multi-source power stack to keep every pivot turning
-        </h2>
-      </Rise>
+      <div className="sx-up" style={d(0)}><Kicker color={GREEN}>TAQA · Integrated Farm Solution</Kicker></div>
+      <h2 className="sx-up mt-4 max-w-[1120px] font-display text-[38px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
+        One partner connects water and a smart, multi-source power stack to keep every pivot turning
+      </h2>
 
       <div className="mt-6 flex-1 min-h-0 flex flex-col gap-4">
         {/* Flow diagram */}
         <div className="flex-1 min-h-0 flex items-stretch gap-4">
           {/* Energy sources */}
-          <Rise i={2} className="flex-1 min-h-0">
-            <div className="h-full rounded-3xl bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)] flex flex-col">
-              <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-3" style={{ color: GREEN }}>
-                Energy Sources
-              </p>
+          <div className="sx-up flex-1 min-h-0" style={d(160)}>
+            <div className="relative h-full overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-sm flex flex-col">
+              <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${GREEN}, ${LIME})` }} />
+              <ColHead color={GREEN}>Energy Sources</ColHead>
               <div className="flex-1 flex flex-col justify-between gap-2">
                 {sources.map(s => (
                   <div key={s.label} className="flex items-center gap-3 rounded-xl px-3 py-2" style={{ background: s.color + "0C" }}>
@@ -607,21 +557,21 @@ function IntegratedSolutionSlide() {
                     </div>
                     <div className="min-w-0">
                       <div className="text-[17px] font-semibold leading-tight" style={{ color: NAVY }}>{s.label}</div>
-                      <div className="text-[12.5px] text-slate-500 leading-tight">{s.desc}</div>
+                      <div className="text-[13px] text-slate-500 leading-tight">{s.desc}</div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          </Rise>
+          </div>
 
           {/* Connector → EMS → connector */}
-          <Rise i={3} className="flex items-center shrink-0">
+          <div className="sx-up flex items-center shrink-0" style={d(220)}>
             <div className="flex items-center">
               <div className="h-[2px] w-8" style={{ background: `linear-gradient(90deg, ${GREEN}30, ${GREEN})` }} />
               <ArrowRight className="w-4 h-4 -ml-1.5" style={{ color: GREEN }} />
               <div
-                className="mx-1 flex h-[150px] w-[150px] flex-col items-center justify-center rounded-full text-center text-white shadow-[0_18px_40px_-14px_rgba(21,128,61,0.55)]"
+                className="mx-1 flex h-[150px] w-[150px] flex-col items-center justify-center rounded-full text-center text-white shadow-lg"
                 style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }}
               >
                 <Zap className="w-6 h-6 mb-1.5" style={{ color: "#fef9c3" }} />
@@ -630,49 +580,51 @@ function IntegratedSolutionSlide() {
               <div className="h-[2px] w-8" style={{ background: `linear-gradient(90deg, ${GREEN}, ${GREEN}30)` }} />
               <ArrowRight className="w-4 h-4 -ml-1.5" style={{ color: GREEN }} />
             </div>
-          </Rise>
+          </div>
 
           {/* Output */}
-          <Rise i={4} className="flex-1 min-h-0">
+          <div className="sx-up flex-1 min-h-0" style={d(280)}>
             <div
-              className="relative h-full overflow-hidden rounded-3xl p-6 text-white flex flex-col justify-center shadow-[0_18px_44px_-18px_rgba(0,32,96,0.55)]"
+              className="relative h-full overflow-hidden rounded-2xl p-6 text-white flex flex-col justify-center shadow-lg"
               style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #0c2f1a 100%)` }}
             >
+              <BlueprintGrid />
+              <Bracket color={GOLD} pos="br" />
               <div
                 aria-hidden
                 className="absolute -right-12 -bottom-16 h-48 w-48 rounded-full pointer-events-none"
                 style={{ background: "radial-gradient(circle, rgba(132,204,22,0.2), transparent 65%)" }}
               />
-              <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-2.5" style={{ color: GOLD }}>
+              <p className="relative font-display text-[15px] font-semibold uppercase tracking-[0.22em] mb-2.5" style={{ color: GOLD }}>
                 Powered Pivots 24/7
               </p>
-              <p className="text-[17px] leading-relaxed text-white/90">
+              <p className="relative text-[17px] leading-relaxed text-white/90">
                 Round-the-clock irrigation — optimised source mix, always on, minimum cost.
               </p>
             </div>
-          </Rise>
+          </div>
         </div>
 
         {/* Water strip */}
-        <Rise i={5}>
-          <div className="flex items-center gap-4 rounded-2xl px-5 py-3.5 ring-1 ring-black/5 bg-white shadow-[0_10px_30px_-14px_rgba(0,149,200,0.25)]">
+        <div className="sx-up" style={d(360)}>
+          <div className="flex items-center gap-4 rounded-2xl px-5 py-3.5 ring-1 ring-black/5 bg-white shadow-sm">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${SKY}, ${tone(SKY)})` }}>
               <Droplets className="w-4 h-4" />
             </div>
             <span className="font-display text-[16px] font-bold" style={{ color: NAVY }}>Water Solutions</span>
             <span className="text-[16px] text-slate-500">Desalination · Wells · Pumping</span>
           </div>
-        </Rise>
+        </div>
 
         {/* Quote */}
-        <Rise i={6}>
+        <div className="sx-up" style={d(420)}>
           <div
             className="rounded-2xl px-5 py-3.5 text-center font-display text-[16px] font-semibold"
             style={{ background: GREEN + "0D", boxShadow: `inset 0 0 0 1px ${GREEN}26`, color: "#14532d" }}
           >
             "TAQA delivers the whole farm energy-and-water backbone as one system."
           </div>
-        </Rise>
+        </div>
       </div>
     </LightSlide>
   );
@@ -689,12 +641,10 @@ function SmartEnergyMixSlide() {
   ];
   return (
     <LightSlide color={GREEN}>
-      <Rise i={0}><Kicker color={GREEN}>TAQA · Smart Energy Mix</Kicker></Rise>
-      <Rise i={1}>
-        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.1] text-[30px] max-w-[1080px]" style={{ color: NAVY }}>
-          Solar by day, batteries after sunset, gas and diesel for firming — least-cost, lowest-carbon, always on
-        </h2>
-      </Rise>
+      <div className="sx-up" style={d(0)}><Kicker color={GREEN}>TAQA · Smart Energy Mix</Kicker></div>
+      <h2 className="sx-up mt-4 max-w-[1120px] font-display text-[38px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
+        Solar by day, batteries after sunset, gas and diesel for firming — least-cost, lowest-carbon, always on
+      </h2>
 
       {/* Step flow with connecting line */}
       <div className="relative mt-9 flex-1 min-h-0">
@@ -705,7 +655,7 @@ function SmartEnergyMixSlide() {
         />
         <div className="grid h-full grid-cols-4 gap-5">
           {steps.map((s, idx) => (
-            <Rise key={s.n} i={2 + idx} className="min-h-0">
+            <div key={s.n} className="sx-up min-h-0" style={d(160 + idx * 65)}>
               <div className="flex h-full flex-col">
                 <div
                   className="relative z-10 mx-auto mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-2xl text-white shadow-lg"
@@ -713,25 +663,26 @@ function SmartEnergyMixSlide() {
                 >
                   {s.icon}
                 </div>
-                <div className="flex-1 rounded-3xl bg-white p-5 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)]">
+                <div className="relative flex-1 overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-sm">
+                  <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${s.color}, ${tone(s.color)})` }} />
                   <div className="font-display text-[30px] font-bold leading-none mb-2" style={gt(s.color, tone(s.color))}>{s.n}</div>
-                  <h3 className="font-display text-[17px] font-bold mb-1.5" style={{ color: NAVY }}>{s.title}</h3>
+                  <h3 className="font-display text-[18px] font-bold mb-1.5" style={{ color: NAVY }}>{s.title}</h3>
                   <p className="text-[16px] leading-relaxed text-slate-600">{s.desc}</p>
                 </div>
               </div>
-            </Rise>
+            </div>
           ))}
         </div>
       </div>
 
-      <Rise i={6} className="mt-5">
+      <div className="sx-up mt-5" style={d(460)}>
         <div
           className="rounded-2xl px-5 py-3.5 text-center text-[17px] font-medium"
           style={{ background: GREEN + "0D", boxShadow: `inset 0 0 0 1px ${GREEN}26`, color: "#14532d" }}
         >
           One TAQA energy-management system optimises the mix every minute — least cost, lowest carbon, always on.
         </div>
-      </Rise>
+      </div>
     </LightSlide>
   );
 }
@@ -748,13 +699,11 @@ function SolutionsOverviewSlide() {
   const journey = ["Scope & How It Works", "Value Proposition", "Implementation Timeline", "Proven Track Record"];
   return (
     <LightSlide color={GREEN}>
-      <Rise i={0}><Kicker color={GREEN}>Agriculture Clients · Solutions Overview</Kicker></Rise>
-      <Rise i={1}>
-        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.08] text-[34px] max-w-[1060px]" style={{ color: NAVY }}>
-          The following slides detail every solution TAQA Arabia offers to farms and agribusiness
-        </h2>
-      </Rise>
-      <Rise i={2} className="mt-4 flex items-center gap-2 flex-wrap">
+      <div className="sx-up" style={d(0)}><Kicker color={GREEN}>Agriculture Clients · Solutions Overview</Kicker></div>
+      <h2 className="sx-up mt-4 max-w-[1120px] font-display text-[38px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
+        The following slides detail every solution TAQA Arabia offers to farms and agribusiness
+      </h2>
+      <div className="sx-up mt-4 flex items-center gap-2 flex-wrap" style={d(120)}>
         <span className="text-[15px] font-medium text-slate-500 mr-1">Each solution:</span>
         {journey.map((j, idx) => (
           <span key={j} className="flex items-center gap-2">
@@ -764,23 +713,23 @@ function SolutionsOverviewSlide() {
             {idx < journey.length - 1 && <ArrowRight className="w-3.5 h-3.5 text-slate-400" />}
           </span>
         ))}
-      </Rise>
+      </div>
 
       <div className="mt-6 flex-1 min-h-0 grid grid-cols-2 grid-rows-2 gap-5">
         {solutions.map((s, idx) => (
-          <Rise key={s.num} i={3 + idx} className="min-h-0">
-            <div className="relative h-full overflow-hidden rounded-3xl bg-white p-6 ring-1 ring-black/5 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.18)]">
+          <div key={s.num} className="sx-up min-h-0" style={d(180 + idx * 60)}>
+            <div className="relative h-full overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-black/5 shadow-[0_10px_30px_-16px_rgba(0,32,96,0.25)]">
               <div aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${s.color}, ${tone(s.color)})` }} />
               <div
                 aria-hidden
-                className="absolute -bottom-7 right-3 font-display font-bold leading-none select-none"
+                className="pointer-events-none absolute -bottom-7 right-3 select-none font-display font-bold leading-none"
                 style={{ fontSize: 110, color: s.color, opacity: 0.08, letterSpacing: "-0.04em" }}
               >
                 {s.num}
               </div>
               <div className="flex items-start gap-4">
                 <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-md"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-md"
                   style={{ background: `linear-gradient(135deg, ${s.color}, ${tone(s.color)})` }}
                 >
                   {s.icon}
@@ -791,360 +740,10 @@ function SolutionsOverviewSlide() {
                 </div>
               </div>
             </div>
-          </Rise>
+          </div>
         ))}
       </div>
     </LightSlide>
-  );
-}
-
-// ─── Reusable: AgriScopeSlide ─────────────────────────────────────────────────
-
-interface AgriScopeSlideProps {
-  sectionLabel: string;
-  title: string;
-  subtitle: string;
-  tagline: string;
-  color: string;
-  icon: React.ReactNode;
-  taqaInvests: string[];
-  steps: string[];
-  whatYouReceive: string[];
-  photo: string;
-}
-
-function AgriScopeSlide({
-  sectionLabel, title, subtitle, tagline, color, icon,
-  taqaInvests, steps, whatYouReceive, photo,
-}: AgriScopeSlideProps) {
-  const num = "0" + sectionLabel.trim().charAt(0);
-  return (
-    <LightSlide color={color} num={num}>
-      {/* Header */}
-      <div className="flex items-start justify-between gap-6">
-        <div className="min-w-0">
-          <Rise i={0}><Kicker color={color}>{sectionLabel}</Kicker></Rise>
-          <Rise i={1}>
-            <h2 className="mt-3.5 font-display font-bold tracking-tight leading-[1.08] text-[30px] max-w-[840px]" style={{ color: NAVY }}>
-              {title}
-            </h2>
-            <p className="mt-1.5 text-[16px] text-slate-500">{subtitle}</p>
-          </Rise>
-        </div>
-        <Rise i={1}><PhotoCard src={photo} className="h-[96px] w-[210px]" /></Rise>
-      </div>
-
-      {/* Tagline */}
-      <Rise i={2} className="mt-4">
-        <div className="relative overflow-hidden rounded-2xl bg-white px-5 py-3 ring-1 ring-black/5 shadow-sm">
-          <div aria-hidden className="absolute left-0 top-0 h-full w-[3px]" style={{ background: `linear-gradient(180deg, ${color}, ${tone(color)})` }} />
-          <p className="text-[17px] font-medium leading-snug" style={{ color: NAVY }}>{tagline}</p>
-        </div>
-      </Rise>
-
-      {/* Three columns */}
-      <div className="mt-4 flex-1 min-h-0 grid grid-cols-3 gap-4">
-        {/* TAQA Invests */}
-        <Rise i={3} className="min-h-0">
-          <div className="h-full rounded-3xl p-5 ring-1 ring-black/5 bg-white shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] flex flex-col">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg text-white" style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }}>
-                {icon}
-              </span>
-              <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em]" style={{ color }}>TAQA Invests</p>
-            </div>
-            <div className="flex-1 flex flex-col justify-evenly">
-              {taqaInvests.map(t => (
-                <div key={t} className="flex items-start gap-2.5 py-1">
-                  <span className="mt-[7px] h-1.5 w-1.5 rounded-full shrink-0" style={{ background: color }} />
-                  <span className="text-[16px] leading-snug text-slate-600">{t}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Rise>
-
-        {/* How it works */}
-        <Rise i={4} className="min-h-0">
-          <div className="h-full rounded-3xl p-5 ring-1 ring-black/5 flex flex-col" style={{ background: color + "08" }}>
-            <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-3" style={{ color }}>How It Works</p>
-            <div className="relative flex-1 flex flex-col justify-evenly pl-9">
-              <div aria-hidden className="absolute left-[13px] top-2 bottom-2 w-[2px] rounded-full" style={{ background: color + "30" }} />
-              {steps.map((s, i) => (
-                <div key={i} className="relative py-1">
-                  <div
-                    className="absolute -left-9 top-1 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-white text-[14px] font-bold font-display ring-2"
-                    style={{ color, boxShadow: `0 0 0 2px ${color}` }}
-                  >
-                    {i + 1}
-                  </div>
-                  <span className="text-[16px] leading-snug text-slate-600">{s}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Rise>
-
-        {/* What you receive */}
-        <Rise i={5} className="min-h-0">
-          <div
-            className="relative h-full overflow-hidden rounded-3xl p-5 text-white flex flex-col shadow-[0_18px_44px_-18px_rgba(0,32,96,0.55)]"
-            style={{ background: `linear-gradient(150deg, ${NAVY} 0%, #0c2f1a 100%)` }}
-          >
-            <div
-              aria-hidden
-              className="absolute -right-12 -top-14 h-44 w-44 rounded-full pointer-events-none"
-              style={{ background: `radial-gradient(circle, ${tone(color)}30, transparent 65%)` }}
-            />
-            <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-3" style={{ color: GOLD }}>What You Receive</p>
-            <div className="flex-1 flex flex-col justify-evenly">
-              {whatYouReceive.map(w => (
-                <div key={w} className="flex items-start gap-2.5 py-1">
-                  <CheckCircle2 className="mt-0.5 w-4 h-4 shrink-0" style={{ color: GOLD }} />
-                  <span className="text-[16px] leading-snug text-white/90">{w}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Rise>
-      </div>
-    </LightSlide>
-  );
-}
-
-// ─── Reusable: AgriValueSlide ─────────────────────────────────────────────────
-
-interface AgriValueSlideProps {
-  sectionLabel: string;
-  title: string;
-  color: string;
-  icon: React.ReactNode;
-  gains: { label: string; desc: string }[];
-  edge: { label: string; desc: string }[];
-  photo: string;
-}
-
-function AgriValueSlide({ sectionLabel, title, color, icon, gains, edge, photo }: AgriValueSlideProps) {
-  const num = "0" + sectionLabel.trim().charAt(0);
-  return (
-    <LightSlide color={color} num={num}>
-      {/* Header */}
-      <div className="flex items-start justify-between gap-6">
-        <div className="min-w-0">
-          <Rise i={0}><Kicker color={color}>{sectionLabel}</Kicker></Rise>
-          <Rise i={1} className="mt-3.5 flex items-center gap-3.5">
-            <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-md"
-              style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }}
-            >
-              {icon}
-            </div>
-            <h2 className="font-display font-bold tracking-tight leading-[1.08] text-[32px]" style={{ color: NAVY }}>
-              {title}
-            </h2>
-          </Rise>
-        </div>
-        <Rise i={1}><PhotoCard src={photo} className="h-[96px] w-[210px]" /></Rise>
-      </div>
-
-      <div className="mt-6 flex-1 min-h-0 grid grid-cols-2 gap-6">
-        {/* Gains */}
-        <div className="flex flex-col min-h-0">
-          <Rise i={2}>
-            <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-3" style={{ color }}>What You Gain</p>
-          </Rise>
-          <div className="flex-1 flex flex-col justify-between gap-2.5">
-            {gains.map((g, idx) => (
-              <Rise key={g.label} i={3 + idx} className="flex-1">
-                <div className="flex h-full items-start gap-3 rounded-2xl p-3.5 ring-1 ring-black/5 bg-white shadow-sm">
-                  <span
-                    className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
-                    style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }}
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="font-display text-[15.5px] font-bold leading-tight" style={{ color: NAVY }}>{g.label}</div>
-                    <div className="mt-0.5 text-[16px] leading-snug text-slate-600">{g.desc}</div>
-                  </div>
-                </div>
-              </Rise>
-            ))}
-          </div>
-        </div>
-
-        {/* Edge */}
-        <div className="flex flex-col min-h-0">
-          <Rise i={3}>
-            <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] mb-3" style={{ color: GREEN }}>TAQA Arabia Edge</p>
-          </Rise>
-          <div className="flex-1 flex flex-col justify-between gap-2.5">
-            {edge.map((e, idx) => (
-              <Rise key={e.label} i={4 + idx} className="flex-1">
-                <div className="flex h-full items-start gap-3 rounded-2xl p-3.5" style={{ background: GREEN + "0A", boxShadow: `inset 0 0 0 1px ${GREEN}1f` }}>
-                  <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full" style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }} />
-                  <div className="min-w-0">
-                    <div className="font-display text-[15.5px] font-bold leading-tight" style={{ color: NAVY }}>{e.label}</div>
-                    <div className="mt-0.5 text-[16px] leading-snug text-slate-600">{e.desc}</div>
-                  </div>
-                </div>
-              </Rise>
-            ))}
-          </div>
-        </div>
-      </div>
-    </LightSlide>
-  );
-}
-
-// ─── Reusable: AgriTimelineSlide ──────────────────────────────────────────────
-
-interface AgriTimelinePhase {
-  day: string;
-  label: string;
-  desc: string;
-}
-interface AgriTimelineGroup {
-  label: string;
-  range: string;
-  color?: string;
-}
-interface AgriTimelineSlideProps {
-  sectionLabel: string;
-  title: string;
-  color: string;
-  icon: React.ReactNode;
-  phases: AgriTimelinePhase[];
-  groups: AgriTimelineGroup[];
-  photo: string;
-}
-
-function AgriTimelineSlide({ sectionLabel, title, color, icon, phases, groups, photo }: AgriTimelineSlideProps) {
-  const num = "0" + sectionLabel.trim().charAt(0);
-  return (
-    <LightSlide color={color} num={num}>
-      {/* Header */}
-      <div className="flex items-start justify-between gap-6">
-        <div className="min-w-0">
-          <Rise i={0}><Kicker color={color}>{sectionLabel}</Kicker></Rise>
-          <Rise i={1} className="mt-3.5 flex items-center gap-3.5">
-            <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-md"
-              style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }}
-            >
-              {icon}
-            </div>
-            <h2 className="font-display font-bold tracking-tight leading-[1.08] text-[32px]" style={{ color: NAVY }}>
-              {title}
-            </h2>
-          </Rise>
-        </div>
-        <Rise i={1}><PhotoCard src={photo} className="h-[96px] w-[210px]" /></Rise>
-      </div>
-
-      {/* Phase group bands */}
-      <div className="mt-5 grid gap-3" style={{ gridTemplateColumns: `repeat(${groups.length}, 1fr)` }}>
-        {groups.map((g, i) => (
-          <Rise key={i} i={2 + i}>
-            <div
-              className="rounded-2xl px-4 py-3 text-white shadow-md flex items-baseline justify-between gap-2"
-              style={{ background: `linear-gradient(135deg, ${g.color ?? color}, ${color})` }}
-            >
-              <span className="font-display text-[14px] font-semibold uppercase tracking-[0.18em]">{g.label}</span>
-              <span className="text-[15px] font-medium text-white/85 whitespace-nowrap">{g.range}</span>
-            </div>
-          </Rise>
-        ))}
-      </div>
-
-      {/* Vertical phase timeline */}
-      <div className="relative mt-5 flex-1 min-h-0 flex flex-col justify-evenly pl-10">
-        <div aria-hidden className="absolute left-[13px] top-2 bottom-2 w-[2px] rounded-full" style={{ background: `linear-gradient(180deg, ${color}, ${color}20)` }} />
-        {phases.map((p, i) => (
-          <Rise key={i} i={3 + i} className="relative py-0.5">
-            <div
-              className="absolute -left-10 top-0.5 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-white ring-2"
-              style={{ boxShadow: `0 0 0 2px ${color}` }}
-            >
-              <span className="h-2 w-2 rounded-full" style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }} />
-            </div>
-            <div className="flex items-baseline gap-3 flex-wrap">
-              <span
-                className="rounded-full px-2.5 py-0.5 font-display text-[14px] font-bold whitespace-nowrap"
-                style={{ background: color + "12", color }}
-              >
-                {p.day}
-              </span>
-              <span className="font-display text-[15.5px] font-bold" style={{ color: NAVY }}>{p.label}</span>
-              <span className="text-[16px] text-slate-500">{p.desc}</span>
-            </div>
-          </Rise>
-        ))}
-      </div>
-    </LightSlide>
-  );
-}
-
-// ─── Reusable: AgriTrackRecordSlide ───────────────────────────────────────────
-
-interface AgriTrackRecordSlideProps {
-  sectionLabel: string;
-  title: string;
-  subheadline: string;
-  body: string;
-  color: string;
-  icon: React.ReactNode;
-  stats: { value: string; label: string }[];
-  photo: string;
-}
-
-function AgriTrackRecordSlide({
-  sectionLabel, title, subheadline, body, color, icon, stats, photo,
-}: AgriTrackRecordSlideProps) {
-  return (
-    <DarkSlide photo={photo} tint={color}>
-      <Rise i={0} className="flex items-center gap-3">
-        <Kicker color={color} dark>{sectionLabel}</Kicker>
-      </Rise>
-      <Rise i={1} className="mt-5 flex items-center gap-4">
-        <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg"
-          style={{ background: `linear-gradient(135deg, ${color}, ${tone(color)})` }}
-        >
-          {icon}
-        </div>
-        <h2 className="font-display font-bold tracking-tight text-white leading-[1.06] text-[38px]">
-          {title}
-        </h2>
-      </Rise>
-
-      <div className="mt-9 flex-1 min-h-0 grid grid-cols-5 gap-8">
-        {/* Story */}
-        <div className="col-span-3 flex flex-col justify-center">
-          <Rise i={2}>
-            <div className="mb-4 h-[3px] w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${color}, ${tone(color)})` }} />
-            <h3 className="font-display text-[24px] font-bold leading-snug" style={gt(tone(color), "#ffffff")}>
-              {subheadline}
-            </h3>
-          </Rise>
-          <Rise i={3}>
-            <p className="mt-4 text-[16px] leading-relaxed text-white/90">{body}</p>
-          </Rise>
-        </div>
-
-        {/* Glass stats */}
-        <div className="col-span-2 grid grid-cols-2 grid-rows-2 gap-4 content-center">
-          {stats.map((s, idx) => (
-            <Rise key={s.label} i={4 + idx} className="min-h-0">
-              <div className="flex h-full flex-col justify-center rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-4">
-                <div className="font-display text-[21px] font-bold leading-tight" style={gt(tone(color), "#ffffff")}>{s.value}</div>
-                <div className="mt-1.5 text-[12.5px] leading-snug text-white/80">{s.label}</div>
-              </div>
-            </Rise>
-          ))}
-        </div>
-      </div>
-    </DarkSlide>
   );
 }
 
@@ -1161,54 +760,63 @@ function WhyOnePartnerSlide() {
   const solutions = ["Water Solutions", "Solar", "Storage", "Mobile CNG", "Diesel", "Smart EMS"];
   return (
     <LightSlide color={NAVY}>
-      <Rise i={0}><Kicker color={NAVY}>Why One Partner</Kicker></Rise>
-      <Rise i={1} className="mt-4 flex items-baseline gap-4 flex-wrap">
-        <h2 className="font-display font-bold tracking-tight leading-[1.05] text-[40px]" style={{ color: NAVY }}>
-          The TAQA One-Stop-Shop
-        </h2>
-        <p className="text-[17px] text-slate-500">
+      <div className="flex items-end justify-between gap-8">
+        <div>
+          <div className="sx-up" style={d(0)}><Kicker color={NAVY}>Why One Partner</Kicker></div>
+          <h2 className="sx-up mt-4 font-display text-[40px] font-bold leading-none tracking-tight" style={{ ...d(60), color: NAVY }}>
+            The TAQA One-Stop-Shop
+          </h2>
+        </div>
+        <p className="sx-up max-w-[430px] pb-1 text-right text-[16px] leading-snug text-slate-500" style={d(120)}>
           One SLA, one communication point, one accountable operator — for the farm's water and power.
         </p>
-      </Rise>
+      </div>
 
       <div className="mt-6 flex-1 min-h-0 grid grid-cols-2 gap-6">
         {/* Solutions hub */}
-        <Rise i={2} className="min-h-0">
+        <div className="sx-up min-h-0" style={d(180)}>
           <div
-            className="relative h-full overflow-hidden rounded-3xl p-6 text-white flex flex-col shadow-[0_18px_44px_-18px_rgba(0,32,96,0.55)]"
+            className="relative h-full overflow-hidden rounded-2xl p-6 text-white flex flex-col shadow-xl"
             style={{ background: `linear-gradient(140deg, ${NAVY} 0%, #0c2f1a 100%)` }}
           >
+            <BlueprintGrid />
+            <Bracket color={GOLD} pos="br" />
             <div
               aria-hidden
               className="absolute -right-16 -top-20 h-56 w-56 rounded-full pointer-events-none"
               style={{ background: "radial-gradient(circle, rgba(132,204,22,0.22), transparent 65%)" }}
             />
-            <h3 className="font-display text-[18px] font-bold mb-4" style={gt(GOLD, "#ffe08a")}>
+            <h3 className="relative font-display text-[18px] font-bold mb-4" style={gt(GOLD, "#ffe08a")}>
               TAQA Arabia — All Farm Solutions
             </h3>
-            <div className="grid grid-cols-2 gap-2.5">
-              {solutions.map(s => (
-                <div key={s} className="flex items-center gap-2.5 rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur-md px-3.5 py-2.5">
+            <div className="relative grid grid-cols-2 gap-2.5">
+              {solutions.map((s, i) => (
+                <div
+                  key={s}
+                  className="sx-up flex items-center gap-2.5 rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur-md px-3.5 py-2.5"
+                  style={d(240 + i * 55)}
+                >
                   <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: `linear-gradient(135deg, ${GOLD}, ${LIME})` }} />
                   <span className="text-[16px] font-semibold text-white/95">{s}</span>
                 </div>
               ))}
             </div>
-            <div className="mt-auto flex items-center gap-2.5 border-t border-white/15 pt-4">
+            <div className="relative mt-auto flex items-center gap-2.5 border-t border-white/15 pt-4">
               <span className="text-[16px] text-white/70">From Fragmented Vendors</span>
-              <ArrowRight className="w-4 h-4" style={{ color: LIME }} />
+              <ArrowRight className="w-4 h-4 shrink-0" style={{ color: LIME }} />
               <span className="text-[16px] font-semibold text-white/95">One Integrated Operator</span>
             </div>
           </div>
-        </Rise>
+        </div>
 
         {/* Benefits */}
         <div className="flex flex-col justify-between gap-2.5 min-h-0">
           {benefits.map((b, idx) => (
-            <Rise key={b.label} i={3 + idx} className="flex-1">
-              <div className="flex h-full items-center gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-black/5 shadow-sm">
+            <div key={b.label} className="sx-up flex-1" style={d(220 + idx * 60)}>
+              <div className="relative flex h-full items-center gap-3 rounded-xl bg-white p-3.5 pl-4 ring-1 ring-black/5 shadow-sm">
+                <span aria-hidden className="absolute inset-y-2.5 left-0 w-[3px] rounded-r-full" style={{ background: `linear-gradient(180deg, ${GREEN}, ${LIME})` }} />
                 <span
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
                   style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }}
                 >
                   <CheckCircle2 className="w-4 h-4" />
@@ -1218,7 +826,7 @@ function WhyOnePartnerSlide() {
                   <div className="text-[16px] leading-snug text-slate-600">{b.desc}</div>
                 </div>
               </div>
-            </Rise>
+            </div>
           ))}
         </div>
       </div>
@@ -1243,15 +851,17 @@ function IntegratedEconomicsSlide() {
   ];
   return (
     <LightSlide color={NAVY}>
-      <Rise i={0}><Kicker color={NAVY}>Integrated Economics</Kicker></Rise>
-      <Rise i={1}>
-        <h2 className="mt-4 font-display font-bold tracking-tight leading-[1.08] text-[34px]" style={{ color: NAVY }}>
-          The Integrated Economics: Diesel-Only vs. TAQA
-        </h2>
-        <p className="mt-1 text-[16px] text-slate-500">
+      <div className="flex items-end justify-between gap-8">
+        <div>
+          <div className="sx-up" style={d(0)}><Kicker color={NAVY}>Integrated Economics</Kicker></div>
+          <h2 className="sx-up mt-4 font-display text-[38px] font-bold leading-none tracking-tight" style={{ ...d(60), color: NAVY }}>
+            The Integrated Economics: Diesel-Only vs. TAQA
+          </h2>
+        </div>
+        <p className="sx-up max-w-[400px] pb-1 text-right text-[16px] leading-snug text-slate-500" style={d(120)}>
           What changes when one partner runs an optimised water-and-power stack — illustrative
         </p>
-      </Rise>
+      </div>
 
       <div className="relative mt-5 flex-1 min-h-0 grid grid-cols-2 gap-6">
         {/* VS badge */}
@@ -1264,9 +874,10 @@ function IntegratedEconomicsSlide() {
         </div>
 
         {/* Today */}
-        <Rise i={2} className="min-h-0">
-          <div className="h-full rounded-3xl p-5 ring-1 ring-red-200 bg-red-50/70 flex flex-col">
-            <div className="mb-3.5 flex items-center gap-2.5">
+        <div className="sx-up min-h-0" style={d(180)}>
+          <div className="relative h-full overflow-hidden rounded-2xl p-5 ring-1 ring-red-200 bg-red-50/70 flex flex-col">
+            <Bracket color="#dc2626" pos="tl" />
+            <div className="mb-3.5 flex items-center gap-2.5 pl-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm" style={{ background: "linear-gradient(135deg, #dc2626, #f87171)" }}>
                 <Flame className="w-4 h-4" />
               </div>
@@ -1277,18 +888,19 @@ function IntegratedEconomicsSlide() {
                 <div key={t.label} className="flex flex-1 items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-red-100">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-red-400" />
                   <div className="min-w-0">
-                    <div className="text-[14.5px] font-bold leading-tight text-red-800">{t.label}</div>
+                    <div className="text-[16px] font-bold leading-tight text-red-800">{t.label}</div>
                     <div className="text-[16px] leading-snug text-slate-600">{t.desc}</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </Rise>
+        </div>
 
         {/* With TAQA */}
-        <Rise i={3} className="min-h-0">
-          <div className="h-full rounded-3xl p-5 flex flex-col" style={{ background: GREEN + "0A", boxShadow: `inset 0 0 0 1px ${GREEN}30` }}>
+        <div className="sx-up min-h-0" style={d(240)}>
+          <div className="relative h-full overflow-hidden rounded-2xl p-5 flex flex-col" style={{ background: GREEN + "0A", boxShadow: `inset 0 0 0 1px ${GREEN}30` }}>
+            <Bracket color={GREEN} pos="tr" />
             <div className="mb-3.5 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm" style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }}>
                 <Zap className="w-4 h-4" />
@@ -1300,21 +912,19 @@ function IntegratedEconomicsSlide() {
                 <div key={t.label} className="flex flex-1 items-center gap-3 rounded-xl bg-white p-3" style={{ boxShadow: `inset 0 0 0 1px ${GREEN}1f` }}>
                   <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: GREEN }} />
                   <div className="min-w-0">
-                    <div className="text-[14.5px] font-bold leading-tight" style={{ color: NAVY }}>{t.label}</div>
+                    <div className="text-[16px] font-bold leading-tight" style={{ color: NAVY }}>{t.label}</div>
                     <div className="text-[16px] leading-snug text-slate-600">{t.desc}</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </Rise>
+        </div>
       </div>
 
-      <Rise i={4}>
-        <p className="mt-3.5 text-center text-[14px] text-slate-500">
-          Figures are illustrative / market-based and depend on farm size, crop, irrigation schedule and fuel prices.
-        </p>
-      </Rise>
+      <p className="sx-up mt-3.5 text-center text-[14px] text-slate-500" style={d(360)}>
+        Figures are illustrative / market-based and depend on farm size, crop, irrigation schedule and fuel prices.
+      </p>
     </LightSlide>
   );
 }
@@ -1336,49 +946,55 @@ function ClosingSlide() {
   ];
   return (
     <DarkSlide photo={P.dina} tint={GREEN}>
-      <Rise i={0}><Kicker color={GREEN} dark>Proven on the Ground</Kicker></Rise>
-      <Rise i={1}>
-        <h2 className="mt-5 font-display font-bold tracking-tight leading-[1.02] text-[52px] text-white">
-          Dina Farms <span style={gt("#4ade80", "#bef264")}>&amp; Beyond</span>
-        </h2>
-        <p className="mt-3 text-[16px] text-white/80">
-          Real agricultural renewable projects — the foundation for the fully integrated farm.
-        </p>
-      </Rise>
+      <div className="sx-up" style={d(0)}><Kicker color={GREEN} dark>Proven on the Ground</Kicker></div>
+      <h2 className="sx-up mt-5 font-display text-[52px] font-bold leading-[1.02] tracking-tight text-white" style={d(70)}>
+        Dina Farms <span style={gt("#4ade80", "#bef264")}>&amp; Beyond</span>
+      </h2>
+      <p className="sx-up mt-3 text-[17px] text-white/80" style={d(130)}>
+        Real agricultural renewable projects — the foundation for the fully integrated farm.
+      </p>
 
-      <Rise i={2}>
-        <p className="mt-6 max-w-[980px] text-[16px] leading-relaxed text-white/90">
-          TAQA Arabia operates renewable-energy projects at Dina Farms — one of Egypt's largest integrated
-          agricultural operations — alongside its landmark Benban solar developments. These projects prove
-          TAQA can deploy and run clean energy at true agricultural scale. The next step is the fully
-          integrated stack: pairing that solar with storage, gas and water under one operator.
-        </p>
-      </Rise>
+      <div className="sx-up mt-6" style={d(190)}>
+        <div className="relative max-w-[1020px] overflow-hidden rounded-2xl bg-white/[0.07] p-6 ring-1 ring-white/15 backdrop-blur-md">
+          <Bracket color={LIME} pos="tl" />
+          <p className="pl-3 text-[17px] leading-relaxed text-white/90">
+            TAQA Arabia operates renewable-energy projects at Dina Farms — one of Egypt's largest integrated
+            agricultural operations — alongside its landmark Benban solar developments. These projects prove
+            TAQA can deploy and run clean energy at true agricultural scale. The next step is the fully
+            integrated stack: pairing that solar with storage, gas and water under one operator.
+          </p>
+        </div>
+      </div>
 
-      <Rise i={3} className="mt-7 flex items-center gap-3">
+      <div className="sx-up mt-6 flex items-center gap-3" style={d(260)}>
         {pillars.map(s => (
           <div key={s.label} className="flex items-center gap-2.5 rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur-md px-4 h-10">
             <span className="h-2 w-2 rounded-full shrink-0" style={{ background: `linear-gradient(135deg, ${s.color}, ${tone(s.color)})` }} />
             <span className="text-[16px] font-semibold text-white/95">{s.label}</span>
           </div>
         ))}
-      </Rise>
+      </div>
 
       <div className="mt-auto grid grid-cols-4 gap-4">
         {stats.map((s, idx) => (
-          <Rise key={s.label} i={4 + idx}>
-            <div className="rounded-3xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-5">
-              <div className="font-display text-[22px] font-bold leading-tight" style={gt("#a3e635", "#fde047")}>{s.value}</div>
+          <div key={s.label} className="sx-up" style={d(320 + idx * 65)}>
+            <div className="rounded-2xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-5">
+              <div className="font-display text-[24px] font-bold leading-tight" style={gt("#a3e635", "#fde047")}>{s.value}</div>
               <div className="mt-1.5 text-[15px] leading-snug text-white/80">{s.label}</div>
             </div>
-          </Rise>
+          </div>
         ))}
       </div>
     </DarkSlide>
   );
 }
 
-// ─── All Slides Array ─────────────────────────────────────────────────────────
+// ─── SLIDES Array (27 slides, 0-indexed) ─────────────────────────────────────
+
+const waterIcon   = <Droplets className="w-5 h-5" />;
+const solarIcon   = <SunMedium className="w-5 h-5" />;
+const batteryIcon = <Battery className="w-5 h-5" />;
+const cngIcon     = <Truck className="w-5 h-5" />;
 
 const SLIDES = [
   // 0
@@ -1397,17 +1013,16 @@ const SLIDES = [
   { title: "Smart Energy Mix",                render: () => <SmartEnergyMixSlide /> },
   // 7
   { title: "Solutions Overview",              render: () => <SolutionsOverviewSlide /> },
-  // 8 — Water: Scope
+
+  // ── Water Solutions ─────────────────────────────────────────────────────────
+  // 8
   {
     title: "Water Solutions: Scope",
     render: () => (
-      <AgriScopeSlide
-        sectionLabel="1 · Water Solutions: Scope & How It Works"
-        title="Reliable, cost-effective water for the farm"
-        subtitle="Desalination, groundwater treatment and smart irrigation pumping"
+      <ScopeSlide
+        solutionNum={1} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
+        subtitle="Reliable, cost-effective water for the farm. Desalination, groundwater treatment and smart irrigation pumping."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the water you use — little to no upfront CapEx."
-        color="#0095C8"
-        icon={<Droplets className="w-4 h-4" />}
         taqaInvests={[
           "Brackish/seawater RO desalination units",
           "Pre-treatment & filtration",
@@ -1428,93 +1043,80 @@ const SLIDES = [
           "Full plant operation and maintenance",
           "Your own water source",
         ]}
-        photo={P.water}
       />
     ),
   },
-  // 9 — Water: Value
+  // 9
   {
     title: "Water Solutions: Value Proposition",
     render: () => (
-      <AgriValueSlide
-        sectionLabel="1 · Water Solutions: Value Proposition"
-        title="Water Solutions: Value Proposition"
-        color="#0095C8"
-        icon={<Droplets className="w-5 h-5" />}
-        gains={[
-          { label: "Guaranteed Water Security",  desc: "Reliable freshwater for irrigation, independent of grid-utility and groundwater constraints." },
-          { label: "Lower Energy & Water Cost",  desc: "VSDs, peak-demand control and solar-powered pumping cut energy use and non-revenue water losses." },
-          { label: "Frees Up Groundwater",       desc: "Desalination and treatment reduce over-abstraction, protecting the aquifer for the long term." },
-          { label: "Sustainability & ESG Impact",desc: "Solar-powered desalination, brine management and a reduced freshwater-extraction footprint." },
+      <ValuePropSlide
+        solutionNum={1} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
+        whatYouGain={[
+          { label: "Guaranteed Water Security",   desc: "Reliable freshwater for irrigation, independent of grid-utility and groundwater constraints." },
+          { label: "Lower Energy & Water Cost",   desc: "VSDs, peak-demand control and solar-powered pumping cut energy use and non-revenue water losses." },
+          { label: "Frees Up Groundwater",        desc: "Desalination and treatment reduce over-abstraction, protecting the aquifer for the long term." },
+          { label: "Sustainability & ESG Impact", desc: "Solar-powered desalination, brine management and a reduced freshwater-extraction footprint." },
         ]}
-        edge={[
+        taqaEdge={[
           { label: "Flexible Delivery Approach", desc: "BOO/BOOT or EPC via Capacity-as-a-Service — no upfront infrastructure cost." },
           { label: "Smart Operations & Uptime",  desc: "Real-time monitoring, leak & failure detection and predictive-maintenance dashboards." },
           { label: "Tailored to the Farm",       desc: "Solutions sized to crop type, hectares and irrigation schedule — not one-size-fits-all." },
           { label: "Performance Guarantees",     desc: "Volume and quality backed by contractual SLAs." },
         ]}
-        photo={P.water}
       />
     ),
   },
-  // 10 — Water: Timeline
+  // 10
   {
     title: "Water Solutions: Timeline",
     render: () => (
-      <AgriTimelineSlide
-        sectionLabel="1 · Water Solutions: Implementation Timeline"
-        title="Water Solutions: Implementation Timeline"
-        color="#0095C8"
-        icon={<Droplets className="w-5 h-5" />}
+      <TimelineSlide
+        solutionNum={1} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
         phases={[
-          { day: "Day 0–20",    label: "Water Demand Study", desc: "Crop water need & source-water survey." },
-          { day: "Day 20–60",   label: "Plant Design",       desc: "RO sizing, pumping & solar integration." },
-          { day: "Day 45–75",   label: "Commercial Model",   desc: "BOO/BOOT & water-purchase agreement." },
-          { day: "Day 75–210",  label: "Construction",       desc: "Plant, wells, networks & smart metering." },
-          { day: "Day 210–260", label: "Commissioning",      desc: "Testing, water-quality validation & handover." },
-          { day: "Day 260+",    label: "Smart O&M",          desc: "IoT monitoring & predictive maintenance." },
+          { days: "Day 0–20",    label: "Water Demand Study (crop water need & source-water survey)" },
+          { days: "Day 20–60",   label: "Plant Design (RO sizing, pumping & solar integration)" },
+          { days: "Day 45–75",   label: "Commercial Model (BOO/BOOT & water-purchase agreement)" },
+          { days: "Day 75–210",  label: "Construction (plant, wells, networks & smart metering)" },
+          { days: "Day 210–260", label: "Commissioning (testing, water-quality validation & handover)" },
+          { days: "Day 260+",    label: "Smart O&M (IoT monitoring & predictive maintenance)" },
         ]}
         groups={[
-          { label: "STUDY & DESIGN", range: "Day 0–60",   color: "#0077A8" },
-          { label: "FINANCE & BUILD",range: "Day 45–260",  color: "#0095C8" },
-          { label: "SMART OPERATE",  range: "Day 260+",    color: "#006B9A" },
+          { label: "STUDY & DESIGN",  range: "Day 0–60" },
+          { label: "FINANCE & BUILD", range: "Day 45–260" },
+          { label: "SMART OPERATE",   range: "Day 260+" },
         ]}
-        photo={P.water}
       />
     ),
   },
-  // 11 — Water: Track Record
+  // 11
   {
     title: "Water Solutions: Track Record",
     render: () => (
-      <AgriTrackRecordSlide
-        sectionLabel="1 · Water Solutions: Proven Track Record"
-        title="Water Solutions: Proven Track Record"
-        subheadline="Eco Solar Desalination — Soma Bay"
+      <TrackRecordSlide
+        solutionNum={1} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
+        heading="Water Solutions: Proven Track Record"
+        subheading="Eco Solar Desalination — Soma Bay"
         body="On the Red Sea, TAQA Water built Egypt's first green desalination facility powered entirely by renewable energy, using technology that consumes 50% less power than peers. The same solar-powered, smart-operated water model — proven at scale — secures irrigation supply for large farms and agribusiness."
-        color="#0095C8"
-        icon={<Droplets className="w-5 h-5" />}
         stats={[
           { value: "+47,000 m³/day", label: "Contracted desalination" },
           { value: "15",             label: "Operational water locations" },
           { value: "50% less power", label: "Than peer plants" },
           { value: "8,560 t CO₂",   label: "Avoided per year" },
         ]}
-        photo={P.water}
       />
     ),
   },
-  // 12 — Solar: Scope
+
+  // ── Solar ────────────────────────────────────────────────────────────────────
+  // 12
   {
     title: "Solar: Scope",
     render: () => (
-      <AgriScopeSlide
-        sectionLabel="2 · Solar: Scope & How It Works"
-        title="Tailored solar PV to power pivots and pumps by day"
-        subtitle="Integrated with storage and diesel for round-the-clock supply"
+      <ScopeSlide
+        solutionNum={2} solutionLabel="Solar" color="#d97706" icon={solarIcon} photo={P.solar}
+        subtitle="Tailored solar PV to power pivots and pumps by day. Integrated with storage and diesel for round-the-clock supply."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the solar power you use — little to no upfront CapEx."
-        color="#d97706"
-        icon={<SunMedium className="w-4 h-4" />}
         taqaInvests={[
           "Ground-mount & pump-side PV arrays",
           "Solar inverters & mounting",
@@ -1535,93 +1137,80 @@ const SLIDES = [
           "Zero-capex PPA option",
           "25-year performance guarantee",
         ]}
-        photo={P.solar}
       />
     ),
   },
-  // 13 — Solar: Value
+  // 13
   {
     title: "Solar: Value Proposition",
     render: () => (
-      <AgriValueSlide
-        sectionLabel="2 · Solar: Value Proposition"
-        title="Solar: Value Proposition"
-        color="#d97706"
-        icon={<SunMedium className="w-5 h-5" />}
-        gains={[
-          { label: "Lower Energy Bills",         desc: "Clean solar energy at lower cost than diesel-only pivot power, through long-term PPAs." },
-          { label: "Energy Security",            desc: "On-site generation reduces exposure to fuel-price spikes and supply disruption." },
-          { label: "Sustainability & Carbon Cut",desc: "Each 1 MWp avoids ~1,000 tons of CO₂ a year — strong ESG and export credentials." },
-          { label: "Uses Idle Land",             desc: "Marginal and unused farmland becomes a productive, cost-saving energy asset." },
+      <ValuePropSlide
+        solutionNum={2} solutionLabel="Solar" color="#d97706" icon={solarIcon} photo={P.solar}
+        whatYouGain={[
+          { label: "Lower Energy Bills",          desc: "Clean solar energy at lower cost than diesel-only pivot power, through long-term PPAs." },
+          { label: "Energy Security",             desc: "On-site generation reduces exposure to fuel-price spikes and supply disruption." },
+          { label: "Sustainability & Carbon Cut", desc: "Each 1 MWp avoids ~1,000 tons of CO₂ a year — strong ESG and export credentials." },
+          { label: "Uses Idle Land",              desc: "Marginal and unused farmland becomes a productive, cost-saving energy asset." },
         ]}
-        edge={[
-          { label: "Flexible Financing Solutions",desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
-          { label: "Single Energy Partner",       desc: "One provider for electricity and water — solar and batteries for maximum savings." },
-          { label: "Lifecycle O&M & Guarantee",  desc: "Remote monitoring, maintenance and performance guarantees for 25+ years." },
-          { label: "Egypt's Solar Pioneer",       desc: "Operating multiple solar farms and water desalination projects across Egypt." },
+        taqaEdge={[
+          { label: "Flexible Financing Solutions", desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
+          { label: "Single Energy Partner",        desc: "One provider for electricity and water — solar and batteries for maximum savings." },
+          { label: "Lifecycle O&M & Guarantee",   desc: "Remote monitoring, maintenance and performance guarantees for 25+ years." },
+          { label: "Egypt's Solar Pioneer",        desc: "Operating multiple solar farms and water desalination projects across Egypt." },
         ]}
-        photo={P.solar}
       />
     ),
   },
-  // 14 — Solar: Timeline
+  // 14
   {
     title: "Solar: Timeline",
     render: () => (
-      <AgriTimelineSlide
-        sectionLabel="2 · Solar: Implementation Timeline"
-        title="Solar: Implementation Timeline"
-        color="#d97706"
-        icon={<SunMedium className="w-5 h-5" />}
+      <TimelineSlide
+        solutionNum={2} solutionLabel="Solar" color="#d97706" icon={solarIcon} photo={P.solar}
         phases={[
-          { day: "Day 0–21",   label: "Site & Energy Study",  desc: "Irradiation, pivot load & land survey." },
-          { day: "Day 21–55",  label: "System Design",        desc: "Array sizing & genset/battery-tie design." },
-          { day: "Day 40–75",  label: "PPA Structuring",      desc: "BOO/BOOT & tariff agreement." },
-          { day: "Day 75–130", label: "Procurement",          desc: "Panels, inverters & mounting sourcing." },
-          { day: "Day 130–210",label: "Install & Commission", desc: "Build, tie-in, testing & go-live." },
-          { day: "Day 210+",   label: "O&M",                  desc: "Monitoring & performance maintenance." },
+          { days: "Day 0–21",    label: "Site & Energy Study (irradiation, pivot load & land survey)" },
+          { days: "Day 21–55",   label: "System Design (array sizing & genset/battery-tie design)" },
+          { days: "Day 40–75",   label: "PPA Structuring (BOO/BOOT & tariff agreement)" },
+          { days: "Day 75–130",  label: "Procurement (panels, inverters & mounting sourcing)" },
+          { days: "Day 130–210", label: "Install & Commission (build, tie-in, testing & go-live)" },
+          { days: "Day 210+",    label: "O&M (monitoring & performance maintenance)" },
         ]}
         groups={[
-          { label: "STUDY & DESIGN", range: "Day 0–55",   color: "#B45309" },
-          { label: "FINANCE & BUILD",range: "Day 40–210",  color: "#d97706" },
-          { label: "OPERATE",        range: "Day 210+",    color: "#92400E" },
+          { label: "STUDY & DESIGN",  range: "Day 0–55" },
+          { label: "FINANCE & BUILD", range: "Day 40–210" },
+          { label: "OPERATE",         range: "Day 210+" },
         ]}
-        photo={P.solar}
       />
     ),
   },
-  // 15 — Solar: Track Record
+  // 15
   {
     title: "Solar: Track Record",
     render: () => (
-      <AgriTrackRecordSlide
-        sectionLabel="2 · Solar: Proven Track Record"
-        title="Solar: Proven Track Record"
-        subheadline="Powering one of Egypt's largest farms with renewable energy"
+      <TrackRecordSlide
+        solutionNum={2} solutionLabel="Solar" color="#d97706" icon={solarIcon} photo={P.dina}
+        heading="Solar: Proven Track Record"
+        subheading="Powering one of Egypt's largest farms with renewable energy"
         body="TAQA Arabia operates renewable-energy projects at Dina Farms — one of Egypt's largest integrated agricultural operations — alongside its landmark Benban solar developments. It is direct proof that TAQA can deploy and run solar at true agricultural scale, powering irrigation and farm operations with clean energy."
-        color="#d97706"
-        icon={<SunMedium className="w-5 h-5" />}
         stats={[
           { value: "Dina Farms", label: "Live agricultural solar project" },
           { value: "Benban",     label: "Landmark solar development" },
           { value: "BOO/BOOT",   label: "PPA models, no farm capex" },
           { value: "~1,000 t",   label: "CO₂ avoided/MWp/yr" },
         ]}
-        photo={P.dina}
       />
     ),
   },
-  // 16 — Battery: Scope
+
+  // ── Battery Storage ─────────────────────────────────────────────────────────
+  // 16
   {
     title: "Battery Storage: Scope",
     render: () => (
-      <AgriScopeSlide
-        sectionLabel="3 · Battery Storage (BESS): Scope & How It Works"
-        title="Battery storage that shifts solar into the night"
-        subtitle="Firms the power stack — so irrigation never stops"
+      <ScopeSlide
+        solutionNum={3} solutionLabel="Battery Storage (BESS)" color="#7B35C2" icon={batteryIcon} photo={P.battery}
+        subtitle="Battery storage that shifts solar into the night. Firms the power stack — so irrigation never stops."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the service — little to no upfront CapEx."
-        color="#7B35C2"
-        icon={<Battery className="w-4 h-4" />}
         taqaInvests={[
           "Battery energy-storage units",
           "Power-conversion system & inverters",
@@ -1642,93 +1231,80 @@ const SLIDES = [
           "24/7 irrigation uptime",
           "EMS-optimised dispatch",
         ]}
-        photo={P.battery}
       />
     ),
   },
-  // 17 — Battery: Value
+  // 17
   {
     title: "Battery Storage: Value Proposition",
     render: () => (
-      <AgriValueSlide
-        sectionLabel="3 · Battery Storage: Value Proposition"
-        title="Battery Storage: Value Proposition"
-        color="#7B35C2"
-        icon={<Battery className="w-5 h-5" />}
-        gains={[
-          { label: "Solar After Sunset",    desc: "Stores daytime solar surplus and dispatches it to run pivots into the evening and early morning." },
-          { label: "Less Diesel, Lower Cost",desc: "Battery dispatch displaces costly diesel-genset hours, cutting fuel spend and engine wear." },
-          { label: "Greener Every Year",    desc: "More stored solar dispatched means less diesel and a steadily smaller carbon footprint." },
-          { label: "A Stacked Asset",       desc: "One system delivers solar-shifting, peak support and backup — value across multiple uses." },
+      <ValuePropSlide
+        solutionNum={3} solutionLabel="Battery Storage" color="#7B35C2" icon={batteryIcon} photo={P.battery}
+        whatYouGain={[
+          { label: "Solar After Sunset",     desc: "Stores daytime solar surplus and dispatches it to run pivots into the evening and early morning." },
+          { label: "Less Diesel, Lower Cost", desc: "Battery dispatch displaces costly diesel-genset hours, cutting fuel spend and engine wear." },
+          { label: "Greener Every Year",     desc: "More stored solar dispatched means less diesel and a steadily smaller carbon footprint." },
+          { label: "A Stacked Asset",        desc: "One system delivers solar-shifting, peak support and backup — value across multiple uses." },
         ]}
-        edge={[
-          { label: "Flexible Financing Solutions",desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time." },
-          { label: "Single Energy Partner",       desc: "One provider for solar, storage and water — maximum savings and utilisation." },
-          { label: "Lifecycle O&M & Guarantee",  desc: "Remote monitoring, maintenance and performance guarantees 25+ years." },
-          { label: "Smart Energy Management",    desc: "EMS automatically optimises charge/discharge against loads, solar and fuel cost." },
+        taqaEdge={[
+          { label: "Flexible Financing Solutions", desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time." },
+          { label: "Single Energy Partner",        desc: "One provider for solar, storage and water — maximum savings and utilisation." },
+          { label: "Lifecycle O&M & Guarantee",   desc: "Remote monitoring, maintenance and performance guarantees 25+ years." },
+          { label: "Smart Energy Management",     desc: "EMS automatically optimises charge/discharge against loads, solar and fuel cost." },
         ]}
-        photo={P.battery}
       />
     ),
   },
-  // 18 — Battery: Timeline
+  // 18
   {
     title: "Battery Storage: Timeline",
     render: () => (
-      <AgriTimelineSlide
-        sectionLabel="3 · Battery Storage: Implementation Timeline"
-        title="Battery Storage: Implementation Timeline"
-        color="#7B35C2"
-        icon={<Battery className="w-5 h-5" />}
+      <TimelineSlide
+        solutionNum={3} solutionLabel="Battery Storage" color="#7B35C2" icon={batteryIcon} photo={P.battery}
         phases={[
-          { day: "Day 0–21",   label: "Load & Solar Study", desc: "Farm load profile and solar surplus assessment." },
-          { day: "Day 21–55",  label: "System Design",      desc: "BESS sizing & hybrid configuration." },
-          { day: "Day 40–75",  label: "Commercial Model",   desc: "BOO/BOOT & savings agreement." },
-          { day: "Day 75–140", label: "Procurement",        desc: "Batteries, PCS & EMS sourcing." },
-          { day: "Day 140–220",label: "Install & Commission",desc: "Build, integration, testing & go-live." },
-          { day: "Day 220+",   label: "Smart O&M",          desc: "EMS monitoring & performance maintenance." },
+          { days: "Day 0–21",    label: "Load & Solar Study (farm load profile and solar surplus assessment)" },
+          { days: "Day 21–55",   label: "System Design (BESS sizing & hybrid configuration)" },
+          { days: "Day 40–75",   label: "Commercial Model (BOO/BOOT & savings agreement)" },
+          { days: "Day 75–140",  label: "Procurement (batteries, PCS & EMS sourcing)" },
+          { days: "Day 140–220", label: "Install & Commission (build, integration, testing & go-live)" },
+          { days: "Day 220+",    label: "Smart O&M (EMS monitoring & performance maintenance)" },
         ]}
         groups={[
-          { label: "STUDY & DESIGN", range: "Day 0–55",   color: "#6B21A8" },
-          { label: "FINANCE & BUILD",range: "Day 40–220",  color: "#7B35C2" },
-          { label: "SMART OPERATE",  range: "Day 220+",    color: "#581C87" },
+          { label: "STUDY & DESIGN",  range: "Day 0–55" },
+          { label: "FINANCE & BUILD", range: "Day 40–220" },
+          { label: "SMART OPERATE",   range: "Day 220+" },
         ]}
-        photo={P.battery}
       />
     ),
   },
-  // 19 — Battery: Track Record
+  // 19
   {
     title: "Battery Storage: Track Record",
     render: () => (
-      <AgriTrackRecordSlide
-        sectionLabel="3 · Battery Storage: Proven Track Record"
-        title="Battery Storage: Proven Track Record"
-        subheadline="Turning intermittent solar into round-the-clock farm power"
+      <TrackRecordSlide
+        solutionNum={3} solutionLabel="Battery Storage" color="#7B35C2" icon={batteryIcon} photo={P.battery}
+        heading="Battery Storage: Proven Track Record"
+        subheading="Turning intermittent solar into round-the-clock farm power"
         body="As Egypt's largest private power player, TAQA Arabia pairs Battery Energy Storage with its solar and distribution assets. Storage lets farms shift solar into the evening, shave peaks and secure supply — the natural next step in TAQA's integrated energy model."
-        color="#7B35C2"
-        icon={<Battery className="w-5 h-5" />}
         stats={[
-          { value: "Peak shaving",   label: "Cuts costly demand charges" },
-          { value: "Solar firming",  label: "Day-to-night energy shift" },
-          { value: "BOO/BOOT",       label: "No client capex" },
-          { value: "24/7 EMS",       label: "Monitoring & O&M" },
+          { value: "Peak shaving",  label: "Cuts costly demand charges" },
+          { value: "Solar firming", label: "Day-to-night energy shift" },
+          { value: "BOO/BOOT",      label: "No client capex" },
+          { value: "24/7 EMS",      label: "Monitoring & O&M" },
         ]}
-        photo={P.battery}
       />
     ),
   },
-  // 20 — CNG: Scope
+
+  // ── Mobile CNG ──────────────────────────────────────────────────────────────
+  // 20
   {
     title: "Mobile CNG: Scope",
     render: () => (
-      <AgriScopeSlide
-        sectionLabel="4 · Mobile CNG: Scope & How It Works"
-        title="Portable natural gas to fuel farm gas-gensets"
-        subtitle="A cleaner, cheaper alternative to diesel where there is no pipeline"
+      <ScopeSlide
+        solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
+        subtitle="Portable natural gas to fuel farm gas-gensets. A cleaner, cheaper alternative to diesel where there is no pipeline."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the gas you use — little to no upfront CapEx."
-        color="#E68A00"
-        icon={<Truck className="w-4 h-4" />}
         taqaInvests={[
           "Mother station & compression",
           "CNG/virtual-pipeline trailers",
@@ -1748,83 +1324,73 @@ const SLIDES = [
           "Lower-cost fuel for drying & processing",
           "Managed supply and refills",
         ]}
-        photo={P.cng}
       />
     ),
   },
-  // 21 — CNG: Value
+  // 21
   {
     title: "Mobile CNG: Value Proposition",
     render: () => (
-      <AgriValueSlide
-        sectionLabel="4 · Mobile CNG: Value Proposition"
-        title="Mobile CNG: Value Proposition"
-        color="#E68A00"
-        icon={<Truck className="w-5 h-5" />}
-        gains={[
-          { label: "Off-Grid Gas Supply",   desc: "Reliable natural gas to remote farms with no pipeline access, by mobile virtual pipeline." },
-          { label: "Cost Savings vs. Diesel",desc: "≈40% lower fuel cost than diesel — a major cut to the farm's biggest running expense." },
-          { label: "Cleaner Operations",    desc: "~24% lower CO₂ than diesel helps the farm meet tightening emissions and export requirements." },
-          { label: "99.5% Uptime SLA",      desc: "SCADA-monitored hot-swap replenishment guarantees uninterrupted gas for the gensets." },
+      <ValuePropSlide
+        solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
+        whatYouGain={[
+          { label: "Off-Grid Gas Supply",     desc: "Reliable natural gas to remote farms with no pipeline access, by mobile virtual pipeline." },
+          { label: "Cost Savings vs. Diesel", desc: "≈40% lower fuel cost than diesel — a major cut to the farm's biggest running expense." },
+          { label: "Cleaner Operations",      desc: "~24% lower CO₂ than diesel helps the farm meet tightening emissions and export requirements." },
+          { label: "99.5% Uptime SLA",        desc: "SCADA-monitored hot-swap replenishment guarantees uninterrupted gas for the gensets." },
         ]}
-        edge={[
-          { label: "Master Gas Scale & Network",  desc: "TAQA's Master Gas runs Egypt's leading CNG virtual pipeline with stations across Egypt." },
-          { label: "Flexible Financing Solutions",desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time." },
-          { label: "Scalable to Any Load",        desc: "Starter (500 Nm³/day) to Heavy (5,000+ Nm³/day) — scales with the farm's gas demand." },
-          { label: "Lifecycle O&M & Guarantee",  desc: "Remote monitoring, maintenance and performance guarantees." },
+        taqaEdge={[
+          { label: "Master Gas Scale & Network",   desc: "TAQA's Master Gas runs Egypt's leading CNG virtual pipeline with stations across Egypt." },
+          { label: "Flexible Financing Solutions", desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time." },
+          { label: "Scalable to Any Load",         desc: "Starter (500 Nm³/day) to Heavy (5,000+ Nm³/day) — scales with the farm's gas demand." },
+          { label: "Lifecycle O&M & Guarantee",   desc: "Remote monitoring, maintenance and performance guarantees." },
         ]}
-        photo={P.cng}
       />
     ),
   },
-  // 22 — CNG: Timeline
+  // 22
   {
     title: "Mobile CNG: Timeline",
     render: () => (
-      <AgriTimelineSlide
-        sectionLabel="4 · Mobile CNG: Implementation Timeline"
-        title="Mobile CNG: Implementation Timeline"
-        color="#E68A00"
-        icon={<Truck className="w-5 h-5" />}
+      <TimelineSlide
+        solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
         phases={[
-          { day: "Day 0",       label: "Discovery",      desc: "Initial farm assessment and gas demand evaluation." },
-          { day: "Day 1–3",     label: "Initial Contact",desc: "TAQA commercial team engagement and requirements scoping." },
-          { day: "Day 4–7",     label: "Site Audit",     desc: "Technical site visit and consumption profiling." },
-          { day: "Day 8–14",    label: "Contract",       desc: "Commercial terms and supply agreement finalisation." },
-          { day: "Day 15–30",   label: "Mobilization",   desc: "Equipment preparation and trailer scheduling." },
-          { day: "Day 90–120",  label: "On-Site Install",desc: "PRMS skid, metering and safety systems installed." },
-          { day: "Day 120–200", label: "Live Gas",       desc: "First gas delivered; metered supply commences." },
+          { days: "Day 0",       label: "Discovery (initial farm assessment and gas demand evaluation)" },
+          { days: "Day 1–3",     label: "Initial Contact (TAQA commercial team engagement and requirements scoping)" },
+          { days: "Day 4–7",     label: "Site Audit (technical site visit and consumption profiling)" },
+          { days: "Day 8–14",    label: "Contract (commercial terms and supply agreement finalisation)" },
+          { days: "Day 15–30",   label: "Mobilization (equipment preparation and trailer scheduling)" },
+          { days: "Day 90–120",  label: "On-Site Install (PRMS skid, metering and safety systems installed)" },
+          { days: "Day 120–200", label: "Live Gas (first gas delivered; metered supply commences)" },
         ]}
         groups={[
-          { label: "DISCOVERY & AUDIT",   range: "Day 0–14",    color: "#B86000" },
-          { label: "CONTRACTING",         range: "Day 8–14",     color: "#E68A00" },
-          { label: "DEPLOYMENT & GO-LIVE",range: "Day 90–200",   color: "#8B5000" },
+          { label: "DISCOVERY & AUDIT",    range: "Day 0–14" },
+          { label: "CONTRACTING",          range: "Day 8–14" },
+          { label: "DEPLOYMENT & GO-LIVE", range: "Day 90–200" },
         ]}
-        photo={P.cng}
       />
     ),
   },
-  // 23 — CNG: Track Record
+  // 23
   {
     title: "Mobile CNG: Track Record",
     render: () => (
-      <AgriTrackRecordSlide
-        sectionLabel="4 · Mobile CNG: Proven Track Record"
-        title="Mobile CNG: Proven Track Record"
-        subheadline="Virtual Pipeline — 4 Governorates. First company in Egypt to supply natural gas through a mobile virtual pipeline."
+      <TrackRecordSlide
+        solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
+        heading="Mobile CNG: Proven Track Record"
+        subheading="Virtual Pipeline — 4 Governorates. First company in Egypt to supply natural gas through a mobile virtual pipeline."
         body="TAQA Arabia pioneered mobile CNG in Egypt, using its network of 86 CNG stations to extend a virtual pipeline into four governorates with no fixed gas infrastructure. The same model brings clean, lower-cost gas to off-grid farms and agribusiness — fueling gensets that would otherwise burn diesel."
-        color="#E68A00"
-        icon={<Truck className="w-5 h-5" />}
         stats={[
-          { value: "86",      label: "CNG stations feeding the virtual pipeline" },
-          { value: "4",       label: "Governorates served off-grid" },
-          { value: "+2,350",  label: "mmscf CNG delivered/year" },
-          { value: "+10",     label: "Active mobile-CNG clients" },
+          { value: "86",     label: "CNG stations feeding the virtual pipeline" },
+          { value: "4",      label: "Governorates served off-grid" },
+          { value: "+2,350", label: "mmscf CNG delivered/year" },
+          { value: "+10",    label: "Active mobile-CNG clients" },
         ]}
-        photo={P.cng}
       />
     ),
   },
+
+  // ── Closing ─────────────────────────────────────────────────────────────────
   // 24
   { title: "Why One Partner",         render: () => <WhyOnePartnerSlide /> },
   // 25
