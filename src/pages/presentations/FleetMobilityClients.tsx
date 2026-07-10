@@ -335,7 +335,7 @@ function NumbersSlide() {
   const heroStats = [
     { value: "EGP 13.4bn", label: "Revenue",                   sub: "FY 2025", hero: true },
     { value: "EGP 1.5bn",  label: "EBITDA",                    sub: "FY 2025" },
-    { value: "~6.5M",      label: "Residential gas customers", sub: "Active connections" },
+    { value: "~7M",        label: "Customers served", sub: "Approximate, all utilities" },
   ];
   const divCards = [
     { div: "GAS",       icon: <Flame className="h-4 w-4" />, color: "#059669", stats: ["86 CNG stations", "18 conversion centers", "Capacity 12K cars/year", "Master Gas virtual pipeline"] },
@@ -406,11 +406,11 @@ function NumbersSlide() {
                 </div>
                 <span className="font-display text-[15px] font-bold uppercase tracking-[0.14em] text-[#002060]">{c.div}</span>
               </div>
-              <div className="mt-3 space-y-1.5">
+              <div className="mt-3 space-y-2.5">
                 {c.stats.map(s => (
-                  <div key={s} className="flex items-start gap-2">
-                    <span aria-hidden className="mt-[9px] h-1.5 w-1.5 shrink-0 rotate-45" style={{ background: c.color }} />
-                    <span className="text-[16px] leading-snug text-slate-600">{s}</span>
+                  <div key={s} className="flex items-start gap-2.5">
+                    <span aria-hidden className="mt-[8px] h-2 w-2 shrink-0 rotate-45" style={{ background: c.color }} />
+                    <span className="text-[17px] font-semibold leading-snug text-slate-700">{s}</span>
                   </div>
                 ))}
               </div>
@@ -557,7 +557,7 @@ function PathwaySlide() {
         </div>
 
         <div
-          className="sx-up relative mt-5 shrink-0 overflow-hidden rounded-2xl px-7 py-4 text-center shadow-lg"
+          className="sx-up relative mt-4 shrink-0 overflow-hidden rounded-2xl px-7 py-3 text-center shadow-lg"
           style={{ ...d(460), background: "linear-gradient(120deg, #002060 0%, #0a2f7a 100%)" }}
         >
           <BlueprintGrid />
@@ -748,13 +748,13 @@ function IntegratedEconomicsSlide() {
       <CornerWash color="#002060" />
       <BlueprintGrid light />
 
-      <div className="relative z-10 flex h-full flex-col p-14">
+      <div className="relative z-10 flex h-full flex-col px-14 py-10">
         <div className="flex items-end justify-between gap-8">
           <div>
             <div className="sx-up" style={d(0)}>
               <Kicker color="#002060">Closing · Integrated Economics</Kicker>
             </div>
-            <h2 className="sx-up mt-4 font-display text-[38px] font-bold leading-none tracking-tight text-[#002060]" style={d(60)}>
+            <h2 className="sx-up mt-4 whitespace-nowrap font-display text-[32px] font-bold leading-tight tracking-tight text-[#002060]" style={d(60)}>
               The Integrated Economics: Diesel-Only vs. TAQA
             </h2>
           </div>
@@ -770,10 +770,10 @@ function IntegratedEconomicsSlide() {
             </div>
             <div className="flex min-h-0 flex-1 flex-col justify-between gap-2.5">
               {todayItems.map((item, i) => (
-                <div key={item.label} className="sx-up relative flex-1 overflow-hidden rounded-xl bg-white px-4 py-2.5 ring-1 ring-black/5 shadow-sm" style={d(200 + i * 60)}>
+                <div key={item.label} className="sx-up relative rounded-xl bg-white px-4 py-3 ring-1 ring-black/5 shadow-sm" style={d(200 + i * 60)}>
                   <span aria-hidden className="absolute inset-y-2.5 left-0 w-[3px] rounded-r-full bg-[#dc2626]" />
                   <div className="pl-2 text-[17px] font-bold leading-tight text-[#002060]">{item.label}</div>
-                  <div className="mt-0.5 pl-2 text-[16px] leading-snug text-slate-600">{item.desc}</div>
+                  <div className="mt-0.5 pl-2 text-[15px] leading-snug text-slate-600">{item.desc}</div>
                 </div>
               ))}
             </div>
@@ -784,10 +784,10 @@ function IntegratedEconomicsSlide() {
             </div>
             <div className="flex min-h-0 flex-1 flex-col justify-between gap-2.5">
               {taqaItems.map((item, i) => (
-                <div key={item.label} className="sx-up relative flex-1 overflow-hidden rounded-xl bg-white px-4 py-2.5 ring-1 ring-black/5 shadow-sm" style={d(260 + i * 60)}>
+                <div key={item.label} className="sx-up relative rounded-xl bg-white px-4 py-3 ring-1 ring-black/5 shadow-sm" style={d(260 + i * 60)}>
                   <span aria-hidden className="absolute inset-y-2.5 left-0 w-[3px] rounded-r-full bg-[#059669]" />
                   <div className="pl-2 text-[17px] font-bold leading-tight text-[#002060]">{item.label}</div>
-                  <div className="mt-0.5 pl-2 text-[16px] leading-snug text-slate-600">{item.desc}</div>
+                  <div className="mt-0.5 pl-2 text-[15px] leading-snug text-slate-600">{item.desc}</div>
                 </div>
               ))}
             </div>
@@ -795,7 +795,7 @@ function IntegratedEconomicsSlide() {
         </div>
 
         <div
-          className="sx-up relative mt-5 shrink-0 overflow-hidden rounded-2xl px-7 py-4 text-center shadow-lg"
+          className="sx-up relative mt-4 shrink-0 overflow-hidden rounded-2xl px-7 py-3 text-center shadow-lg"
           style={{ ...d(520), background: "linear-gradient(120deg, #002060 0%, #0a2f7a 100%)" }}
         >
           <BlueprintGrid />
@@ -1105,7 +1105,7 @@ const SLIDES = [
       <ScopeSlide
         solutionNum={3} solutionLabel="EV Charging" color="#7c3aed" icon={evIcon} photo={P.ev}
         subtitle="Electrify with the holder of Egypt's first private EV-charging licence — depot, destination and en-route AC/DC charging, end-to-end."
-        taqaInvests={["AC & DC charging infrastructure", "Grid-capacity upgrades", "Energy management & load balancing", "Operator/user mobile app", "BOO/BOOT charger financing"]}
+        taqaInvests={["AC & DC charging infrastructure", "Grid-capacity upgrades", "Energy management & load balancing", "Operator/user mobile app"]}
         steps={[
           "TAQA surveys the depot grid, fleet duty-cycle and charging mix.",
           "AC chargers overnight at depot; DC chargers for en-route top-ups.",

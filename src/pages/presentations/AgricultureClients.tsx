@@ -388,7 +388,7 @@ function NumbersSlide() {
   const heroes = [
     { value: "EGP 13.4bn", label: "Revenue",       sub: "FY 2025" },
     { value: "EGP 1.5bn",  label: "EBITDA",        sub: "FY 2025" },
-    { value: "~6.5M",      label: "Gas customers", sub: "Active connections" },
+    { value: "~7M",        label: "Customers served", sub: "Approximate, all utilities" },
   ];
   const divisions = [
     { div: "GAS",          icon: <Flame className="w-4 h-4" />,    stats: ["+10,000 km", "8 governorates, 15yr"],    color: "#E68A00" },
@@ -442,9 +442,9 @@ function NumbersSlide() {
               </div>
               <div className="space-y-2.5">
                 {dv.stats.map(s => (
-                  <div key={s} className="flex items-start gap-2">
-                    <span className="mt-[7px] h-1.5 w-1.5 rounded-full shrink-0" style={{ background: dv.color }} />
-                    <span className="text-[16px] font-medium text-slate-600 leading-snug">{s}</span>
+                  <div key={s} className="flex items-start gap-2.5">
+                    <span className="mt-[8px] h-2 w-2 rotate-45 shrink-0" style={{ background: dv.color }} />
+                    <span className="text-[17px] font-semibold text-slate-700 leading-snug">{s}</span>
                   </div>
                 ))}
               </div>
@@ -854,7 +854,7 @@ function IntegratedEconomicsSlide() {
       <div className="flex items-end justify-between gap-8">
         <div>
           <div className="sx-up" style={d(0)}><Kicker color={NAVY}>Integrated Economics</Kicker></div>
-          <h2 className="sx-up mt-4 font-display text-[38px] font-bold leading-none tracking-tight" style={{ ...d(60), color: NAVY }}>
+          <h2 className="sx-up mt-4 whitespace-nowrap font-display text-[32px] font-bold leading-tight tracking-tight" style={{ ...d(60), color: NAVY }}>
             The Integrated Economics: Diesel-Only vs. TAQA
           </h2>
         </div>
@@ -885,11 +885,11 @@ function IntegratedEconomicsSlide() {
             </div>
             <div className="flex-1 flex flex-col justify-between gap-2">
               {today.map(t => (
-                <div key={t.label} className="flex flex-1 items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-red-100">
+                <div key={t.label} className="flex items-center gap-3 rounded-xl bg-white px-3.5 py-2.5 ring-1 ring-red-100">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-red-400" />
                   <div className="min-w-0">
                     <div className="text-[16px] font-bold leading-tight text-red-800">{t.label}</div>
-                    <div className="text-[16px] leading-snug text-slate-600">{t.desc}</div>
+                    <div className="text-[15px] leading-snug text-slate-600">{t.desc}</div>
                   </div>
                 </div>
               ))}
@@ -909,11 +909,11 @@ function IntegratedEconomicsSlide() {
             </div>
             <div className="flex-1 flex flex-col justify-between gap-2">
               {withTaqa.map(t => (
-                <div key={t.label} className="flex flex-1 items-center gap-3 rounded-xl bg-white p-3" style={{ boxShadow: `inset 0 0 0 1px ${GREEN}1f` }}>
+                <div key={t.label} className="flex items-center gap-3 rounded-xl bg-white px-3.5 py-2.5" style={{ boxShadow: `inset 0 0 0 1px ${GREEN}1f` }}>
                   <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: GREEN }} />
                   <div className="min-w-0">
                     <div className="text-[16px] font-bold leading-tight" style={{ color: NAVY }}>{t.label}</div>
-                    <div className="text-[16px] leading-snug text-slate-600">{t.desc}</div>
+                    <div className="text-[15px] leading-snug text-slate-600">{t.desc}</div>
                   </div>
                 </div>
               ))}
@@ -1028,7 +1028,6 @@ const SLIDES = [
           "Pre-treatment & filtration",
           "Storage reservoirs & pumping",
           "Irrigation distribution & smart meters",
-          "BOO/BOOT plant financing",
         ]}
         steps={[
           "TAQA studies crop water demand and source-water quality.",
@@ -1122,7 +1121,6 @@ const SLIDES = [
           "Solar inverters & mounting",
           "Pump controllers & soft starters",
           "Monitoring & connection works",
-          "BOO/BOOT solar financing",
         ]}
         steps={[
           "TAQA assesses land, sun hours and pivot load.",
@@ -1216,7 +1214,6 @@ const SLIDES = [
           "Power-conversion system & inverters",
           "Switchgear & grid/solar interface",
           "EMS & SCADA controls",
-          "BOO/BOOT financing",
         ]}
         steps={[
           "TAQA sizes storage to the farm's pivot profile and solar surplus.",
@@ -1310,7 +1307,6 @@ const SLIDES = [
           "CNG/virtual-pipeline trailers",
           "On-site decompression & PRMS skid",
           "Metering & safety controls",
-          "BOO/BOOT financing",
         ]}
         steps={[
           "Gas is compressed at a TAQA mother station to ~250 bar.",

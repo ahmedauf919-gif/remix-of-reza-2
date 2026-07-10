@@ -335,7 +335,7 @@ function NumbersSlide() {
   const heroStats = [
     { value: "EGP 13.4bn", label: "Revenue",       sub: "FY 2025", hero: true },
     { value: "EGP 1.5bn",  label: "EBITDA",        sub: "FY 2025" },
-    { value: "~6.5M",      label: "Gas customers", sub: "Active connections" },
+    { value: "~7M",        label: "Customers served", sub: "Approximate, all utilities" },
   ];
   const divCards = [
     { div: "GAS",            icon: <Flame className="h-4 w-4" />,    color: "#c2410c", stat: "+10,000 km, 8 governorates (15yr)" },
@@ -406,7 +406,14 @@ function NumbersSlide() {
                 </div>
                 <span className="font-display text-[15px] font-bold uppercase tracking-[0.14em] text-[#002060]">{c.div}</span>
               </div>
-              <p className="mt-auto pt-3 text-[16px] font-medium leading-snug text-slate-600">{c.stat}</p>
+              <div className="mt-3 space-y-2.5">
+                {c.stat.split(", ").map(pt => (
+                  <div key={pt} className="flex items-start gap-2.5">
+                    <span aria-hidden className="mt-[8px] h-2 w-2 shrink-0 rotate-45" style={{ background: c.color }} />
+                    <span className="text-[17px] font-semibold leading-snug text-slate-700">{pt}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -782,7 +789,7 @@ const SLIDES = [
         solutionNum={1} solutionLabel="Mobile CNG" color="#c2410c" icon={cngIcon} photo={P.cng}
         subtitle="Portable natural-gas supply delivering cost savings, flexibility and energy security for off-grid industrial sites."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the gas you consume — little to no upfront CapEx."
-        taqaInvests={["Mother station & compression", "CNG/virtual-pipeline trailers", "On-site decompression & PRMS skid", "Industrial metering & controls", "BOO/BOOT financing"]}
+        taqaInvests={["Mother station & compression", "CNG/virtual-pipeline trailers", "On-site decompression & PRMS skid", "Industrial metering & controls"]}
         steps={[
           "Gas is compressed at a TAQA mother station to ~250 bar.",
           "Trailers deliver it to your plant as a virtual pipeline.",
@@ -865,7 +872,7 @@ const SLIDES = [
       <ScopeSlide
         solutionNum={2} solutionLabel="Electricity Distribution" color="#1d4ed8" icon={elecIcon} photo={P.electric}
         subtitle="Turnkey distribution networks for industrial sites and parks — from power sourcing and design through licensed lifetime O&M."
-        taqaInvests={["HV/MV substations & switchgear", "Distribution transformers", "Cabling, protection & metering", "SCADA & control room", "BOO/BOOT financing"]}
+        taqaInvests={["HV/MV substations & switchgear", "Distribution transformers", "Cabling, protection & metering", "SCADA & control room"]}
         steps={[
           "TAQA designs the zone network to factory load demands.",
           "Substations, transformers and feeders are built and energized.",
@@ -947,7 +954,7 @@ const SLIDES = [
       <ScopeSlide
         solutionNum={3} solutionLabel="Gas Distribution" color="#059669" icon={gasIcon} photo={P.pipeline}
         subtitle="End-to-end EPC for natural-gas distribution networks across industrial sites, parks and free zones."
-        taqaInvests={["City-gate & PRMS stations", "Steel distribution mains", "Factory service lines", "Industrial meters & regulators", "BOO/BOOT financing"]}
+        taqaInvests={["City-gate & PRMS stations", "Steel distribution mains", "Factory service lines", "Industrial meters & regulators"]}
         steps={[
           "TAQA secures the concession and designs the gas grid.",
           "Mains and service lines are laid across the zone.",
@@ -1015,7 +1022,7 @@ const SLIDES = [
           { value: "+10,000 km", label: "network" },
           { value: "8",          label: "governorate concessions (15yr)" },
           { value: "66%",        label: "private concession share" },
-          { value: "~6.5M",      label: "customers served" },
+          { value: "~7M",        label: "customers served (approx.)" },
         ]}
       />
     ),
@@ -1029,7 +1036,7 @@ const SLIDES = [
       <ScopeSlide
         solutionNum={4} solutionLabel="CHP" color="#b45309" icon={chpIcon} photo={P.chp}
         subtitle="Combined Heat & Power — capturing waste heat to deliver electricity plus thermal energy from a single fuel input."
-        taqaInvests={["Gas engine/turbine genset", "Waste-heat recovery unit", "Absorption chiller (tri-gen)", "Grid sync, controls & SCADA", "BOO/BOOT plant financing"]}
+        taqaInvests={["Gas engine/turbine genset", "Waste-heat recovery unit", "Absorption chiller (tri-gen)", "Grid sync, controls & SCADA"]}
         steps={[
           "Natural gas feeds the on-site engine or turbine.",
           "The genset generates electricity for your plant.",
@@ -1111,7 +1118,7 @@ const SLIDES = [
       <ScopeSlide
         solutionNum={5} solutionLabel="Solar" color="#ca8a04" icon={solarIcon} photo={P.solar}
         subtitle="Tailored solar PV solutions delivering measurable value across financing, sustainability and operations."
-        taqaInvests={["Rooftop & ground-mount PV", "Inverters & transformers", "Connection & net-metering works", "Monitoring & SCADA", "BOO/BOOT financing"]}
+        taqaInvests={["Rooftop & ground-mount PV", "Inverters & transformers", "Connection & net-metering works", "Monitoring & SCADA"]}
         steps={[
           "TAQA assesses roof, land and the factory's energy profile.",
           "Arrays are sized and designed for optimal yield.",
@@ -1193,7 +1200,7 @@ const SLIDES = [
       <ScopeSlide
         solutionNum={6} solutionLabel="Energy Storage (BESS)" color="#7c3aed" icon={bessIcon} photo={P.battery}
         subtitle="Battery Energy Storage Systems — storing clean power to cut peak charges, firm up solar and secure supply."
-        taqaInvests={["Battery energy-storage units", "Power-conversion system & inverters", "Switchgear & grid interface", "EMS & SCADA controls", "BOO/BOOT financing"]}
+        taqaInvests={["Battery energy-storage units", "Power-conversion system & inverters", "Switchgear & grid interface", "EMS & SCADA controls"]}
         steps={[
           "TAQA sizes storage to the factory's peak profile and solar surplus.",
           "Batteries charge during off-peak or peak-solar hours.",

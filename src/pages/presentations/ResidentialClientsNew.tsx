@@ -341,7 +341,7 @@ function NumbersSlide() {
   const heroStats = [
     { value: "EGP 13.4bn", label: "Revenue",                   sub: "FY 2025", hero: true },
     { value: "EGP 1.5bn",  label: "EBITDA",                    sub: "FY 2025" },
-    { value: "~6.5M",      label: "Residential gas customers", sub: "Active connections" },
+    { value: "~7M",        label: "Customers served", sub: "Approximate, all utilities" },
   ];
   const divCards = [
     { div: "GAS",            icon: <Flame className="h-4 w-4" />,    color: "#E68A00", stat: "+10,000 km, 8 governorates (15yr)" },
@@ -415,7 +415,14 @@ function NumbersSlide() {
                 </div>
                 <span className="font-display text-[15px] font-bold uppercase tracking-[0.14em] text-[#002060]">{c.div}</span>
               </div>
-              <p className="mt-auto pt-3 text-[16px] font-medium leading-snug text-slate-600">{c.stat}</p>
+              <div className="mt-3 space-y-2.5">
+                {c.stat.split(", ").map(pt => (
+                  <div key={pt} className="flex items-start gap-2.5">
+                    <span aria-hidden className="mt-[8px] h-2 w-2 shrink-0 rotate-45" style={{ background: c.color }} />
+                    <span className="text-[17px] font-semibold leading-snug text-slate-700">{pt}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -804,7 +811,7 @@ const SLIDES = [
         solutionNum={1} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
         subtitle="Off-grid natural gas delivered via mobile virtual pipeline — zero infrastructure capex."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the gas you consume — little to no upfront CapEx."
-        taqaInvests={["Mother station & compression skids", "CNG/virtual-pipeline trailers", "On-site decompression & PRMS skid", "Metering, odorization & safety controls", "BOO/BOOT asset financing"]}
+        taqaInvests={["Mother station & compression skids", "CNG/virtual-pipeline trailers", "On-site decompression & PRMS skid", "Metering, odorization & safety controls"]}
         steps={[
           "Gas is compressed at a TAQA mother station to ~250 bar.",
           "CNG trailers haul it to your community as a virtual pipeline.",
@@ -887,7 +894,7 @@ const SLIDES = [
       <ScopeSlide
         solutionNum={2} solutionLabel="Electricity Distribution" color="#d97706" icon={elecIcon} photo={P.electricity}
         subtitle="Turnkey distribution networks for residential developments — from power sourcing and design through licensed lifetime O&M."
-        taqaInvests={["MV/LV substations & ring-main units", "Distribution transformers", "Cabling, switchgear & protection", "Smart meters & SCADA", "BOO/BOOT network financing"]}
+        taqaInvests={["MV/LV substations & ring-main units", "Distribution transformers", "Cabling, switchgear & protection", "Smart meters & SCADA"]}
         steps={[
           "TAQA designs the network to the community's phased load.",
           "Substations and feeders are built and energized.",
@@ -970,7 +977,7 @@ const SLIDES = [
         solutionNum={3} solutionLabel="Water Desalination" color="#0095C8" icon={waterIcon} photo={P.water}
         subtitle="Reverse-osmosis plants and digitalized, solar-powered water operations."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the water you use — little to no upfront CapEx."
-        taqaInvests={["Intake & pre-treatment system", "Reverse-osmosis desalination trains", "Post-treatment & storage tanks", "Pumping, distribution & smart meters", "BOO/BOOT plant financing"]}
+        taqaInvests={["Intake & pre-treatment system", "Reverse-osmosis desalination trains", "Post-treatment & storage tanks", "Pumping, distribution & smart meters"]}
         steps={[
           "Seawater or brackish water is drawn in and pre-treated.",
           "Reverse-osmosis membranes remove salt and impurities.",
@@ -1052,7 +1059,7 @@ const SLIDES = [
       <ScopeSlide
         solutionNum={4} solutionLabel="Gas Distribution" color="#009045" icon={gasIcon} photo={P.pipeline}
         subtitle="End-to-end gas network EPC — design, build, commission and operate."
-        taqaInvests={["City-gate & pressure-reduction stations", "Steel & PE distribution mains", "Service lines to each home", "Domestic meters & regulators", "BOO/BOOT network financing"]}
+        taqaInvests={["City-gate & pressure-reduction stations", "Steel & PE distribution mains", "Service lines to each home", "Domestic meters & regulators"]}
         steps={[
           "TAQA secures the concession and designs the gas network.",
           "Mains and service lines are laid across the community.",
@@ -1115,12 +1122,12 @@ const SLIDES = [
         solutionNum={4} solutionLabel="Gas Distribution" color="#009045" icon={gasIcon} photo={P.pipeline}
         heading="Egypt's largest private gas distribution network"
         subheading="TAQA Gas operates one of Egypt's largest private piped-gas networks: +10,000 km of distribution mains across 8 governorates with 15-year renewable concessions"
-        body="With 66% of Egypt's private gas concessions and ~6.5 million residential customers, TAQA is the proven gas infrastructure partner for any residential development."
+        body="With 66% of Egypt's private gas concessions and ~7 million customers served, TAQA is the proven gas infrastructure partner for any residential development."
         stats={[
           { value: "+10,000 km", label: "Network" },
           { value: "8",          label: "Governorate concessions (15yr)" },
           { value: "66%",        label: "Private concession share" },
-          { value: "~6.5M",      label: "Residential customers" },
+          { value: "~7M",        label: "Customers served (approx.)" },
         ]}
       />
     ),
@@ -1217,7 +1224,7 @@ const SLIDES = [
         solutionNum={6} solutionLabel="EV Chargers" color="#7c3aed" icon={evIcon} photo={P.ev}
         subtitle="AC, DC and golf-car charging with full-investment green-mobility services."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the energy you charge — little to no upfront CapEx."
-        taqaInvests={["AC & DC fast-charging units", "Grid connection & upgrade works", "Energy-management & load balancing", "Payment, app & access platform", "BOO/BOOT charger financing"]}
+        taqaInvests={["AC & DC fast-charging units", "Grid connection & upgrade works", "Energy-management & load balancing", "Payment, app & access platform"]}
         steps={[
           "TAQA assesses parking, demand and available grid capacity.",
           "Chargers and any needed grid upgrades are installed.",
@@ -1300,7 +1307,7 @@ const SLIDES = [
         solutionNum={7} solutionLabel="Solar PV" color="#16a34a" icon={solarIcon} photo={P.solar}
         subtitle="Rooftop and common-area solar PV — cutting bills, with flexible ownership."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the solar power you use — little to no upfront CapEx."
-        taqaInvests={["Rooftop & carport PV arrays", "Inverters & mounting structures", "Net-metering & connection works", "Monitoring & performance platform", "BOO/BOOT solar financing"]}
+        taqaInvests={["Rooftop & carport PV arrays", "Inverters & mounting structures", "Net-metering & connection works", "Monitoring & performance platform"]}
         steps={[
           "TAQA studies roofs, shading and the community's energy profile.",
           "Arrays are sized and designed for optimal yield.",
