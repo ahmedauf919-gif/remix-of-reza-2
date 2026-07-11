@@ -365,6 +365,7 @@ function _runLngCore(I: LngInputs): Omit<LngOutputs, "breakEvenPriceUsd"> {
   let cash = 0;
   let accumulated = 0;
   let retained = 0;
+  let taxLossPool = 0; // cumulative tax-loss carryforward (NOL)
   let seniorBal = seniorDebt;
   let shlBal    = shlAmount;
 
@@ -465,7 +466,10 @@ function _runLngCore(I: LngInputs): Omit<LngOutputs, "breakEvenPriceUsd"> {
 
     // P&L
     const ebt       = ebit - seniorInterest - shlInterest;
-    const tax       = Math.max(0, ebt) * I.taxRatePct;
+    // Tax-loss carryforward: losses accumulate in a pool and offset future taxable income
+    const nolOffset = Math.min(taxLossPool, Math.max(0, ebt));
+    const tax       = (Math.max(0, ebt) - nolOffset) * I.taxRatePct;
+    taxLossPool    += Math.max(0, -ebt) - nolOffset;
     const netProfit = ebt - tax;
 
     // DSCR — CFADS = EBITDA - tax (before debt service)

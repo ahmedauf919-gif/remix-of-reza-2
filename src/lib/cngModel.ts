@@ -597,6 +597,7 @@ export function runCngModel(I: CngInputs): CngOutputs {
   let slOutstanding = shareholderLoan;
   let prevAR = 0, prevAP = 0;
   let cash = 0, accumDep = 0, retainedEarnings = 0;
+  let taxLossPool = 0; // cumulative tax-loss carryforward (NOL)
 
   for (let y = 0; y < N; y++) {
     const o = revOpex(y);
@@ -634,7 +635,10 @@ export function runCngModel(I: CngInputs): CngOutputs {
     const slClosing = slOutstanding;
 
     const ebt = ebit - interest - slInterest;
-    const tax = Math.max(0, ebt) * I.citTaxRatePct;
+    // Tax-loss carryforward: losses accumulate in a pool and offset future taxable income
+    const nolOffset = Math.min(taxLossPool, Math.max(0, ebt));
+    const tax = (Math.max(0, ebt) - nolOffset) * I.citTaxRatePct;
+    taxLossPool += Math.max(0, -ebt) - nolOffset;
     const netProfit = ebt - tax;
 
     const ar = o.revenue * (I.arDays / 365);

@@ -665,6 +665,7 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   let cumDep = 0;
   let cash = 0;
   let retained = 0;
+  let taxLossPool = 0; // cumulative tax-loss carryforward (NOL)
   let shlOutstanding = shlAmount;
   const ppeGross = totalCapexWithIdc;
   const paidInEquity = equityAmount;
@@ -741,7 +742,10 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     const interest = seniorInterest + shlInterest;
     const principalRepay = seniorPrincipal + shlPrincipal;
     const ebt = ebit - interest;
-    const tax = Math.max(0, ebt) * I.taxRate;
+    // Tax-loss carryforward: losses accumulate in a pool and offset future taxable income
+    const nolOffset = Math.min(taxLossPool, Math.max(0, ebt));
+    const tax = (Math.max(0, ebt) - nolOffset) * I.taxRate;
+    taxLossPool += Math.max(0, -ebt) - nolOffset;
     const netProfit = ebt - tax;
 
     // Working capital: AR on revenue, AP on cash opex (variable + electricity + fixed).
