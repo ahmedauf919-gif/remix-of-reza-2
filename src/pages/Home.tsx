@@ -508,8 +508,8 @@ export default function Home() {
                 },
                 {
                   to: "/sizing/pv-yield", group: "Renewables", color: "#d97706", icon: SunMedium,
-                  title: "Solar Yield Simulator", sub: "Irradiation & CAPEX",
-                  desc: "Irradiation, load and roof/land surveys — optimise array layout, estimate specific yield, monthly generation and CAPEX per Wp.",
+                  title: "PV", sub: "Rooftop Savings & NPV",
+                  desc: "Turn your factory rooftop or adjacent land into savings — TAQA's discount vs government tariffs, yearly savings, NPV, EGP/m² and CO₂ avoided.",
                 },
                 {
                   to: "/sizing/bess", group: "Storage", color: "#7B35C2", icon: Battery,
