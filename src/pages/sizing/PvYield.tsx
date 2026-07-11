@@ -1,181 +1,200 @@
 import { useMemo, useState } from "react";
 import { SunMedium } from "lucide-react";
 import {
-  ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis,
-  CartesianGrid, Tooltip, ReferenceLine,
+  ResponsiveContainer, ComposedChart, AreaChart, LineChart, Bar, Area, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
 } from "recharts";
 import { ToolPage, Panel, Field, SegmentedField, Stat, Verdict } from "./toolkit";
 
 const ACCENT = "#d97706";
+const CUMULATIVE = "#005298"; // house blue for the cumulative line — CVD-safe next to the amber bars
 
-/* Annual GHI presets (kWh/m²/yr) + monthly irradiation weights (summer-peaking,
-   normalized at runtime so each site's 12 shares sum to 1). */
-const SITES = {
-  cairo: { label: "Cairo", ghi: 2000, shape: [70, 74, 88, 95, 102, 106, 107, 103, 94, 85, 72, 66] },
-  delta: { label: "Delta", ghi: 1900, shape: [66, 72, 86, 94, 102, 107, 108, 104, 95, 84, 70, 62] },
-  upper: { label: "Upper Egypt", ghi: 2300, shape: [74, 78, 90, 96, 102, 105, 106, 102, 94, 86, 76, 70] },
-  redsea: { label: "Red Sea coast", ghi: 2200, shape: [72, 76, 89, 95, 101, 105, 106, 103, 94, 85, 74, 68] },
-} as const;
-type SiteKey = keyof typeof SITES;
+/* TAQA Excel model — fixed assumptions */
+const HORIZON = 25; // years
+const CO2_T_PER_KWH = 0.0004; // tonnes CO₂ avoided per kWh generated
 
-/* Area utilisation by mounting type — kWp installable per 1,000 m². */
+/* Mounting → land use density (m² of site per kW installed) */
 const MOUNTING = {
-  rooftop: { label: "Rooftop", util: 120 },
-  ground: { label: "Ground", util: 90 },
-  carport: { label: "Carport", util: 100 },
+  tracker: { label: "Tracker", density: 14.63 },
+  fixed: { label: "Fixed", density: 6.98 },
 } as const;
 type MountKey = keyof typeof MOUNTING;
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const LIFE_YEARS = 25;
-const DEGRADATION_AVG = 0.85; // lifetime-average output factor used in the indicative LCOE
-const ANNUAL_DEGRADATION = 0.005; // 0.5 %/yr used in the cash-recovery curve
-const GRID_CO2_T_PER_MWH = 0.45;
+/* Grid connection voltage → government tariff (EGP/kWh) */
+const VOLTAGE = {
+  ehv: { label: "EHV", tariff: 1.89 },
+  hv: { label: "HV", tariff: 2.0 },
+  mv: { label: "MV", tariff: 2.5 },
+  lv: { label: "LV", tariff: 2.74 },
+} as const;
+type VoltKey = keyof typeof VOLTAGE;
+
+/* Government tariff escalation, years 2–4 (fixed Excel assumptions, %/yr).
+   Year 1 pays today's tariff; year 5 onward uses the long-run slider. */
+const EARLY_ESCALATION = [25, 15, 10];
 
 const fmt = (n: number, d = 1) =>
   n.toLocaleString(undefined, { maximumFractionDigits: d });
+const fmtM = (n: number, d = 2) =>
+  (n / 1e6).toLocaleString(undefined, { maximumFractionDigits: d });
 
 export default function PvYield() {
-  const [site, setSite] = useState<SiteKey>("cairo");
-  const [mounting, setMounting] = useState<MountKey>("rooftop");
-  const [availableArea, setAvailableArea] = useState(20000);
-  const [shadingLoss, setShadingLoss] = useState(5);
-  const [performanceRatio, setPerformanceRatio] = useState(80);
-  const [dcAcRatio, setDcAcRatio] = useState(120);
-  const [capexPerWp, setCapexPerWp] = useState(0.75);
-  const [tariff, setTariff] = useState(0.09);
+  const [area, setArea] = useState(195000);
+  const [mounting, setMounting] = useState<MountKey>("tracker");
+  const [specificYield, setSpecificYield] = useState(1800);
+  const [voltage, setVoltage] = useState<VoltKey>("hv");
+  const [discountPct, setDiscountPct] = useState(10);
+  const [waccPct, setWaccPct] = useState(20);
+  const [longRunEsc, setLongRunEsc] = useState(6);
 
   const r = useMemo(() => {
-    const { ghi, shape } = SITES[site];
-    const util = MOUNTING[mounting].util;
+    const density = MOUNTING[mounting].density;
+    const govTariff = VOLTAGE[voltage].tariff;
+    const kWp = area / density;
+    const energyKWh = kWp * specificYield; // kWh/yr, flat — no degradation (matches Excel)
+    const wacc = waccPct / 100;
 
-    const kWp = (availableArea * util) / 1000;
-    // Standard flat-plate approximation: GHI in kWh/m²/yr against 1 kW/m² STC irradiance.
-    const specificYield = ghi * (performanceRatio / 100) * (1 - shadingLoss / 100);
-    const annualMWh = (kWp * specificYield) / 1000;
-    const acKW = kWp / (dcAcRatio / 100);
-    const capex = kWp * 1000 * capexPerWp;
-    const lcoe = capex / (annualMWh * 1000 * LIFE_YEARS * DEGRADATION_AVG); // $/kWh, indicative
-    const annualRevenueY1 = annualMWh * 1000 * tariff;
-    const payback = capex / annualRevenueY1;
-
-    const shapeSum = shape.reduce((a, b) => a + b, 0);
-    const monthly = MONTHS.map((m, i) => ({
-      m,
-      mwh: (annualMWh * shape[i]) / shapeSum,
-    }));
-
-    const capexM = capex / 1e6;
+    const years: {
+      year: number; tariff: number; savings: number; savingsM: number;
+      cumM: number; discCumM: number; perM2: number;
+    }[] = [];
+    let tariff = govTariff;
     let cum = 0;
-    const cash = [{ year: 0, recovered: 0 }];
-    for (let y = 1; y <= LIFE_YEARS; y++) {
-      cum += (annualRevenueY1 * (1 - ANNUAL_DEGRADATION * (y - 1))) / 1e6;
-      cash.push({ year: y, recovered: cum });
+    let discCum = 0;
+    for (let y = 1; y <= HORIZON; y++) {
+      const esc = y === 1 ? 0 : y <= 4 ? EARLY_ESCALATION[y - 2] : longRunEsc;
+      tariff *= 1 + esc / 100;
+      const savings = energyKWh * tariff * (discountPct / 100);
+      cum += savings;
+      discCum += savings / Math.pow(1 + wacc, y); // Excel NPV(): year 1 discounted once
+      years.push({
+        year: y,
+        tariff,
+        savings,
+        savingsM: savings / 1e6,
+        cumM: cum / 1e6,
+        discCumM: discCum / 1e6,
+        perM2: savings / area,
+      });
     }
 
+    const co2PerYr = energyKWh * CO2_T_PER_KWH;
     return {
-      kWp, specificYield, annualMWh, acKW, capex, capexM, lcoe, payback,
-      monthly, cash,
-      co2Kt: (annualMWh * GRID_CO2_T_PER_MWH) / 1000,
+      kWp,
+      energyKWh,
+      govTariff,
+      years,
+      savingsY1: years[0].savings,
+      perM2Y1: years[0].perM2,
+      pureSavings: cum,
+      npv: discCum,
+      co2PerYr,
+      co2Lifetime: co2PerYr * HORIZON,
     };
-  }, [site, mounting, availableArea, shadingLoss, performanceRatio, dcAcRatio, capexPerWp, tariff]);
+  }, [area, mounting, specificYield, voltage, discountPct, waccPct, longRunEsc]);
 
   const tick = { fontSize: 11, fill: "#64748b" };
+  const tooltipStyle = { fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" } as const;
 
   return (
     <ToolPage
-      title="PV Yield & Array Layout"
-      tagline="Irradiation, load and roof/land survey → array layout, yield and CAPEX optimisation"
-      badge="Sizing Models · Renewables"
+      title="PV — Rooftop Solar Savings"
+      tagline="What your rooftop or adjacent land earns you with TAQA vs the government tariff"
+      badge="Sizing Models · PV"
       accent={ACCENT}
       icon={<SunMedium className="h-5 w-5" />}
     >
       <div className="grid gap-5 lg:grid-cols-[400px_1fr]">
-        <Panel title="Inputs" subtitle="Site survey, losses and commercial assumptions">
-          <div className="space-y-5">
-            <SegmentedField
-              label={`Site (annual GHI ${SITES[site].ghi.toLocaleString()} kWh/m²/yr)`}
-              value={site}
-              onChange={(v: SiteKey) => setSite(v)}
-              options={(Object.keys(SITES) as SiteKey[]).map(k => ({ value: k, label: SITES[k].label }))}
-              accent={ACCENT}
-            />
-            <SegmentedField
-              label={`Mounting (${MOUNTING[mounting].util} kWp / 1,000 m²)`}
-              value={mounting}
-              onChange={(v: MountKey) => setMounting(v)}
-              options={(Object.keys(MOUNTING) as MountKey[]).map(k => ({ value: k, label: MOUNTING[k].label }))}
-              accent={ACCENT}
-            />
-            <Field label="Available area" value={availableArea} onChange={setAvailableArea}
-              min={500} max={200000} step={500} unit="m²"
-              hint="Usable roof / land footprint after setbacks and access ways" accent={ACCENT} />
-            <Field label="Shading loss" value={shadingLoss} onChange={setShadingLoss}
-              min={0} max={25} step={1} unit="%"
-              hint="Horizon, parapets, adjacent structures" accent={ACCENT} />
-            <Field label="Performance ratio" value={performanceRatio} onChange={setPerformanceRatio}
-              min={70} max={88} step={1} unit="%"
-              hint="Soiling, temperature, wiring and inverter losses" accent={ACCENT} />
-            <Field label="DC / AC ratio" value={dcAcRatio} onChange={setDcAcRatio}
-              min={100} max={140} step={1} unit="%"
-              hint="Array oversizing vs inverter nameplate" accent={ACCENT} />
-            <Field label="CAPEX" value={capexPerWp} onChange={setCapexPerWp}
-              min={0.55} max={1.1} step={0.01} unit="$/Wp"
-              hint="Turnkey EPC including BoS and grid connection" accent={ACCENT} />
-            <Field label="Tariff offset" value={tariff} onChange={setTariff}
-              min={0.04} max={0.2} step={0.005} unit="$/kWh"
-              hint="Blended value of displaced grid energy" accent={ACCENT} />
-          </div>
-        </Panel>
+        <div className="space-y-5">
+          <Panel title="Your Site" subtitle="Factory rooftop and/or land beside it">
+            <div className="space-y-5">
+              <Field label="Available area" value={area} onChange={setArea}
+                min={1000} max={500000} step={1000} unit="m²"
+                hint="Rooftop plus any adjacent land you can dedicate to PV" accent={ACCENT} />
+              <SegmentedField
+                label={`Mounting (${MOUNTING[mounting].density} m² per kW)`}
+                value={mounting}
+                onChange={(v: MountKey) => setMounting(v)}
+                options={(Object.keys(MOUNTING) as MountKey[]).map(k => ({ value: k, label: MOUNTING[k].label }))}
+                accent={ACCENT}
+              />
+              <Field label="Specific yield" value={specificYield} onChange={setSpecificYield}
+                min={1400} max={2200} step={10} unit="kWh/kWp/yr"
+                hint="Annual energy per installed kWp at your location" accent={ACCENT} />
+            </div>
+          </Panel>
+
+          <Panel title="Commercial" subtitle="Tariff, TAQA discount and financing assumptions">
+            <div className="space-y-5">
+              <SegmentedField
+                label={`Voltage level (government tariff EGP ${VOLTAGE[voltage].tariff.toFixed(2)}/kWh)`}
+                value={voltage}
+                onChange={(v: VoltKey) => setVoltage(v)}
+                options={(Object.keys(VOLTAGE) as VoltKey[]).map(k => ({ value: k, label: VOLTAGE[k].label }))}
+                accent={ACCENT}
+              />
+              <Field label="TAQA discount vs government price" value={discountPct} onChange={setDiscountPct}
+                min={5} max={30} step={1} unit="%"
+                hint="Your savings: the slice of the government tariff you keep" accent={ACCENT} />
+              <Field label="WACC" value={waccPct} onChange={setWaccPct}
+                min={10} max={30} step={0.5} unit="%"
+                hint="Discount rate applied to future savings in the NPV" accent={ACCENT} />
+              <Field label="Long-run tariff escalation (year 5+)" value={longRunEsc} onChange={setLongRunEsc}
+                min={3} max={12} step={0.5} unit="%/yr"
+                hint="Government price growth. Years 2–4 fixed at 25% / 15% / 10% per the model."
+                accent={ACCENT} />
+            </div>
+          </Panel>
+        </div>
 
         <div className="space-y-5">
           <Verdict
             accent={ACCENT}
-            title={`${fmt(r.kWp / 1000, 1)} MWp ${MOUNTING[mounting].label} array — ${fmt(r.specificYield, 0)} kWh/kWp/yr`}
-            detail={`${fmt(r.acKW / 1000, 1)} MW AC (DC/AC ${fmt(dcAcRatio / 100, 2)}) on ${fmt(availableArea / 10000, 1)} ha at ${SITES[site].label}. Indicative LCOE ${fmt(r.lcoe * 100, 1)} ¢/kWh, simple payback ${r.payback > LIFE_YEARS ? `> ${LIFE_YEARS}` : fmt(r.payback, 1)} yr at ${fmt(tariff * 100, 1)} ¢/kWh.`}
+            title={`EGP ${fmtM(r.npv, 1)}M NPV over 25 years`}
+            detail={`${fmt(r.kWp, 0)} kWp on ${fmt(area, 0)} m² · saves EGP ${fmtM(r.savingsY1)}M in year 1, EGP ${fmtM(r.pureSavings, 0)}M total — you win on price, space and carbon.`}
           />
 
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-            <Stat label="Installed DC" value={fmt(r.kWp / 1000, 2)} unit="MWp"
-              sub={`${fmt(r.kWp, 0)} kWp on ${fmt(availableArea, 0)} m²`} accent={ACCENT} big />
-            <Stat label="Annual generation" value={fmt(r.annualMWh / 1000, 2)} unit="GWh"
-              sub={`${fmt(r.annualMWh, 0)} MWh, year 1`} accent={ACCENT} big />
-            <Stat label="Specific yield" value={fmt(r.specificYield, 0)} unit="kWh/kWp"
-              sub={`GHI ${SITES[site].ghi.toLocaleString()} · PR ${performanceRatio}% · shading ${shadingLoss}%`} accent={ACCENT} big />
-            <Stat label="CAPEX" value={fmt(r.capexM, 2)} unit="M$"
-              sub={`${fmt(capexPerWp, 2)} $/Wp turnkey`} accent={ACCENT} big />
-          </div>
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-            <Stat label="LCOE (indicative)" value={fmt(r.lcoe * 100, 2)} unit="¢/kWh"
-              sub={`Simple, ${LIFE_YEARS} yr · avg degradation ${DEGRADATION_AVG}`} accent={ACCENT} />
-            <Stat label="Simple payback" value={r.payback > LIFE_YEARS ? `>${LIFE_YEARS}` : fmt(r.payback, 1)} unit="yr"
-              sub={`vs tariff ${fmt(tariff * 100, 1)} ¢/kWh`} accent={ACCENT} />
-            <Stat label="AC capacity" value={fmt(r.acKW / 1000, 2)} unit="MW"
-              sub={`DC/AC ratio ${fmt(dcAcRatio / 100, 2)}`} accent={ACCENT} />
-            <Stat label="CO₂ avoided" value={fmt(r.co2Kt, 1)} unit="kt/yr"
-              sub={`At ${GRID_CO2_T_PER_MWH} tCO₂/MWh grid factor`} accent={ACCENT} />
+            <Stat label="Year-1 savings" value={fmtM(r.savingsY1)} unit="EGP M"
+              sub={`${discountPct}% off EGP ${r.govTariff.toFixed(2)}/kWh (${VOLTAGE[voltage].label})`} accent={ACCENT} big />
+            <Stat label="Total 25-yr savings" value={fmtM(r.pureSavings, 0)} unit="EGP M"
+              sub="Pure savings, undiscounted" accent={ACCENT} big />
+            <Stat label="Savings per m²" value={fmt(r.perM2Y1, 2)} unit="EGP/m²/yr"
+              sub="Year 1 — what each square metre earns" accent={ACCENT} big />
+            <Stat label="CO₂ avoided" value={fmt(r.co2PerYr, 0)} unit="t/yr"
+              sub={`${fmt(r.co2Lifetime, 0)} tonnes over the 25-year lifetime`} accent={ACCENT} big />
           </div>
 
-          <Panel title="Monthly generation" subtitle={`Year-1 output by month at ${SITES[site].label} irradiation shape (MWh)`}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={r.monthly} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <Panel title="Savings each year"
+            subtitle={`Annual savings at ${discountPct}% off the escalating government tariff, with the running total (EGP M)`}>
+            <ResponsiveContainer width="100%" height={320}>
+              <ComposedChart data={r.years} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis dataKey="m" tick={tick} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} />
-                <YAxis tick={tick} axisLine={false} tickLine={false} width={56}
-                  tickFormatter={(v: number) => v.toLocaleString()} />
+                <XAxis dataKey="year" tick={tick} axisLine={{ stroke: "#cbd5e1" }} tickLine={false}
+                  tickFormatter={(v: number) => `Y${v}`} />
+                <YAxis yAxisId="annual" tick={tick} axisLine={false} tickLine={false} width={52}
+                  tickFormatter={(v: number) => fmt(v, 0)} />
+                <YAxis yAxisId="cum" orientation="right" tick={tick} axisLine={false} tickLine={false} width={56}
+                  tickFormatter={(v: number) => fmt(v, 0)} />
                 <Tooltip
-                  formatter={(v: number) => [`${fmt(v, 0)} MWh`, "Generation"]}
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }} />
-                <Bar dataKey="mwh" fill={ACCENT} radius={[4, 4, 0, 0]} maxBarSize={40} />
-              </BarChart>
+                  formatter={(v: number, name: string) => [`EGP ${fmt(v, 2)}M`, name]}
+                  labelFormatter={(l: number) => `Year ${l}`}
+                  contentStyle={tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar yAxisId="annual" dataKey="savingsM" name="Annual savings" fill={ACCENT}
+                  radius={[3, 3, 0, 0]} maxBarSize={24} />
+                <Line yAxisId="cum" type="monotone" dataKey="cumM" name="Cumulative savings"
+                  stroke={CUMULATIVE} strokeWidth={2} dot={false} />
+              </ComposedChart>
             </ResponsiveContainer>
           </Panel>
 
-          <Panel title="Cash recovery" subtitle="Cumulative undiscounted energy value vs CAPEX over 25 years (0.5 %/yr degradation)">
+          <Panel title="NPV build-up"
+            subtitle={`Cumulative savings discounted at ${waccPct}% WACC — where the EGP ${fmtM(r.npv, 1)}M comes from`}>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={r.cash} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <AreaChart data={r.years} margin={{ top: 20, right: 8, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="pvCash" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="pvNpv" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={ACCENT} stopOpacity={0.35} />
                     <stop offset="100%" stopColor={ACCENT} stopOpacity={0.04} />
                   </linearGradient>
@@ -184,17 +203,39 @@ export default function PvYield() {
                 <XAxis dataKey="year" tick={tick} axisLine={{ stroke: "#cbd5e1" }} tickLine={false}
                   tickFormatter={(v: number) => `Y${v}`} />
                 <YAxis tick={tick} axisLine={false} tickLine={false} width={56}
-                  tickFormatter={(v: number) => `$${fmt(v, 0)}M`} />
+                  tickFormatter={(v: number) => fmt(v, 0)} />
                 <Tooltip
-                  formatter={(v: number) => [`$${fmt(v, 2)} M`, "Cumulative recovery"]}
+                  formatter={(v: number) => [`EGP ${fmt(v, 2)}M`, "Discounted cumulative"]}
                   labelFormatter={(l: number) => `Year ${l}`}
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }} />
-                <ReferenceLine y={r.capexM} stroke="#002060" strokeDasharray="6 4"
-                  label={{ value: `CAPEX $${fmt(r.capexM, 1)}M — breakeven`, position: "insideTopLeft", fontSize: 11, fill: "#002060" }} />
-                <Area type="monotone" dataKey="recovered" stroke={ACCENT} strokeWidth={2}
-                  fill="url(#pvCash)" name="Cumulative recovery" />
+                  contentStyle={tooltipStyle} />
+                <ReferenceLine y={r.npv / 1e6} stroke="#002060" strokeDasharray="6 4"
+                  label={{ value: `NPV EGP ${fmtM(r.npv, 1)}M`, position: "insideTopLeft", fontSize: 11, fill: "#002060" }} />
+                <Area type="monotone" dataKey="discCumM" stroke={ACCENT} strokeWidth={2}
+                  fill="url(#pvNpv)" name="Discounted cumulative" />
               </AreaChart>
             </ResponsiveContainer>
+          </Panel>
+
+          <Panel title="Savings per m²"
+            subtitle="What each square metre of roof or land earns per year (EGP/m²/yr)">
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={r.years} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis dataKey="year" tick={tick} axisLine={{ stroke: "#cbd5e1" }} tickLine={false}
+                  tickFormatter={(v: number) => `Y${v}`} />
+                <YAxis tick={tick} axisLine={false} tickLine={false} width={52}
+                  tickFormatter={(v: number) => fmt(v, 0)} />
+                <Tooltip
+                  formatter={(v: number) => [`EGP ${fmt(v, 2)}/m²`, "Savings per m²"]}
+                  labelFormatter={(l: number) => `Year ${l}`}
+                  contentStyle={tooltipStyle} />
+                <Line type="monotone" dataKey="perM2" stroke={ACCENT} strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+            <p className="text-[11px] text-slate-400 mt-2">
+              Alongside the money: this system avoids {fmt(r.co2Lifetime, 0)} tonnes of CO₂ over its 25-year life
+              ({fmt(r.co2PerYr, 0)} t/yr at 0.4 kg CO₂ per kWh).
+            </p>
           </Panel>
         </div>
       </div>
