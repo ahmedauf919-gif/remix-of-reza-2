@@ -123,10 +123,21 @@ export async function exportCngExcel(m: CngOutputs) {
   const ops = m.rows.filter((r: any) => (r.yearIdx ?? 0) >= 0);
   const N = ops.length;
   const r = (y: number) => (ops[y] as any) ?? {};
+  // Real CngYearRow leaf components — they sum exactly to r.opex
+  // (opex = msOpex + msVat + trailerOpex + trailerVat + daughterOpex + headOffice).
   const opexBreakdown: OpexComponent[] = [
-    { key: "om", label: "Operations & Maintenance", value: y => r(y).om ?? r(y).maintenance ?? 0 },
+    { key: "salaries", label: "Salaries (Mother Station)", value: y => r(y).salaries ?? 0 },
+    { key: "electricity", label: "Electricity (Mother Station)", value: y => r(y).electricity ?? 0 },
+    { key: "msRent", label: "Mother Station Rent", value: y => r(y).msRent ?? 0 },
+    { key: "msVat", label: "VAT on Mother Station OPEX", value: y => r(y).msVat ?? 0 },
+    { key: "transportFixed", label: "Transport — Fixed", value: y => r(y).transportFixed ?? 0 },
+    { key: "transportVariable", label: "Transport — Variable", value: y => r(y).transportVariable ?? 0 },
+    { key: "tires", label: "Tires", value: y => r(y).tires ?? 0 },
+    { key: "trailerVat", label: "VAT on Trailer OPEX", value: y => r(y).trailerVat ?? 0 },
+    { key: "toll", label: "Tolls", value: y => r(y).toll ?? 0 },
     { key: "insurance", label: "Insurance", value: y => r(y).insurance ?? 0 },
-    { key: "rent", label: "Land / Site Rent", value: y => r(y).rent ?? 0 },
+    { key: "misc", label: "Miscellaneous", value: y => r(y).misc ?? 0 },
+    { key: "headOffice", label: "Head Office Allocation", value: y => r(y).headOffice ?? 0 },
   ];
   const seed: StandardRowSeed = {
     revenue: y => r(y).revenue ?? 0,
@@ -138,11 +149,11 @@ export async function exportCngExcel(m: CngOutputs) {
     principalRepay: y => r(y).principalRepay ?? 0,
     slDraw: y => r(y).slDraw ?? 0,
     slPrincipalRepay: y => r(y).slPrincipalRepay ?? 0,
-    seniorRate: y => r(y).rate ?? (I as any).debtRate ?? 0,
-    slRate: (I as any).slRatePct ?? 0,
-    taxRate: (I as any).taxRatePct ?? 0.225,
-    arDays: (I as any).arDays ?? 30,
-    apDays: (I as any).apDays ?? 30,
+    seniorRate: y => r(y).rate ?? 0,
+    slRate: I.slRatePct ?? 0,
+    taxRate: I.citTaxRatePct ?? 0.225,
+    arDays: I.arDays ?? 30,
+    apDays: I.apDays ?? 30,
     debtOpeningY1: r(0).debtOpening ?? m.debtAmount,
     slOpeningY1: r(0).slOpening ?? m.shareholderLoan ?? 0,
     paidInEquity: y => r(y).paidInEquity ?? m.equityAmount,
@@ -174,7 +185,7 @@ export async function exportCngExcel(m: CngOutputs) {
   await exportProjectFinanceExcel(buildSpec(
     `CNG_Model_${(I.projectName || "project").replace(/\s+/g, "_")}.xlsx`,
     I.projectName ?? "CNG Project", "Mobile CNG Project Finance Model",
-    ops.map((rr: any, i) => rr.year ?? i + 1), 0.10,
+    ops.map((rr: any, i) => rr.year ?? i + 1), I.discountRateProject ?? 0.10,
     m.totalCapexEgp, m.equityAmount, m.debtAmount, inputs, seed,
   ));
 }
@@ -184,39 +195,40 @@ export async function exportWaterExcel(m: WaterOutputs) {
   const I = m.inputs;
   const ops = m.rows.filter((r: any) => (r.yearIdx ?? 0) >= 0);
   const r = (y: number) => (ops[y] as any) ?? {};
+  // Real YearRow fields: fixedCost/variableCost/electricityCost/sga.
+  // operatingCost = fixed + variable + electricity + major maintenance, so the MM
+  // line is derived as the remainder; total breakdown = operatingCost + sga (= true opex).
   const opexBreakdown: OpexComponent[] = [
-    { key: "om", label: "Operations & Maintenance (fixed + var)", value: y => (r(y).fixedOpex ?? 0) + (r(y).variableOpex ?? 0) },
+    { key: "om", label: "Operations & Maintenance (fixed + var)", value: y => (r(y).fixedCost ?? 0) + (r(y).variableCost ?? 0) },
     { key: "electricity", label: "Electricity", value: y => r(y).electricityCost ?? 0 },
+    { key: "mm", label: "Major Maintenance", value: y => Math.max(0, (r(y).operatingCost ?? 0) - (r(y).fixedCost ?? 0) - (r(y).variableCost ?? 0) - (r(y).electricityCost ?? 0)) },
     { key: "sga", label: "SG&A", value: y => r(y).sga ?? 0 },
-    { key: "mmra", label: "MMRA", value: y => r(y).mmra ?? 0 },
-    { key: "insurance", label: "Insurance", value: y => r(y).insurance ?? 0 },
   ];
-  // Reuse aliases — map "om" to fixedOpex + variableOpex; the others kept as keys present in IS.
   const seed: StandardRowSeed = {
     revenue: y => r(y).revenue ?? 0,
     opex: y => opexBreakdown.reduce((s, c) => s + c.value(y), 0),
     opexBreakdown,
     depreciation: y => r(y).depreciation ?? 0,
-    capex: y => r(y).capex ?? r(y).mmCapex ?? 0,
+    capex: y => r(y).capex ?? 0,
     debtDraw: y => r(y).debtDraw ?? 0,
     principalRepay: y => r(y).principalRepay ?? 0,
-    slDraw: y => r(y).slDraw ?? 0,
-    slPrincipalRepay: y => r(y).slPrincipalRepay ?? 0,
+    slDraw: _y => 0,
+    slPrincipalRepay: _y => 0,
     seniorRate: y => r(y).rate ?? I.debtRateYr1 ?? 0,
-    slRate: (I as any).slRatePct ?? 0,
-    taxRate: (I as any).taxRatePct ?? 0.225,
-    arDays: (I as any).arDays ?? 30,
-    apDays: (I as any).apDays ?? 30,
+    slRate: I.shareholderLoanRate ?? 0,
+    taxRate: I.taxRate ?? 0.225,
+    arDays: I.receivablesDays ?? 30,
+    apDays: I.payablesDays ?? 30,
     debtOpeningY1: r(0).debtOpening ?? m.debtAmount,
-    slOpeningY1: r(0).slOpening ?? 0,
+    slOpeningY1: 0, // shareholder-loan balances are not tracked per-row in the water model
     paidInEquity: y => r(y).paidInEquity ?? m.equityAmount,
     retainedEarnings: y => r(y).retainedEarnings ?? 0,
-    netPPE: y => r(y).netPPE ?? 0,
+    netPPE: y => r(y).ppeNet ?? 0,
     cash: y => r(y).cash ?? 0,
-    ar: y => r(y).ar ?? 0,
-    ap: y => r(y).ap ?? 0,
+    ar: y => r(y).accountsReceivable ?? 0,
+    ap: y => r(y).accountsPayable ?? 0,
     interest: y => r(y).interest ?? 0,
-    slInterest: y => r(y).slInterest ?? 0,
+    slInterest: _y => 0,
     tax: y => r(y).tax ?? 0,
     workingCapDelta: y => r(y).workingCapDelta ?? 0,
   };
@@ -248,45 +260,52 @@ export async function exportWindExcel(m: WindOutputs) {
   const I = m.inputs;
   const ops = m.rows.filter((r: any) => (r.yearIdx ?? 0) >= 0);
   const r = (y: number) => (ops[y] as any) ?? {};
+  // Segregated opex lines — these are the real AnnualRow fields and sum exactly to r.opex.
   const opexBreakdown: OpexComponent[] = [
-    { key: "om", label: "Operations & Maintenance", value: y => r(y).opex ?? 0 },
-    { key: "insurance", label: "Insurance", value: y => r(y).insurance ?? 0 },
-    { key: "rent", label: "Land Lease", value: y => r(y).landLease ?? 0 },
+    { key: "om", label: "Base O&M & Fixed Opex", value: y => r(y).opexBase ?? 0 },
+    { key: "realEstate", label: "Real-Estate Tax", value: y => r(y).opexRealEstate ?? 0 },
+    { key: "otherFixed", label: "Other Fixed Opex", value: y => r(y).opexOtherFixed ?? 0 },
+    { key: "majorMaint", label: "Major Maintenance", value: y => r(y).opexMajorMaintenance ?? 0 },
+    { key: "pctRev", label: "% of Revenue Items", value: y => r(y).opexPctRevenue ?? 0 },
+    { key: "decomm", label: "Decommissioning Accrual", value: y => r(y).opexDecommissioning ?? 0 },
+    { key: "levy", label: "Additional Levy", value: y => r(y).opexLevy ?? 0 },
   ];
   const seed: StandardRowSeed = {
-    revenue: y => r(y).revenue ?? 0,
-    opex: y => opexBreakdown.reduce((s, c) => s + c.value(y), 0),
+    revenue: y => (r(y).revenue ?? 0) + (r(y).carbonRevenue ?? 0),
+    opex: y => r(y).opex ?? 0,
     opexBreakdown,
     depreciation: y => r(y).depreciation ?? 0,
-    capex: y => r(y).majorMaintenance ?? 0,
-    debtDraw: y => r(y).debtDraw ?? 0,
-    principalRepay: y => r(y).debtRepayment ?? r(y).principalRepay ?? 0,
-    slDraw: y => r(y).shLoanDraw ?? 0,
-    slPrincipalRepay: y => r(y).shLoanRepay ?? 0,
-    seniorRate: y => r(y).rate ?? r(y).debtRate ?? (I as any).debtRate ?? 0,
-    slRate: (I as any).shLoanRate ?? 0,
-    taxRate: (I as any).taxRate ?? 0.225,
-    arDays: (I as any).arDays ?? 30,
-    apDays: (I as any).apDays ?? 30,
-    debtOpeningY1: r(0).debtOpening ?? m.debtAmount,
-    slOpeningY1: r(0).shLoanOpening ?? m.shLoanAmount ?? 0,
-    paidInEquity: y => r(y).paidInEquity ?? m.equityAmount,
-    retainedEarnings: y => r(y).retainedEarnings ?? 0,
-    netPPE: y => r(y).netPPE ?? 0,
+    capex: _y => 0, // major maintenance is expensed within opex; no ops-period capex rows
+    debtDraw: _y => 0,
+    principalRepay: y => r(y).principal ?? 0,
+    slDraw: _y => 0,
+    slPrincipalRepay: _y => 0,
+    seniorRate: _y => m.blendedRate ?? 0,
+    slRate: I.shLoanRate ?? 0,
+    taxRate: I.taxRate ?? 0.225,
+    arDays: I.daysReceivable ?? 30,
+    apDays: I.daysPayable ?? 30,
+    debtOpeningY1: r(0).openingDebt ?? m.debtAmount,
+    slOpeningY1: m.shLoanAmount ?? 0,
+    paidInEquity: _y => m.equityAmount,
+    // AnnualRow.equity is the TOTAL equity book (paid-in + retained), so back out paid-in.
+    retainedEarnings: y => (r(y).equity ?? 0) - m.equityAmount,
+    netPPE: y => r(y).ppe ?? 0,
     cash: y => r(y).cash ?? 0,
-    ar: y => r(y).ar ?? 0,
-    ap: y => r(y).ap ?? 0,
-    interest: y => r(y).interestExpense ?? r(y).interest ?? 0,
-    slInterest: y => r(y).shLoanInterest ?? 0,
+    ar: y => r(y).receivables ?? 0,
+    ap: y => r(y).payables ?? 0,
+    interest: y => r(y).interest ?? 0,
+    slInterest: _y => 0, // shareholder-loan interest is not tracked per-row in the wind model
     tax: y => r(y).tax ?? 0,
-    workingCapDelta: y => r(y).workingCapitalDelta ?? 0,
+    workingCapDelta: y => r(y).workingCapitalChange ?? 0,
   };
   const inputs: ScalarInput[] = [
     ...inputsFromObject({
       projectName: I.projectName, country: I.country, scenario: I.scenario,
       constructionMonths: I.constructionMonths, operationsYears: I.operationsYears,
       epcCost: I.epcCost, contingency: I.contingency,
-      taxRate: (I as any).taxRate, riskFreeRate: (I as any).riskFreeRate, equityBeta: (I as any).equityBeta,
+      taxRate: I.taxRate, riskFreeRate: I.riskFreeRate, equityBeta: I.equityBeta,
+      daysReceivable: I.daysReceivable, daysPayable: I.daysPayable,
     }, "Project"),
     { label: "Total Uses", value: m.totalUses, group: "Headline Results", fmt: FMT_NUM0 },
     { label: "Senior Debt", value: m.debtAmount, group: "Headline Results", fmt: FMT_NUM0 },
@@ -317,7 +336,7 @@ export async function exportLngExcel(m: LngOutputs) {
   ];
   const seed: StandardRowSeed = {
     revenue:           y => r(y).revenue        ?? 0,
-    opex:              y => r(y).totalOpex + r(y).feedGasCost ?? 0,
+    opex:              y => (r(y).totalOpex ?? 0) + (r(y).feedGasCost ?? 0),
     opexBreakdown,
     depreciation:      y => r(y).depreciation   ?? 0,
     capex:             y => r(y).capex           ?? 0,
@@ -382,7 +401,8 @@ export async function exportLngExcel(m: LngOutputs) {
   await exportProjectFinanceExcel(buildSpec(
     `LNG_Tanzania_Model_${(I.projectName || "project").replace(/\s+/g, "_")}.xlsx`,
     I.projectName ?? "Tanzania Micro LNG", "Tanzania Micro LNG — Project Finance Model",
-    ops.map(rr => rr.year), I.discountRateEquity,
+    // NPV(FCFF) must discount at the project rate, not the equity rate.
+    ops.map(rr => rr.year), I.discountRateProject,
     m.totalCapexUsd, m.equityAmount, m.seniorDebt + m.shlAmount, inputs, seed,
   ));
 }

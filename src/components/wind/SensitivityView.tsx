@@ -70,13 +70,33 @@ export const SensitivityView = ({ inputs }: { inputs: ProjectInputs }) => {
   const baseModel = useMemo(() => runModel(inputs), [inputs]);
   const baseIRR = baseModel.equityIRR;
 
+  // Gearing is an output of DSCR-sculpted sizing (debt is bisected to hit the target
+  // DSCR), so perturbing the gearing input has no effect in that mode — hide it.
+  const visibleVariables = useMemo(
+    () => VARIABLES.filter(v => !(v.key === "gearing" && inputs.sizingMode === "dscr-sculpted")),
+    [inputs.sizingMode]
+  );
+
   const results = useMemo(() => {
-    return VARIABLES.filter(v => selected[v.key as string]).map(v => {
-      const base = inputs[v.key] as number;
+    return visibleVariables.filter(v => selected[v.key as string]).map(v => {
+      // The engine derives its senior rate from the tranche all-in rates (blended),
+      // not from the aggregate `interestRate` input. So the "Interest rate" row
+      // perturbs the risk margin of all three tranches by the delta (which shifts
+      // the blended all-in rate one-for-one) and displays the blended rate as base.
+      const isInterestRate = v.key === "interestRate";
+      const base = isInterestRate ? baseModel.blendedRate : (inputs[v.key] as number);
       const deltas = v.unit === "pct" ? deltasPP : deltasRel;
       const cells = deltas.map(delta => {
         const newVal = applyDelta(base, delta, v.unit);
-        const newInputs = { ...inputs, [v.key]: newVal } as ProjectInputs;
+        const newInputs: ProjectInputs = isInterestRate
+          ? {
+              ...inputs,
+              interestRate: inputs.interestRate + delta,
+              debt1: { ...inputs.debt1, riskMargin: inputs.debt1.riskMargin + delta },
+              debt2: { ...inputs.debt2, riskMargin: inputs.debt2.riskMargin + delta },
+              debt3: { ...inputs.debt3, riskMargin: inputs.debt3.riskMargin + delta },
+            }
+          : ({ ...inputs, [v.key]: newVal } as ProjectInputs);
         let irr = NaN;
         try {
           irr = runModel(newInputs).equityIRR;
@@ -85,7 +105,7 @@ export const SensitivityView = ({ inputs }: { inputs: ProjectInputs }) => {
       });
       return { v, base, cells };
     });
-  }, [inputs, selected, deltasRel, deltasPP]);
+  }, [inputs, selected, deltasRel, deltasPP, visibleVariables, baseModel]);
 
   const deltasForHeader = (unit: VarDef["unit"]) => unit === "pct" ? deltasPP : deltasRel;
 
@@ -127,7 +147,7 @@ export const SensitivityView = ({ inputs }: { inputs: ProjectInputs }) => {
         <div>
           <Label className="text-xs mb-2 block">Variables to test</Label>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {VARIABLES.map(v => (
+            {visibleVariables.map(v => (
               <label key={v.key as string} className="flex items-center gap-2 text-sm cursor-pointer">
                 <Checkbox
                   checked={!!selected[v.key as string]}

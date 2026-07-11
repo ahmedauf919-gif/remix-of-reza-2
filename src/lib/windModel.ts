@@ -982,17 +982,21 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   const refiOpsYear = refiOn ? Math.max(1, I.refinanceYear - opsStartYear + 1) : -1;
   const rateForY = (y: number) => (refiOn && y >= refiOpsYear) ? rBase + (I.refinanceMargin || 0) : rBase;
 
-  // Availability case selector
-  const availabilityEff = I.availabilityCase === "High" ? I.availabilityHigh
+  // Availability case selector — case multiplier (Base/High/Low, defaults 1)
+  // applied ON TOP of the plant availability input so I.availability always scales energy.
+  const availabilityCaseMult = I.availabilityCase === "High" ? I.availabilityHigh
     : I.availabilityCase === "Low" ? I.availabilityLow
-    : (I.availabilityBase || I.availability);
+    : I.availabilityBase;
+  const availabilityEff = (availabilityCaseMult || 1) * (I.availability ?? 1);
 
-  // Tax window helper (year-based, with holiday window override)
+  // Tax window helper (year-based, with holiday window override).
+  // Holiday end is DERIVED: start + years − 1 (the taxHolidayEndYear input is ignored),
+  // and the same window is used by both the debt-sizing pass and the final tax calc.
+  const taxHolidayYrs = Math.max(0, Math.floor(I.taxHolidayYears || 0));
+  const taxHolidayEnd = I.taxHolidayStartYear + taxHolidayYrs - 1;
   const taxYearsActive = (yr: number) => {
     const inWindow = yr >= I.taxStartYear && yr <= I.taxEndYear;
-    const inHoliday = I.taxHolidayYears > 0 || I.taxHolidayEndYear >= I.taxHolidayStartYear
-      ? (yr >= I.taxHolidayStartYear && yr <= I.taxHolidayEndYear)
-      : false;
+    const inHoliday = taxHolidayYrs > 0 && yr >= I.taxHolidayStartYear && yr <= taxHolidayEnd;
     return inWindow && !inHoliday;
   };
 
@@ -1035,7 +1039,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
       I.oAndM * v("oAndM") + I.assetMgmt * v("assetMgmt") + I.spvCost * v("spvCost") +
       I.insurance * v("insurance") + I.csrContribution * v("csrContribution") + I.eetcCost * v("eetcCost")
     ) * escal;
-    const rentalValue = I.epcCost * (I.rentalValuePct || 0.5);
+    const rentalValue = I.epcCost * (I.rentalValuePct ?? 0.5);
     const realEstate = rentalValue * I.realEstateTaxableAmount * I.realEstateTaxRate * (1 - (I.exemptedProportion || 0)) * escal;
     const otherFixedOpex = (
       I.bondExpenses * v("bondExpenses") + I.lease * v("lease") + I.auxiliaryPower * v("auxiliaryPower") +
@@ -1107,7 +1111,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
       if (y <= grace || dbt <= 1e-6) { dsByY[y] = interest + (principalByY[y] || 0); continue; }
       let principal = 0;
       if (I.sizingMode === "dscr-sculpted" || I.sizingMode === "llcr-sculpted") {
-        const realisedTax = taxByY[y] ?? ((y <= I.taxHolidayYears) ? 0 : interest * I.taxRate);
+        const realisedTax = taxByY[y] ?? (!taxYearsActive(pre[y - 1].year) ? 0 : interest * I.taxRate);
         const cfadsApprox = pre[y - 1].ebitda - realisedTax + pre[y - 1].wcChange;
         const targetDS = cfadsApprox / Math.max(1.001, I.targetDSCR);
         principal = Math.max(0, Math.min(dbt, targetDS - interest));
@@ -1146,6 +1150,7 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
   // ── PASS C: assemble draft rows (interest tax shield captured exactly)
   const draft: AnnualRow[] = [];
   debt = debtAmount;
+  let nolPool = 0; // tax-loss carryforward (NOL): negative EBT accumulates and offsets future positive EBT
   for (let y = 1; y <= N; y++) {
     const p = pre[y - 1];
     const openingDebt = debt;
@@ -1156,7 +1161,14 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
     // Apply refi step-up first (cash-out), then principal repayment.
     debt = Math.max(0, debt + refiProceeds - principal);
     const ebt = p.ebit - interest;
-    const taxOnEbt = (!taxYearsActive(p.year) || ebt <= 0) ? 0 : ebt * I.taxRate;
+    let taxOnEbt = 0;
+    if (ebt < 0) {
+      nolPool += -ebt;
+    } else if (taxYearsActive(p.year)) {
+      const nolUsed = Math.min(nolPool, ebt);
+      nolPool -= nolUsed;
+      taxOnEbt = (ebt - nolUsed) * I.taxRate;
+    }
     const nokusOn = I.nokusRate > 0 && p.year >= I.nokusStartYear && p.year <= I.nokusEndYear;
     const effRate = ebt > 0 ? taxOnEbt / ebt : 0;
     const nokusTax = nokusOn && effRate < I.nokusThresholdRate && ebt > 0
@@ -1230,9 +1242,11 @@ function simulate(I: ProjectInputs, agg: ReturnType<typeof aggregate>, debtAmoun
       decommReserve = 0;
       decommProvision = 0;
     }
-    // CFFI: cash from operations after debt service & DSRA, plus any refi cash-out, less the cash
-    // we've ring-fenced for decommissioning (kept inside the project, not distributable).
-    const cffi = row.cfads - row.debtService - movement + row.refiProceeds - decommContribution;
+    // CFFI: cash from operations after debt service & DSRA, plus any refi cash-out.
+    // The decommissioning accrual is already deducted once via opex (it flows through
+    // EBITDA → CFADS), so it must NOT be subtracted again here; the ring-fenced amount
+    // simply sits in the restricted decommReserve instead of free cash.
+    const cffi = row.cfads - row.debtService - movement + row.refiProceeds;
     // Distributions
     let distributable = Math.max(0, cffi) * (I.payoutRatio ?? 1);
     if (I.divRestrictedToRetainedEarnings === 1) {
@@ -1544,7 +1558,7 @@ export function runModel(inputs: ProjectInputs): ModelOutputs {
     shCF.push(shPay);
     // Stash arrears on the row for BS/transparency
     sim.rows[idx].prefAccrued = prefArrears + shArrears;
-    commonCF.push(Math.max(0, avail));
+    commonCF.push(avail);
   });
 
   const commonEquityIRR = commonAmt > 0 ? irr(commonCF, 0.10) : NaN;

@@ -107,11 +107,11 @@ export const SummaryView = ({ m }: { m: ModelOutputs }) => {
           </table>
           <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
             <div className="rounded bg-secondary/40 p-2">
-              <div className="text-muted-foreground">NPV (project @ {fmtPct(m.inputs.discountRateProject, 1)})</div>
+              <div className="text-muted-foreground">NPV (project @ WACC {fmtPct(m.wacc, 1)})</div>
               <div className="font-mono font-semibold">${fmt(m.npvProject / 1000)}m</div>
             </div>
             <div className="rounded bg-secondary/40 p-2">
-              <div className="text-muted-foreground">NPV (equity @ {fmtPct(m.inputs.discountRateEquity, 1)})</div>
+              <div className="text-muted-foreground">NPV (equity @ Ke {fmtPct(m.costOfEquity, 1)})</div>
               <div className="font-mono font-semibold">${fmt(m.npvEquity / 1000)}m</div>
             </div>
             <div className="rounded bg-secondary/40 p-2">
