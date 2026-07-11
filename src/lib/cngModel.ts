@@ -441,7 +441,7 @@ export function runCngModel(I: CngInputs): CngOutputs {
   const dailyM3 = I.meterM3PerHour * I.operatingHoursPerDay;
   const compressorDailyM3 = (I.compressorCapacityM3hr || 0) * (I.numCompressors || 1) * (I.compressorPerformance || 1) * (I.flowSharingFactor || 1) * (I.operatingHoursPerDay || 24);
   const effectiveDailyM3 = compressorDailyM3 > 0 ? Math.min(dailyM3, compressorDailyM3) : dailyM3;
-  const designedAnnualM3 = dailyM3 * I.operatingDaysPerYear;
+  const designedAnnualM3 = effectiveDailyM3 * I.operatingDaysPerYear;
   const designedMonthlyM3 = designedAnnualM3 / 12;
   // trips per month required
   const effectiveTrailerPayload = I.trailerCapacityM3 * (1 - I.unutilizedPctPerTruck);
@@ -538,6 +538,7 @@ export function runCngModel(I: CngInputs): CngOutputs {
         const principal = Math.min(bal, pmt - interest);
         arr[y] = principal; bal -= principal;
       }
+      if (bal > 0) arr[tenor - 1] += bal;
     } else {
       // Sculpted
       let bal = debtAmount;
@@ -605,12 +606,17 @@ export function runCngModel(I: CngInputs): CngOutputs {
     const ebit = ebitda - depreciation;
 
     const annualRate = seniorRateAt(y);
-    let principalRepay = y < I.loanTenorYears ? Math.min(debtOutstanding, principalSharePerYear[y] || 0) : 0;
-    if (I.refiEnabled && y === Math.max(1, I.refiYear)) {
+    const refiOpsYear = Math.max(1, I.refiYear);
+    const repayHorizon = I.refiEnabled
+      ? Math.max(I.loanTenorYears, refiOpsYear + Math.max(1, I.refiNewTenorYears))
+      : I.loanTenorYears;
+    let principalRepay = y < repayHorizon ? Math.min(debtOutstanding, principalSharePerYear[y] || 0) : 0;
+    if (I.refiEnabled && y === refiOpsYear) {
       const newTenor = Math.max(1, I.refiNewTenorYears);
       const perYear = debtOutstanding / newTenor;
       principalRepay = Math.min(debtOutstanding, perYear);
       for (let yy = y + 1; yy < Math.min(N, y + newTenor); yy++) principalSharePerYear[yy] = perYear;
+      if (y + newTenor > N) principalSharePerYear[N - 1] += perYear * (y + newTenor - N);
     }
     const avgBal = debtOutstanding - principalRepay / 2;
     const interest = Math.max(0, avgBal) * annualRate;

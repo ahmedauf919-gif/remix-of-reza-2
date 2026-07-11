@@ -30,7 +30,7 @@ export const CngSummary = ({ m }: { m: CngOutputs }) => {
       <section className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="NPV (Project)" value={fmtEgp(m.npvProject)} hint={`@ ${fmtPct(I.discountRateProject)}`} icon={<Layers className="h-5 w-5"/>} accent="primary"/>
         <KpiCard label="NPV (Equity)" value={fmtEgp(m.npvEquity)} hint={`@ ${fmtPct(I.discountRateEquity)}`} icon={<Layers className="h-5 w-5"/>} accent="accent"/>
-        <KpiCard label="Daily volume" value={`${fmtNum(I.dailyConsumptionM3, 0)} m³`} hint={`${fmtNum(I.operatingHoursPerDay, 0)} hr/day`} icon={<Activity className="h-5 w-5"/>} accent="primary"/>
+        <KpiCard label="Daily volume" value={`${fmtNum(I.meterM3PerHour * I.operatingHoursPerDay, 0)} m³`} hint={`${fmtNum(I.operatingHoursPerDay, 0)} hr/day`} icon={<Activity className="h-5 w-5"/>} accent="primary"/>
         <KpiCard label="Trips / month" value={fmtNum(m.trailerTripsPerMonth, 0)} hint={`Capacity ${fmtNum(I.tripsPerMonth * I.numTrailers, 0)}`} icon={<Truck className="h-5 w-5"/>} accent="accent"/>
         <KpiCard label="Trailer utilisation" value={fmtPct(m.utilizationPct)} hint={`${I.numTrailers} trailers · ${fmtNum(I.distancePerTripKm, 0)} km/trip`} icon={<Truck className="h-5 w-5"/>} accent={m.utilizationPct < 0.95 ? "success" : "accent"}/>
         <KpiCard label="DSCR cushion" value={`${(m.minDSCR - 1.3) >= 0 ? "+" : ""}${fmtNum(m.minDSCR - 1.3, 2)}x`} hint="vs 1.30x" icon={<Shield className="h-5 w-5"/>} accent={(m.minDSCR - 1.3) >= 0 ? "success" : "accent"}/>

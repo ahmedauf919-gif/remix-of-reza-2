@@ -156,7 +156,7 @@ export function LngOutput({ m }: { m: LngOutputs }) {
       ],
     },
     {
-      title: `Equity IRR (${(m.equityIRR * 100).toFixed(1)}%) — Levered FCFE`,
+      title: `Equity IRR (${Number.isFinite(m.equityIRR) ? (m.equityIRR * 100).toFixed(1) + "%" : "—"}) — Levered FCFE`,
       rows: [
         { label: "Net Profit",              values: v(r => r.netProfit) },
         { label: "(+) Depreciation",        values: v(r => r.depreciation), indent: true },

@@ -10,7 +10,7 @@ type VarDef = { key: keyof CngInputs; label: string; unit: "pct" | "abs" };
 const VARIABLES: VarDef[] = [
   { key: "transportSellingPriceEgp", label: "Transport price (EGP/m³)", unit: "abs" },
   { key: "gasCommissionEgp",         label: "Gas commission (EGP/m³)",  unit: "abs" },
-  { key: "dailyConsumptionM3",       label: "Daily volume (m³)",        unit: "abs" },
+  { key: "meterM3PerHour",           label: "Meter capacity (m³/hr)",   unit: "abs" },
   { key: "variableTransportPerKmEgp",label: "Variable transport (EGP/km)", unit: "abs" },
   { key: "msKwhPerM3",               label: "kWh per m³ compressed",    unit: "abs" },
   { key: "msElectricityEgpKwh",      label: "Electricity price",        unit: "abs" },

@@ -24,6 +24,16 @@ function npv(rate: number, cf: number[]): number {
 }
 
 function irr(cf: number[], guess = 0.1): number {
+  // An IRR only exists if the cash-flow vector changes sign at least once.
+  // All-negative (or all-positive) vectors have no root — Newton would
+  // otherwise diverge to a garbage rate.
+  let hasPos = false, hasNeg = false;
+  for (const v of cf) {
+    if (v > 0) hasPos = true;
+    else if (v < 0) hasNeg = true;
+  }
+  if (!hasPos || !hasNeg) return NaN;
+
   let r = guess;
   for (let iter = 0; iter < 200; iter++) {
     let f = 0, df = 0;
@@ -36,7 +46,14 @@ function irr(cf: number[], guess = 0.1): number {
     if (Math.abs(r2 - r) < 1e-10) { r = r2; break; }
     r = r2;
   }
-  return isFinite(r) ? r : NaN;
+  if (!isFinite(r) || r <= -1) return NaN;
+
+  // Convergence guard: accept only if NPV at the solution is ≈ 0
+  // relative to the scale of the cash flows.
+  const scale = cf.reduce((s, v) => s + Math.abs(v), 0);
+  const residual = npv(r, cf);
+  if (!isFinite(residual) || Math.abs(residual) > 1e-6 * Math.max(1, scale)) return NaN;
+  return r;
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -426,9 +443,14 @@ function _runLngCore(I: LngInputs): Omit<LngOutputs, "breakEvenPriceUsd"> {
     }
 
     // Senior debt
+    // Effective maturity: a refi extends the repayment window to
+    // refiYear + refiNewTenorYears; otherwise the original tenor applies.
+    const effectiveMaturity = refiDone
+      ? (I.refiYear ?? 5) + (I.refiNewTenorYears ?? 5)
+      : I.debtTenorYears;
     const seniorOpening  = seniorBal;
     const inGrace        = y < grace;
-    const afterTenor     = y >= I.debtTenorYears;
+    const afterTenor     = y >= effectiveMaturity;
     const seniorRepay    = (!inGrace && !afterTenor) ? Math.min(seniorAmortCurrent, seniorBal) : 0;
     const seniorInterest = seniorOpening * seniorRateCurrent;
     const seniorClosing  = Math.max(0, seniorOpening - seniorRepay);
@@ -566,13 +588,20 @@ function _runLngCore(I: LngInputs): Omit<LngOutputs, "breakEvenPriceUsd"> {
 
 // Bisect over sellingPriceUsdPerMmbtu — calls _runLngCore to avoid recursion
 function solvePriceForIRR(I: LngInputs, targetIRR: number): number {
-  let lo = 0.5, hi = 30;
+  const LO = 0.5, HI = 30;
+  let lo = LO, hi = HI;
   for (let i = 0; i < 60; i++) {
     const mid = (lo + hi) / 2;
     const trialIRR = _runLngCore({ ...I, sellingPriceUsdPerMmbtu: mid }).equityIRR;
-    if (trialIRR < targetIRR) lo = mid; else hi = mid;
+    // NaN IRR (no root, e.g. all-negative FCFE) counts as "below target".
+    if (!(trialIRR >= targetIRR)) lo = mid; else hi = mid;
   }
-  return (lo + hi) / 2;
+  const sol = (lo + hi) / 2;
+  // If the solution pins to either bound, no crossing exists inside the
+  // search range — report NaN rather than a bogus $0.50 / $30 price.
+  const tol = 1e-6;
+  if (sol <= LO + tol || sol >= HI - tol) return NaN;
+  return sol;
 }
 
 // Public entry point — adds break-even on top of core

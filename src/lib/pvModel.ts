@@ -455,9 +455,16 @@ export function runPvModel(I: PvInputs): PvOutputs {
   const paidInEquity = equityRaise - shareholderLoan;
 
   // ── Senior debt amortisation schedule (with optional refinancing) ──
+  // refiYear is 1-indexed in ops years (1 = first ops year), so it maps to ops index refiYear − 1
+  const refiOpsIndex = Math.max(0, I.refiYear - 1);
+  // If refi is executed, the repayment schedule can extend beyond the original tenor:
+  // effective maturity = max(original tenor, refi index + new tenor)
+  const effectiveDebtMaturity = I.refiEnabled
+    ? Math.max(I.loanTenorYears, refiOpsIndex + Math.max(1, I.refiNewTenorYears))
+    : I.loanTenorYears;
   // Effective rate = bank base rate per year + spread (corridor removed from model logic)
   const seniorRateAt = (y: number): number => {
-    if (I.refiEnabled && y >= Math.max(1, I.refiYear)) return I.refiNewRatePct;
+    if (I.refiEnabled && y >= refiOpsIndex) return I.refiNewRatePct;
     return at(I.bankInterestPerYear, y, 0.10) + I.spreadPct;
   };
 
@@ -498,7 +505,8 @@ export function runPvModel(I: PvInputs): PvOutputs {
     const usufruct = revenue * I.usufructPctOfRevenue * rentEsc;
     const mmraEsc = cumulAt(I.mmraInflationPerYear, y, 0.05);
     const mmra = revenue * I.mmraPctOfRevenue * mmraEsc;
-    // replacement is a cash-only investing outflow — excluded from P&L / EBITDA
+    // replacement is a capex (investing) outflow — excluded from EBITDA, capitalised into PPE
+    // and expensed via straight-line depreciation over the remaining project years
     const opex = om + omVat + insurance + rent + usufruct + mmra;
     return { revenue, om, omVat, insurance, replacement, rent, usufruct, mmra, opex, fx, energy, tariff };
   };
@@ -589,6 +597,8 @@ export function runPvModel(I: PvInputs): PvOutputs {
   let accumDep = 0;
   let retainedEarnings = 0;
   let prevNetPPEMain = totalCapexEgp; // tracks opening net PPE for insurance calculation
+  let grossPPE = totalCapexEgp; // grows as replacement capex is capitalised
+  const replacementDep = new Array(N).fill(0); // straight-line dep from capitalised replacements
   void periodsPerYear;
 
   for (let y = 0; y < N; y++) {
@@ -596,16 +606,23 @@ export function runPvModel(I: PvInputs): PvOutputs {
     const energy = o.energy;
     const ebitda = o.revenue - o.opex;
 
+    // Capitalise replacement capex into gross PPE; depreciate straight-line over remaining project years
+    if (o.replacement > 0) {
+      grossPPE += o.replacement;
+      const perYr = o.replacement / (N - y);
+      for (let yy = y; yy < N; yy++) replacementDep[yy] += perYr;
+    }
+
     const depreciation = allCapex.reduce((s, b) => {
       if (b.depMethod === "UnitOfProduction") return s + b.annualDep * energy;
       return s + (y < b._life ? b.annualDep : 0);
-    }, 0);
+    }, 0) + replacementDep[y];
     const ebit = ebitda - depreciation;
 
     const annualRate = seniorRateAt(y);
-    let principalRepay = y < I.loanTenorYears ? Math.min(debtOutstanding, principalSharePerYear[y] || 0) : 0;
-    // Refi: at refi year, refresh the schedule for remaining balance
-    if (I.refiEnabled && y === Math.max(1, I.refiYear)) {
+    let principalRepay = y < effectiveDebtMaturity ? Math.min(debtOutstanding, principalSharePerYear[y] || 0) : 0;
+    // Refi: at refi year (ops index refiYear − 1), refresh the schedule for remaining balance
+    if (I.refiEnabled && y === refiOpsIndex) {
       const newTenor = Math.max(1, I.refiNewTenorYears);
       // distribute remaining balance over new tenor (equal)
       const perYear = debtOutstanding / newTenor;
@@ -639,7 +656,7 @@ export function runPvModel(I: PvInputs): PvOutputs {
     prevAR = ar; prevAP = ap;
 
     const taxAdjUnlev = Math.max(0, ebit) * I.taxRatePct;
-    // replacement is a direct capex cash outflow (not in P&L), flows through investing activities
+    // replacement is a capex cash outflow through investing activities (capitalised; P&L sees only its depreciation)
     const fcff = ebit - taxAdjUnlev + depreciation + wcDelta - o.replacement;
     const fcfe = netProfit + depreciation + wcDelta - principalRepay - slPrincipal - o.replacement;
 
@@ -650,7 +667,7 @@ export function runPvModel(I: PvInputs): PvOutputs {
     accumDep += depreciation;
     retainedEarnings += netProfit;
     cash = cash + fcfe; // residual to equity holders accumulates as cash
-    const netPPE = Math.max(0, totalCapexEgp - accumDep);
+    const netPPE = Math.max(0, grossPPE - accumDep);
     prevNetPPEMain = netPPE; // closing becomes next year's opening for insurance
 
     rows.push({

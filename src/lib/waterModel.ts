@@ -390,6 +390,7 @@ export interface YearRow {
   accumDep: number;
   ppeNet: number;
   accountsReceivable: number;
+  accountsPayable: number;
   cash: number;
   totalAssets: number;
   paidInEquity: number;
@@ -477,7 +478,27 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   const equityBucket = totalRoCapex * (1 - I.debtToEquity);
   const shlAmount = equityBucket * Math.max(0, Math.min(1, I.shareholderLoanPct));
   const equityAmount = equityBucket - shlAmount;
-  const idc = principalDebt * I.debtRateYr1 * constYears * 0.596;
+  // IDC derived from the monthly CAPEX construction draw schedule when a valid
+  // schedule is provided (fractions per month summing to ~100%). Each month's
+  // debt draw accrues interest at the Yr-1 senior rate (base + bank spread) for
+  // the construction months remaining after the draw. Falls back to the legacy
+  // approximation when the schedule is empty or does not sum to ~100%.
+  const drawSched = I.capexDrawScheduleMonthly ?? [];
+  const drawSum = drawSched.reduce((s, v) => s + (isFinite(v) ? v : 0), 0);
+  let idc: number;
+  if (drawSched.length > 0 && Math.abs(drawSum - 1) < 0.01) {
+    const annualRate = debtRateAt(I, 0); // Yr-1 base rate (or per-year override) + bank spread
+    const monthlyRate = annualRate / 12;
+    const months = Math.max(drawSched.length, I.constructionMonths);
+    idc = 0;
+    for (let m = 0; m < drawSched.length; m++) {
+      const f = isFinite(drawSched[m]) ? drawSched[m] : 0;
+      const monthsRemaining = Math.max(0, months - m - 1);
+      idc += principalDebt * f * monthlyRate * monthsRemaining;
+    }
+  } else {
+    idc = principalDebt * I.debtRateYr1 * constYears * 0.596; // legacy approximation
+  }
   const debtAmount = principalDebt + idc;
   const totalCapexWithIdc = totalRoCapex + idc;
   const capexPerM3Egp = totalCapexWithIdc / I.capacityM3Day;
@@ -640,7 +661,7 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
 
   // ── Year-by-year rows ──
   const rows: YearRow[] = [];
-  let prevAR = 0;
+  let prevNWC = 0; // net working capital = AR − AP
   let cumDep = 0;
   let cash = 0;
   let retained = 0;
@@ -661,7 +682,7 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     fcfe: -totalCapexWithIdc + debtAmount + shlAmount,
     debtOpening: 0, debtClosing: debtAmount, rate: 0, dscr: NaN,
     ppeGross, accumDep: 0, ppeNet: ppeGross,
-    accountsReceivable: 0, cash: 0,
+    accountsReceivable: 0, accountsPayable: 0, cash: 0,
     totalAssets: ppeGross,
     paidInEquity, retainedEarnings: 0, totalEquity: paidInEquity,
     totalLiabAndEquity: paidInEquity + debtAmount + shlAmount,
@@ -723,9 +744,15 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
     const tax = Math.max(0, ebt) * I.taxRate;
     const netProfit = ebt - tax;
 
-    const ar = revenue * (I.receivablesDays / 365);
-    const wcDelta = -(ar - prevAR);
-    prevAR = ar;
+    // Working capital: AR on revenue, AP on cash opex (variable + electricity + fixed).
+    // In the final operating year the net working capital is fully released
+    // (receivables collected, payables settled).
+    const isTerminalYear = y === N - 1;
+    const ar = isTerminalYear ? 0 : revenue * (I.receivablesDays / 365);
+    const ap = isTerminalYear ? 0 : (variableCost + electricityCost + fixedCost) * (I.payablesDays / 365);
+    const nwc = ar - ap;
+    const wcDelta = -(nwc - prevNWC);
+    prevNWC = nwc;
 
     const taxAdjUnlev = Math.max(0, ebit) * I.taxRate;
     let fcff = ebit - taxAdjUnlev + depreciation + wcDelta;
@@ -767,10 +794,10 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
       workingCapDelta: wcDelta, fcff, fcfe,
       debtOpening: debtOpen, debtClosing: debtClose + shlOutstanding, rate, dscr,
       ppeGross, accumDep: cumDep, ppeNet,
-      accountsReceivable: ar, cash,
+      accountsReceivable: ar, accountsPayable: ap, cash,
       totalAssets,
       paidInEquity, retainedEarnings: retained, totalEquity,
-      totalLiabAndEquity: totalEquity + debtClose + shlOutstanding,
+      totalLiabAndEquity: totalEquity + debtClose + shlOutstanding + ap,
     });
   }
 
@@ -865,16 +892,39 @@ export function runWaterModel(rawI: WaterInputs): WaterOutputs {
   };
 }
 
-// Sensitivity helper — recompute IRR / LCOM3 across a 1D variable
+// Sensitivity helper — recompute IRR / LCOM3 across a 1D variable.
+// `field` may be a scalar input key or a custom mapper that clones the inputs.
+export type SensitivityMapper = (base: WaterInputs, mult: number) => WaterInputs;
+
+// Scalar fields that are shadowed by per-year override arrays: when the array is
+// populated the scalar is ignored, so the sensitivity must scale the array too.
+const SCALAR_ARRAY_TWINS: Partial<Record<keyof WaterInputs, keyof WaterInputs>> = {
+  fxRateEgpPerUsd: "fxRatePerYear",
+  minTakePct: "minTakePctPerYear",
+  debtRateYr1: "debtRatePerYear",
+};
+
 export function sensitivityIRR(
   base: WaterInputs,
-  field: keyof WaterInputs,
+  field: keyof WaterInputs | SensitivityMapper,
   multipliers: number[]
 ): { mult: number; projectIRR: number; equityIRR: number; lcom3: number; minDSCR: number }[] {
-  const baseVal = base[field] as number;
+  const map: SensitivityMapper = typeof field === "function"
+    ? field
+    : (b, m) => {
+        const baseVal = b[field] as number;
+        const next = { ...b, [field]: baseVal * m } as WaterInputs;
+        const twin = SCALAR_ARRAY_TWINS[field];
+        if (twin) {
+          const arr = b[twin] as number[] | undefined;
+          if (arr && arr.length > 0) {
+            (next as any)[twin] = arr.map(v => (isFinite(v) ? v * m : v));
+          }
+        }
+        return next;
+      };
   return multipliers.map(m => {
-    const inputs = { ...base, [field]: baseVal * m } as WaterInputs;
-    const r = runWaterModel(inputs);
+    const r = runWaterModel(map(base, m));
     return { mult: m, projectIRR: r.projectIRR, equityIRR: r.equityIRR, lcom3: r.lcom3, minDSCR: r.minDSCR };
   });
 }

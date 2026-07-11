@@ -396,10 +396,10 @@ export function LngInputsForm({ inputs: I, onChange }: Props) {
           <Field label="SHL Interest Rate (% p.a.)">
             <Input type="number" value={pct(I.shlInterestRatePct)} onChange={e => set("shlInterestRatePct", dec(+e.target.value))} step="0.1" />
           </Field>
-          <Field label="SHL Tenor (years)">
-            <Input type="number" value={I.debtTenorYears} onChange={e => set("debtTenorYears", N(+e.target.value, 10))} />
-          </Field>
         </Row>
+        <p className="text-xs text-muted-foreground">
+          The SHL is interest-only with a bullet repayment at senior debt maturity ({I.debtTenorYears} years — set under Senior Debt above).
+        </p>
 
         <SectionHeader>Refinancing Option</SectionHeader>
         <div className="flex items-center gap-3 mb-3">

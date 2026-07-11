@@ -7,6 +7,7 @@ interface AssetVintage {
   life: number;
   startYearIdx: number; // index when depreciation starts
   shortLife: boolean;
+  baseAmount?: number; // ORIGINAL (commissioning-vintage) cost — escalation base for replacements
 }
 
 export function runModel(inp: Inputs): ModelOutput {
@@ -74,12 +75,14 @@ export function runModel(inp: Inputs): ModelOutput {
       const grossInitial = allInitialItems.reduce((s, c) => s + c.amount, 0);
       for (const it of allInitialItems) {
         const remaining = Math.max(1, N - commIdx + 1);
+        const seedAmount = totalSeed * (it.amount / grossInitial);
         vintages.push({
           name: it.name,
-          amount: totalSeed * (it.amount / grossInitial),
+          amount: seedAmount,
           life: Math.min(it.life, remaining), // cap life so RAB fully depreciates by concession end
           startYearIdx: commIdx,
           shortLife: !!it.shortLife,
+          baseAmount: seedAmount,
         });
       }
       cwip = 0;
@@ -170,14 +173,17 @@ export function runModel(inp: Inputs): ModelOutput {
       if (i !== v.startYearIdx + v.life) continue; // fires once at end of THIS vintage's life
       const remaining = N - i + 1;
       if (remaining <= 0) continue;
-      const yearsSinceCommissioning = i - commIdx;
-      const escFactor = inp.replacementCapexCPI ? Math.pow(1 + inp.cpi, Math.max(0, yearsSinceCommissioning)) : 1;
-      const repl = v.amount * escFactor;
+      // Escalate from the ORIGINAL base cost by years since original commissioning —
+      // escalating the already-escalated prior vintage would compound per generation.
+      const yearsSinceOriginalCommissioning = i - commIdx;
+      const escFactor = inp.replacementCapexCPI ? Math.pow(1 + inp.cpi, Math.max(0, yearsSinceOriginalCommissioning)) : 1;
+      const originalBase = v.baseAmount ?? v.amount;
+      const repl = originalBase * escFactor;
       replacementCapex += repl;
       const existing = replBreakdown.find(b => b.name === v.name);
       if (existing) existing.amount += repl;
       else replBreakdown.push({ name: v.name, amount: repl });
-      replacements.push({ name: v.name, amount: repl, life: Math.min(v.life, remaining), startYearIdx: i, shortLife: true });
+      replacements.push({ name: v.name, amount: repl, life: Math.min(v.life, remaining), startYearIdx: i, shortLife: true, baseAmount: originalBase });
     }
     vintages.push(...replacements);
     row.replacementBreakdown = replBreakdown;
@@ -276,7 +282,11 @@ export function runModel(inp: Inputs): ModelOutput {
       } else {
         const sinceReview = i - lastReviewIdx;
         if (inp.applyPriceControl && sinceReview >= inp.priceControlYears) {
-          currentTariff = row.rabTariff;
+          // Reset baseline from the underlying revenue requirement EXCLUDING the
+          // one-year BB6 true-up — baking the reconciliation into the baseline
+          // would carry a single-year adjustment through the whole 5-year period.
+          const baselineRevReq = provisionalRevReq - row.bb6Recon;
+          currentTariff = row.volumeMMBtu > 0 ? Math.max(0, baselineRevReq / row.volumeMMBtu) : currentTariff;
           lastReviewIdx = i;
         } else if (i > commIdx) {
           if (inp.applyTariffInflation) currentTariff = currentTariff * (1 + inp.cpi);
@@ -303,7 +313,9 @@ export function runModel(inp: Inputs): ModelOutput {
     row.ebit = row.ebitda - row.da;
 
     // === Financing ===
-    if (isConstruction) {
+    // CWIP spends through the commissioning year (i === commIdx) — the final capex
+    // tranche must be financed too, so draw debt/equity for i <= commIdx.
+    if (i <= commIdx) {
       const phaseFrac = normPhasing[i - 1] ?? 0;
       row.debtDrawdown = totalDebt * phaseFrac;
       debtBalance += row.debtDrawdown;
@@ -311,20 +323,24 @@ export function runModel(inp: Inputs): ModelOutput {
       row.loanFees = totalDebt * (inp.loanFeesPct ?? 0) * phaseFrac;
     }
     const grace = Math.max(0, inp.debtGracePeriod ?? 0);
+    const debtBalanceBeforeRepay = debtBalance; // opening balance for interest (post-drawdown, pre-repayment)
     if (!isConstruction && i >= commIdx + grace) {
       const yearOfRepay = i - commIdx - grace + 1;
       if (yearOfRepay <= inp.debtTenor) {
-        row.debtRepayment = totalDebt / inp.debtTenor;
+        // Never repay more than the outstanding balance — no phantom principal
+        row.debtRepayment = Math.min(debtBalance, totalDebt / inp.debtTenor);
         debtBalance = Math.max(0, debtBalance - row.debtRepayment);
       }
     }
     row.ltDebtBalance = debtBalance;
 
-    const loanInterest = row.ltDebtBalance > 0 || row.debtRepayment > 0
-      ? (debtBalance + row.debtRepayment) * inp.debtRate
+    // Interest accrues on the actual opening (pre-repayment) balance
+    const loanInterest = debtBalanceBeforeRepay > 0
+      ? debtBalanceBeforeRepay * inp.debtRate
       : 0;
     const overdraftInterest = overdraft * inp.overdraftRate;
-    row.interest = isConstruction ? row.loanFees : loanInterest + overdraftInterest;
+    // loanFees is non-zero post-construction only in the commissioning year (final tranche)
+    row.interest = isConstruction ? row.loanFees : loanInterest + overdraftInterest + row.loanFees;
     row.ebt = row.ebit - row.interest;
 
     // === Tax / Zakat ===
@@ -401,6 +417,9 @@ export function runModel(inp: Inputs): ModelOutput {
     row.dividendWHT = row.dividend * (inp.withholdingTaxRate ?? 0);
     row.dividendNet = row.dividend - row.dividendWHT;
     retainedEarnings -= row.dividend;
+    // Write back the CLOSING balance — the earlier snapshot was the opening balance,
+    // which lagged the balance sheet by one year and corrupted terminal equity.
+    row.retainedEarnings = retainedEarnings;
 
     // === VAT (cash-only per Saudi VAT Law — not P&L, not RAB) ===
     // Input VAT paid on capex spend this year (construction CWIP + post-comm replacement).
@@ -408,9 +427,9 @@ export function runModel(inp: Inputs): ModelOutput {
     // pure pass-through with VAT already handled by ARAMCO; connection fee VAT is immaterial here.
     // Recoverable balance offsets output VAT; excess output is remitted to ZATCA.
     // vatRate already declared at top of runModel (ex-VAT helper).
-    row.inputVATPaid = isConstruction
-      ? row.cwipSpend * vatRate
-      : replacementCapex * vatRate;
+    // cwipSpend is non-zero through the commissioning year (i <= commIdx);
+    // replacementCapex only post-commissioning — sum covers both without double-count.
+    row.inputVATPaid = (row.cwipSpend + replacementCapex) * vatRate;
     row.outputVATCollected = isConstruction ? 0 : row.gasRevenue * vatRate;
     const vatRecOpening = vatRecoverableBal;
     const availableCredit = vatRecOpening + row.inputVATPaid;
@@ -433,18 +452,21 @@ export function runModel(inp: Inputs): ModelOutput {
     // === Cash Flow ===
     // Levered OCF: netProfit + D&A − ΔWC (indirect method).
     row.ocf = isConstruction ? 0 : (row.netProfit + row.da - row.deltaWorkingCapital);
-    row.icf = isConstruction ? -row.cwipSpend : -replacementCapex;
+    // Commissioning year carries the final CWIP tranche AND is an operating year —
+    // include both (cwipSpend is 0 post-commissioning; replacementCapex is 0 pre-).
+    row.icf = -(row.cwipSpend + replacementCapex);
 
     // Project (unlevered) FCF — used for project IRR. Independent of financing.
     // VAT on capex is a real cash outflow during construction even though it's
     // recovered later via output VAT — include net VAT cash in project FCF.
     row.fcf = isConstruction
       ? -row.cwipSpend + row.netVATCash
-      : (row.ebitda - row.taxZakatTotal - replacementCapex - row.deltaWorkingCapital + row.netVATCash);
+      : (row.ebitda - row.taxZakatTotal - row.cwipSpend - replacementCapex - row.deltaWorkingCapital + row.netVATCash);
 
     // Cash balance: include net VAT cash (off-P&L) on top of OCF/ICF/financing.
+    // Equity is injected through the commissioning year (final CWIP tranche).
     const financingCFCash = row.debtDrawdown - row.debtRepayment
-      + (isConstruction ? equityTotal * (normPhasing[i - 1] ?? 0) : 0);
+      + (i <= commIdx ? equityTotal * (normPhasing[i - 1] ?? 0) : 0);
     let netCash = row.ocf + row.icf + financingCFCash - row.dividend + row.netVATCash;
 
     if (cash + netCash < 0) {
@@ -493,7 +515,8 @@ export function runModel(inp: Inputs): ModelOutput {
   const lastRow = rows[rows.length - 1];
   const terminalEquity = lastRow ? Math.max(0, lastRow.shareCapital + lastRow.retainedEarnings) : 0;
   const dividendCFs = rows.map((r, i) => {
-    const eqInj = r.isConstruction ? -(equityTotal * (normPhasing[i] ?? 0)) : 0;
+    // Equity is injected through the commissioning year (r.idx === commIdx), not just construction
+    const eqInj = r.idx <= commIdx ? -(equityTotal * (normPhasing[i] ?? 0)) : 0;
     const terminal = i === rows.length - 1 ? terminalEquity : 0;
     return eqInj + r.dividendNet + terminal;
   });
@@ -517,7 +540,9 @@ export function runModel(inp: Inputs): ModelOutput {
   const bb5 = npv(inp.wacc, rows.map((r) => r.bb5PassThrough));
   const lcoeRAB = pvVol > 0 ? (bb1 + bb2 + bb3 + bb4 + bb5) / pvVol : 0;
 
-  const capexPV = npv(inp.wacc, rows.map((r, i) => (r.isConstruction ? r.cwipSpend : (r.capexAdditions - (i + 1 === commIdx ? r.cwipTransfer : 0)))));
+  // Capex CASH spend: CWIP spend (through commissioning year) + replacements. Excludes
+  // the CWIP transfer (which embeds IDC returns) to avoid double-counting.
+  const capexPV = npv(inp.wacc, rows.map((r) => r.cwipSpend + r.replacementCapexAdded));
   const opexPV = bb4 + bb5;
   const taxPV = bb3;
   const lcoeUnlevered = pvVol > 0 ? (capexPV + opexPV + taxPV) / pvVol : 0;

@@ -6,26 +6,91 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
 type VarDef = {
-  key: keyof PvInputs;
+  key: string;
   label: string;
   unit: "pct" | "abs";
+  baseOf: (I: PvInputs) => number;
+  apply: (I: PvInputs, newVal: number) => PvInputs;
 };
 
+const scalarVar = (key: keyof PvInputs, label: string, unit: "pct" | "abs"): VarDef => ({
+  key: key as string,
+  label,
+  unit,
+  baseOf: I => I[key] as number,
+  apply: (I, newVal) => ({ ...I, [key]: newVal } as PvInputs),
+});
+
 const VARIABLES: VarDef[] = [
-  { key: "govtBaseTariffEgp",      label: "Tariff base (EGP/kWh)",        unit: "abs" },
-  { key: "govtEscalationPct",      label: "Tariff escalation",             unit: "pct" },
-  { key: "yieldP50",               label: "Yield P50 (kWh/kWp)",         unit: "abs" },
-  { key: "yieldP90",               label: "Yield P90 (kWh/kWp)",         unit: "abs" },
-  { key: "capacityKwp",            label: "Installed capacity (kWp)",     unit: "abs" },
-  { key: "lossThereafterPct",      label: "Annual degradation",           unit: "pct" },
-  { key: "omPerMwUsd",             label: "O&M USD/MW",                    unit: "abs" },
-  { key: "insurancePctOfCapex",    label: "Insurance % of CAPEX",         unit: "pct" },
-  { key: "debtPct",                label: "Gearing",                       unit: "pct" },
-  { key: "spreadPct",              label: "Bank spread",                   unit: "pct" },
-  { key: "loanTenorYears",         label: "Debt tenor (yrs)",              unit: "abs" },
-  { key: "taxRatePct",             label: "Tax rate",                      unit: "pct" },
-  { key: "opexYoYPct",             label: "OPEX escalation",               unit: "pct" },
-  { key: "contingencyPct",         label: "Contingency %",                 unit: "pct" },
+  {
+    // The engine prices off voltageTariffs[voltageLevel]; scale all voltage tariffs
+    // (govtBaseTariffEgp alone is shadowed and would produce a flat row).
+    key: "tariffBase",
+    label: "Tariff base (EGP/kWh)",
+    unit: "abs",
+    baseOf: I => I.voltageTariffs?.[I.voltageLevel] ?? I.govtBaseTariffEgp,
+    apply: (I, newVal) => {
+      const base = I.voltageTariffs?.[I.voltageLevel] ?? I.govtBaseTariffEgp;
+      const ratio = base > 0 ? newVal / base : 1;
+      const voltageTariffs = Object.fromEntries(
+        Object.entries(I.voltageTariffs ?? {}).map(([k, t]) => [k, (t as number) * ratio])
+      ) as PvInputs["voltageTariffs"];
+      return { ...I, voltageTariffs, govtBaseTariffEgp: I.govtBaseTariffEgp * ratio };
+    },
+  },
+  {
+    // The engine uses tariffEscalationPerYear when set; shift the whole array
+    // (govtEscalationPct alone is shadowed and would produce a flat row).
+    key: "tariffEscalation",
+    label: "Tariff escalation",
+    unit: "pct",
+    baseOf: I => (I.tariffEscalationPerYear?.length ? I.tariffEscalationPerYear[0] : I.govtEscalationPct),
+    apply: (I, newVal) => {
+      const base = I.tariffEscalationPerYear?.length ? I.tariffEscalationPerYear[0] : I.govtEscalationPct;
+      const shift = newVal - base;
+      return {
+        ...I,
+        govtEscalationPct: I.govtEscalationPct + shift,
+        tariffEscalationPerYear: (I.tariffEscalationPerYear ?? []).map(x => x + shift),
+      };
+    },
+  },
+  {
+    // Perturb whichever yield case is actually driving the model.
+    key: "yieldActive",
+    label: "Yield, active case (kWh/kWp)",
+    unit: "abs",
+    baseOf: I => (I.yieldCase === "P90" ? I.yieldP90 : I.yieldP50),
+    apply: (I, newVal) => (I.yieldCase === "P90" ? { ...I, yieldP90: newVal } : { ...I, yieldP50: newVal }),
+  },
+  scalarVar("capacityKwp",         "Installed capacity (kWp)", "abs"),
+  scalarVar("lossThereafterPct",   "Annual degradation",       "pct"),
+  scalarVar("omPerMwUsd",          "O&M USD/MW",               "abs"),
+  scalarVar("insurancePctOfCapex", "Insurance % of CAPEX",     "pct"),
+  scalarVar("debtPct",             "Gearing",                  "pct"),
+  scalarVar("spreadPct",           "Bank spread",              "pct"),
+  scalarVar("loanTenorYears",      "Debt tenor (yrs)",         "abs"),
+  scalarVar("taxRatePct",          "Tax rate",                 "pct"),
+  {
+    // The engine uses the per-year OPEX inflation arrays when set; shift them
+    // (opexYoYPct alone is shadowed and would produce a flat row).
+    key: "opexEscalation",
+    label: "OPEX escalation",
+    unit: "pct",
+    baseOf: I => (I.omInflationPerYear?.length ? I.omInflationPerYear[0] : I.opexYoYPct),
+    apply: (I, newVal) => {
+      const base = I.omInflationPerYear?.length ? I.omInflationPerYear[0] : I.opexYoYPct;
+      const shift = newVal - base;
+      return {
+        ...I,
+        opexYoYPct: I.opexYoYPct + shift,
+        omInflationPerYear: (I.omInflationPerYear ?? []).map(x => x + shift),
+        mmraInflationPerYear: (I.mmraInflationPerYear ?? []).map(x => x + shift),
+        insuranceInflationPerYear: (I.insuranceInflationPerYear ?? []).map(x => x + shift),
+      };
+    },
+  },
+  scalarVar("contingencyPct",      "Contingency %",            "pct"),
 ];
 
 const fmtPct = (v: number) => (isFinite(v) ? (v * 100).toFixed(2) + "%" : "n/a");
@@ -62,7 +127,7 @@ const METRICS: { key: Metric; label: string }[] = [
 
 export const PvSensitivity = ({ inputs }: { inputs: PvInputs }) => {
   const [selected, setSelected] = useState<Record<string, boolean>>(
-    Object.fromEntries(VARIABLES.slice(0, 6).map(v => [v.key as string, true]))
+    Object.fromEntries(VARIABLES.slice(0, 6).map(v => [v.key, true]))
   );
   const [metric, setMetric] = useState<Metric>("equityIRR");
   const [rangePct, setRangePct] = useState<number>(20);
