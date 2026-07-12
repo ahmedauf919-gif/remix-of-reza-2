@@ -53,7 +53,7 @@ export const PvOutput = ({ m }: { m: PvOutputs }) => {
       title: "Revenue",
       rows: [
         { label: "Energy generated (kWh)", values: v(r => r.energyKwh) },
-        { label: "Effective tariff (EGP/kWh)", values: v(r => r.tariffEgp), d: 3, indent: true },
+        { label: "Effective tariff, net of discount (EGP/kWh)", values: v(r => r.tariffEgp), d: 3, indent: true },
         { label: "Revenue", values: v(r => r.revenue), bold: true },
       ],
     },

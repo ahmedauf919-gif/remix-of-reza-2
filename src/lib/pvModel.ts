@@ -676,7 +676,7 @@ export function runPvModel(I: PvInputs): PvOutputs {
 
     rows.push({
       year: I.startYear + y, yearIdx: y, fx: o.fx,
-      capacityKwp: I.capacityKwp, energyKwh: energy, tariffEgp: o.tariff, revenue: o.revenue,
+      capacityKwp: I.capacityKwp, energyKwh: energy, tariffEgp: energy > 0 ? o.revenue / energy : o.tariff, revenue: o.revenue,
       om: o.om, omVat: o.omVat, mmra: o.mmra, insurance: o.insurance, replacement: o.replacement,
       rent: o.rent, usufruct: o.usufruct, opex: o.opex,
       ebitda, depreciation, ebit, interest, slInterest, ebt, tax, netProfit,
