@@ -124,7 +124,7 @@ const categories = [
     label: "Sizing Models",
     description: "Technical sizing tools for capacity planning and equipment specification.",
     icon: Ruler,
-    count: 8,
+    count: 7,
     iconBg: "bg-emerald-700",
     iconColor: "text-white",
     accent: "border-emerald-300/40 hover:border-emerald-400/60",
@@ -148,7 +148,7 @@ const categories = [
     label: "TAQA Analytics",
     description: "Internal business intelligence — client portfolio maps, sector breakdowns and operational dashboards.",
     icon: TrendingUp,
-    count: 1,
+    count: 2,
     iconBg: "bg-[#E8A020]",
     iconColor: "text-white",
     accent: "border-amber-300/40 hover:border-amber-400/60",
@@ -473,35 +473,6 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {/* NABQ card */}
-              <Link
-                to="/sizing/nabq"
-                className="group block animate-fade-in-up"
-              >
-                <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm transition-all duration-300 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 hover:border-emerald-500/30 border-border">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.03] to-emerald-300/[0.06] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
-                  <div className="flex items-start justify-between mb-4 relative z-10">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-emerald-50 text-emerald-700">
-                      Energy Analytics
-                    </span>
-                    <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-emerald-700 transition-transform duration-300 group-hover:scale-110 group-hover:shadow-md">
-                      <BarChart2 className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                  <div className="relative z-10">
-                    <h3 className="font-bold text-[#002060] text-base leading-snug">NABQ</h3>
-                    <p className="text-[11px] text-emerald-700 font-medium mt-0.5 mb-2.5">Power & Diesel Analytics</p>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Power consumption analysis, diesel cost forecasting, battery sizing, solar integration, and client load dashboards for NABQ.
-                    </p>
-                  </div>
-                  <div className="relative z-10 mt-5 flex items-center gap-1.5 text-xs font-semibold text-emerald-700 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                    Open Dashboard
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-emerald-500 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 rounded-b-xl" />
-                </div>
-              </Link>
 
               {/* Engineering sizing tools */}
               {[
@@ -680,6 +651,35 @@ export default function Home() {
               <span>Internal business intelligence and client portfolio dashboards.</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {/* NABQ card */}
+              <Link
+                to="/sizing/nabq"
+                className="group block animate-fade-in-up"
+              >
+                <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm transition-all duration-300 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 hover:border-emerald-500/30 border-border">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.03] to-emerald-300/[0.06] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
+                  <div className="flex items-start justify-between mb-4 relative z-10">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-emerald-50 text-emerald-700">
+                      Energy Analytics
+                    </span>
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-emerald-700 transition-transform duration-300 group-hover:scale-110 group-hover:shadow-md">
+                      <BarChart2 className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <div className="relative z-10">
+                    <h3 className="font-bold text-[#002060] text-base leading-snug">NABQ</h3>
+                    <p className="text-[11px] text-emerald-700 font-medium mt-0.5 mb-2.5">Power & Diesel Analytics</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Power consumption analysis, diesel cost forecasting, battery sizing, solar integration, and client load dashboards for NABQ.
+                    </p>
+                  </div>
+                  <div className="relative z-10 mt-5 flex items-center gap-1.5 text-xs font-semibold text-emerald-700 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                    Open Dashboard
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-emerald-500 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 rounded-b-xl" />
+                </div>
+              </Link>
               <Link to="/analytics/taqa" className="block group">
                 <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm overflow-hidden hover:shadow-md hover:border-amber-400/40 transition-all">
                   <div className="flex items-start justify-between mb-4">
