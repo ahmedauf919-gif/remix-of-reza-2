@@ -184,7 +184,7 @@ const features = [
 ];
 
 export default function Home() {
-  const [activeCategory, setActiveCategory] = useState<CategoryId>("investment");
+  const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null);
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);
   const [dirCount, setDirCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -194,11 +194,11 @@ export default function Home() {
     import("@/lib/directoryStore").then(m => setDirCount(m.loadEntries().length));
   }, [activeCategory]);
 
-  // Scroll the newly opened panel into view whenever a category tile is clicked
-  // (skip on first mount so the page doesn't jump on load).
+  // Bring the newly opened accordion row into view if it isn't fully visible
+  // (skip on first mount — nothing is expanded yet).
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
-    panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (activeCategory) panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [activeCategory]);
 
   return (
@@ -315,25 +315,32 @@ export default function Home() {
       {/* ── Main content ───────────────────────────────────── */}
       <main className="container py-10 flex-1">
 
-        {/* Category tiles */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-8">
+        {/* Category accordion — hidden until clicked, opens inline */}
+        <div className="space-y-4">
           {categories.map((cat, i) => {
             const Icon = cat.icon;
             const isActive = activeCategory === cat.id;
             return (
-              <button
+              <div
                 key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`text-left rounded-xl border-2 bg-white p-5 shadow-sm
+                ref={isActive ? panelRef : undefined}
+                className={`rounded-xl border-2 bg-white shadow-sm overflow-hidden
                              transition-all duration-200 animate-fade-in-up
                              ${isActive ? cat.activeAccent + " shadow-md" : "border-border " + cat.accent}`}
                 style={{ animationDelay: `${i * 80}ms` }}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center shadow-sm ${cat.iconBg}`}>
+                <button
+                  onClick={() => setActiveCategory(isActive ? null : cat.id)}
+                  className="w-full text-left p-5 flex items-center gap-4"
+                >
+                  <div className={`h-12 w-12 shrink-0 rounded-xl flex items-center justify-center shadow-sm ${cat.iconBg}`}>
                     <Icon className={`h-6 w-6 ${cat.iconColor}`} />
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-bold text-[#002060] text-base leading-snug">{cat.label}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{cat.description}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {cat.id === "directory" && (
                       <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${cat.badgeBg}`}>
                         {dirCount} saved
@@ -350,21 +357,15 @@ export default function Home() {
                       </span>
                     )}
                     <ChevronRight
-                      className={`h-4 w-4 transition-transform duration-200
+                      className={`h-5 w-5 transition-transform duration-200
                                    ${isActive ? "rotate-90 text-[#005298]" : "text-muted-foreground/50"}`}
                     />
                   </div>
-                </div>
-                <h2 className="font-bold text-[#002060] text-base leading-snug">{cat.label}</h2>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{cat.description}</p>
-              </button>
-            );
-          })}
-        </div>
+                </button>
 
-        <div ref={panelRef} className="scroll-mt-20">
-        {/* ── Panel: Investment Models ── */}
-        {activeCategory === "investment" && (
+                {isActive && (
+                  <div className="border-t border-border/60 px-5 pb-6 pt-5">
+        {cat.id === "investment" && (
           <div className="animate-fade-in-up">
             <div className="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
               <Briefcase className="h-4 w-4 text-[#005298]" />
@@ -462,9 +463,7 @@ export default function Home() {
             </div>
           </div>
         )}
-
-        {/* ── Panel: Sizing Models ── */}
-        {activeCategory === "sizing" && (
+        {cat.id === "sizing" && (
           <div className="animate-fade-in-up">
             <div className="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
               <Ruler className="h-4 w-4 text-emerald-600" />
@@ -591,9 +590,7 @@ export default function Home() {
             </div>
           </div>
         )}
-
-        {/* ── Panel: Client Presentations ── */}
-        {activeCategory === "presentations" && (
+        {cat.id === "presentations" && (
           <div className="animate-fade-in-up">
             <div className="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
               <Presentation className="h-4 w-4 text-violet-600" />
@@ -674,9 +671,7 @@ export default function Home() {
             </div>
           </div>
         )}
-
-        {/* ── Panel: TAQA Analytics ── */}
-        {activeCategory === "analytics" && (
+        {cat.id === "analytics" && (
           <div className="animate-fade-in-up">
             <div className="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
               <TrendingUp className="h-4 w-4 text-amber-600" />
@@ -703,13 +698,16 @@ export default function Home() {
             </div>
           </div>
         )}
-
-        {/* ── Panel: Directory ── */}
-        {activeCategory === "directory" && (
+        {cat.id === "directory" && (
           <div className="animate-fade-in-up">
             <DirectoryPanel />
           </div>
         )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
       </main>
