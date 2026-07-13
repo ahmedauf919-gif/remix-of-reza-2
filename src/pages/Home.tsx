@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Wind, SunMedium, Droplets, Truck, ArrowRight, Plus,
@@ -187,9 +187,18 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<CategoryId>("investment");
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);
   const [dirCount, setDirCount] = useState(0);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     import("@/lib/directoryStore").then(m => setDirCount(m.loadEntries().length));
+  }, [activeCategory]);
+
+  // Scroll the newly opened panel into view whenever a category tile is clicked
+  // (skip on first mount so the page doesn't jump on load).
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [activeCategory]);
 
   return (
@@ -353,6 +362,7 @@ export default function Home() {
           })}
         </div>
 
+        <div ref={panelRef} className="scroll-mt-20">
         {/* ── Panel: Investment Models ── */}
         {activeCategory === "investment" && (
           <div className="animate-fade-in-up">
@@ -700,6 +710,7 @@ export default function Home() {
             <DirectoryPanel />
           </div>
         )}
+        </div>
 
       </main>
 
