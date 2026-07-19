@@ -1,16 +1,14 @@
-import { useMemo, useRef, useState } from "react";
-import { SunMedium, ImageDown, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { SunMedium, Presentation, Loader2 } from "lucide-react";
 import {
   ResponsiveContainer, ComposedChart, AreaChart, LineChart, Bar, Area, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
 } from "recharts";
 import { ToolPage, Panel, Field, SegmentedField, Stat, Verdict } from "./toolkit";
-import { PvSlideExport, type PvSlideData } from "./PvSlideExport";
-
-const EXPORT_ID = "pv-export-slide-capture";
+import { exportPvPptx } from "./pvPptxExport";
 
 const ACCENT = "#d97706";
-const CUMULATIVE = "#005298"; // house blue for the cumulative line — CVD-safe next to the amber bars
+const GOV_RED = "#b91c1c"; // government tariff cost — the counterfactual client avoids
 
 /* TAQA Excel model — fixed assumptions */
 const HORIZON = 25; // years
@@ -60,6 +58,7 @@ export default function PvYield() {
 
     const years: {
       year: number; tariff: number; savings: number; savingsM: number;
+      govCostM: number; clientCostM: number;
       cumM: number; discCumM: number; perM2: number;
     }[] = [];
     let tariff = govTariff;
@@ -68,7 +67,12 @@ export default function PvYield() {
     for (let y = 1; y <= HORIZON; y++) {
       const esc = y === 1 ? 0 : y <= 4 ? EARLY_ESCALATION[y - 2] : longRunEsc;
       tariff *= 1 + esc / 100;
-      const savings = energyKWh * tariff * (discountPct / 100);
+      // Government cost: what the client would pay the grid for this energy at
+      // the full (undiscounted) tariff. Client cost: what they actually pay
+      // TAQA once the discount is applied. Savings is simply the gap between them.
+      const govCost = energyKWh * tariff;
+      const clientCost = govCost * (1 - discountPct / 100);
+      const savings = govCost - clientCost;
       cum += savings;
       discCum += savings / Math.pow(1 + wacc, y); // Excel NPV(): year 1 discounted once
       years.push({
@@ -76,6 +80,8 @@ export default function PvYield() {
         tariff,
         savings,
         savingsM: savings / 1e6,
+        govCostM: govCost / 1e6,
+        clientCostM: clientCost / 1e6,
         cumM: cum / 1e6,
         discCumM: discCum / 1e6,
         perM2: savings / area,
@@ -100,39 +106,23 @@ export default function PvYield() {
   const tick = { fontSize: 11, fill: "#64748b" };
   const tooltipStyle = { fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" } as const;
 
-  const slideData: PvSlideData = {
-    headline: "Turning Idle Roof Space Into 25 Years of Savings",
-    intro: `By hosting a ${fmt(r.kWp, 0)} kWp PV plant across ${fmt(area, 0)} m² of rooftop and adjacent land, TAQA delivers electricity at a guaranteed ${discountPct}% discount to the ${VOLTAGE[voltage].label} government tariff of EGP ${r.govTariff.toFixed(2)}/kWh — funded, built and operated end-to-end, with zero disruption to your operations.`,
-    kWp: r.kWp, area, discountPct, waccPct, govTariff: r.govTariff, voltageLabel: VOLTAGE[voltage].label,
-    savingsY1: r.savingsY1, npv: r.npv, pureSavings: r.pureSavings,
-    co2PerYr: r.co2PerYr, co2Lifetime: r.co2Lifetime,
-    years: r.years.map(y => ({ year: y.year, savingsM: y.savingsM, cumM: y.cumM })),
-  };
-
   const handleExportSlide = async () => {
     setExporting(true);
     try {
-      const [{ default: html2canvas }] = await Promise.all([
-        import("html2canvas"),
-        document.fonts?.ready ?? Promise.resolve(),
-      ]);
-      // let the chart canvas + fonts settle a frame before capture
-      await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
-      const node = document.getElementById(EXPORT_ID);
-      if (!node) return;
-      const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-      const url = canvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `PV-Rooftop-Savings-${Math.round(r.kWp)}kWp.png`;
-      a.click();
+      await exportPvPptx({
+        headline: "Turning Idle Roof Space Into 25 Years of Savings",
+        intro: `By hosting a ${fmt(r.kWp, 0)} kWp PV plant across ${fmt(area, 0)} m² of rooftop and adjacent land, TAQA delivers electricity at a guaranteed ${discountPct}% discount to the ${VOLTAGE[voltage].label} government tariff of EGP ${r.govTariff.toFixed(2)}/kWh — funded, built and operated end-to-end, with zero disruption to your operations.`,
+        kWp: r.kWp, area, discountPct, waccPct, govTariff: r.govTariff, voltageLabel: VOLTAGE[voltage].label,
+        savingsY1: r.savingsY1, npv: r.npv, pureSavings: r.pureSavings,
+        co2PerYr: r.co2PerYr, co2Lifetime: r.co2Lifetime,
+        years: r.years.map(y => ({ year: y.year, govCostM: y.govCostM, clientCostM: y.clientCostM })),
+      });
     } finally {
       setExporting(false);
     }
   };
 
   return (
-    <>
     <ToolPage
       title="PV — Rooftop Solar Savings"
       tagline="What your rooftop or adjacent land earns you with TAQA vs the government tariff"
@@ -192,8 +182,8 @@ export default function PvYield() {
               className="inline-flex items-center gap-1.5 rounded-lg px-3.5 h-9 text-[13px] font-semibold text-white shadow-sm transition-colors disabled:opacity-60"
               style={{ background: ACCENT }}
             >
-              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />}
-              {exporting ? "Preparing…" : "Export Slide"}
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Presentation className="h-4 w-4" />}
+              {exporting ? "Preparing…" : "Export PowerPoint"}
             </button>
           </div>
 
@@ -214,26 +204,24 @@ export default function PvYield() {
               sub={`${fmt(r.co2Lifetime, 0)} tonnes over the 25-year lifetime`} accent={ACCENT} big />
           </div>
 
-          <Panel title="Savings each year"
-            subtitle={`Annual savings at ${discountPct}% off the escalating government tariff, with the running total (EGP M)`}>
+          <Panel title="Government cost vs. your cost with TAQA"
+            subtitle="Two clearly labeled series — the gap between the red line (government tariff) and the amber bars (your discounted cost) is what you save, year by year">
             <ResponsiveContainer width="100%" height={320}>
               <ComposedChart data={r.years} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                 <XAxis dataKey="year" tick={tick} axisLine={{ stroke: "#cbd5e1" }} tickLine={false}
                   tickFormatter={(v: number) => `Y${v}`} />
-                <YAxis yAxisId="annual" tick={tick} axisLine={false} tickLine={false} width={52}
-                  tickFormatter={(v: number) => fmt(v, 0)} />
-                <YAxis yAxisId="cum" orientation="right" tick={tick} axisLine={false} tickLine={false} width={56}
-                  tickFormatter={(v: number) => fmt(v, 0)} />
+                <YAxis tick={tick} axisLine={false} tickLine={false} width={52}
+                  tickFormatter={(v: number) => fmt(v, 0)} label={{ value: "EGP, millions", angle: -90, position: "insideLeft", fontSize: 11, fill: "#64748b" }} />
                 <Tooltip
                   formatter={(v: number, name: string) => [`EGP ${fmt(v, 2)}M`, name]}
                   labelFormatter={(l: number) => `Year ${l}`}
                   contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar yAxisId="annual" dataKey="savingsM" name="Annual savings" fill={ACCENT}
-                  radius={[3, 3, 0, 0]} maxBarSize={24} />
-                <Line yAxisId="cum" type="monotone" dataKey="cumM" name="Cumulative savings"
-                  stroke={CUMULATIVE} strokeWidth={2} dot={false} />
+                <Bar dataKey="clientCostM" name={`Your cost with TAQA (${discountPct}% off)`} fill={ACCENT}
+                  radius={[3, 3, 0, 0]} maxBarSize={20} />
+                <Line type="monotone" dataKey="govCostM" name="Government tariff cost"
+                  stroke={GOV_RED} strokeWidth={2.5} dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </Panel>
@@ -289,10 +277,5 @@ export default function PvYield() {
         </div>
       </div>
     </ToolPage>
-
-    <div style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }} aria-hidden>
-      <PvSlideExport data={slideData} containerId={EXPORT_ID} />
-    </div>
-    </>
   );
 }
