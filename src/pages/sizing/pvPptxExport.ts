@@ -162,20 +162,15 @@ export async function exportPvPptx(data: PvPptxData): Promise<void> {
   const years = data.years.map(yr => `Y${yr.year}`);
 
   slide.addChart(
+    pptx.ChartType.bar,
     [
-      {
-        type: pptx.ChartType.bar,
-        data: [{ name: `Your Cost With TAQA (${data.discountPct}% off, EGP M)`, labels: years, values: data.years.map(yr => yr.clientCostM) }],
-        options: { chartColors: [AMBER] },
-      },
-      {
-        type: pptx.ChartType.line,
-        data: [{ name: "Government Tariff Cost (EGP M)", labels: years, values: data.years.map(yr => yr.govCostM) }],
-        options: { chartColors: [GOV_RED], lineSize: 2.5, lineDataSymbol: "none" },
-      },
+      { name: "Government Tariff Cost (EGP M)", labels: years, values: data.years.map(yr => yr.govCostM) },
+      { name: `Your Cost With TAQA (${data.discountPct}% off, EGP M)`, labels: years, values: data.years.map(yr => yr.clientCostM) },
     ],
     {
       x: rightX, y: chartY, w: rightW, h: chartH,
+      barGrouping: "clustered",
+      chartColors: [GOV_RED, AMBER],
       showLegend: true, legendPos: "t", legendFontSize: 9, legendColor: SLATE_TEXT,
       showTitle: false,
       catAxisLabelFontSize: 7, catAxisLabelColor: SLATE_TEXT,
@@ -188,7 +183,7 @@ export async function exportPvPptx(data: PvPptxData): Promise<void> {
   );
 
   slide.addShape(pptx.ShapeType.rect, { x: rightX, y: chartY + chartH, w: rightW, h: captionH, fill: { color: DARK }, line: { type: "none" } });
-  slide.addText(`EGP ${fmtM(data.pureSavings, 0)}M Saved Over 25 Years — The Gap Between The Lines`, {
+  slide.addText(`EGP ${fmtM(data.pureSavings, 0)}M Saved Over 25 Years — The Gap Between The Bars`, {
     x: rightX + 0.18, y: chartY + chartH, w: rightW - 0.36, h: captionH, valign: "middle", color: WHITE, bold: true, fontSize: 12.5, fontFace: FONT,
   });
 

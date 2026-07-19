@@ -205,7 +205,7 @@ export default function PvYield() {
           </div>
 
           <Panel title="Government cost vs. your cost with TAQA"
-            subtitle="Two clearly labeled series — the gap between the red line (government tariff) and the amber bars (your discounted cost) is what you save, year by year">
+            subtitle="Two clearly labeled bars per year — the gap between the red (government tariff) and amber (your discounted cost) bars is what you save">
             <ResponsiveContainer width="100%" height={320}>
               <ComposedChart data={r.years} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
@@ -218,10 +218,10 @@ export default function PvYield() {
                   labelFormatter={(l: number) => `Year ${l}`}
                   contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey="govCostM" name="Government tariff cost" fill={GOV_RED}
+                  radius={[2, 2, 0, 0]} maxBarSize={13} />
                 <Bar dataKey="clientCostM" name={`Your cost with TAQA (${discountPct}% off)`} fill={ACCENT}
-                  radius={[3, 3, 0, 0]} maxBarSize={20} />
-                <Line type="monotone" dataKey="govCostM" name="Government tariff cost"
-                  stroke={GOV_RED} strokeWidth={2.5} dot={false} />
+                  radius={[2, 2, 0, 0]} maxBarSize={13} />
               </ComposedChart>
             </ResponsiveContainer>
           </Panel>
