@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
-import { SunMedium } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { SunMedium, ImageDown, Loader2 } from "lucide-react";
 import {
   ResponsiveContainer, ComposedChart, AreaChart, LineChart, Bar, Area, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
 } from "recharts";
 import { ToolPage, Panel, Field, SegmentedField, Stat, Verdict } from "./toolkit";
+import { PvSlideExport, type PvSlideData } from "./PvSlideExport";
+
+const EXPORT_ID = "pv-export-slide-capture";
 
 const ACCENT = "#d97706";
 const CUMULATIVE = "#005298"; // house blue for the cumulative line — CVD-safe next to the amber bars
@@ -46,6 +49,7 @@ export default function PvYield() {
   const [discountPct, setDiscountPct] = useState(10);
   const [waccPct, setWaccPct] = useState(20);
   const [longRunEsc, setLongRunEsc] = useState(6);
+  const [exporting, setExporting] = useState(false);
 
   const r = useMemo(() => {
     const density = MOUNTING[mounting].density;
@@ -96,7 +100,39 @@ export default function PvYield() {
   const tick = { fontSize: 11, fill: "#64748b" };
   const tooltipStyle = { fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" } as const;
 
+  const slideData: PvSlideData = {
+    headline: "Turning Idle Roof Space Into 25 Years of Savings",
+    intro: `By hosting a ${fmt(r.kWp, 0)} kWp PV plant across ${fmt(area, 0)} m² of rooftop and adjacent land, TAQA delivers electricity at a guaranteed ${discountPct}% discount to the ${VOLTAGE[voltage].label} government tariff of EGP ${r.govTariff.toFixed(2)}/kWh — funded, built and operated end-to-end, with zero disruption to your operations.`,
+    kWp: r.kWp, area, discountPct, waccPct, govTariff: r.govTariff, voltageLabel: VOLTAGE[voltage].label,
+    savingsY1: r.savingsY1, npv: r.npv, pureSavings: r.pureSavings,
+    co2PerYr: r.co2PerYr, co2Lifetime: r.co2Lifetime,
+    years: r.years.map(y => ({ year: y.year, savingsM: y.savingsM, cumM: y.cumM })),
+  };
+
+  const handleExportSlide = async () => {
+    setExporting(true);
+    try {
+      const [{ default: html2canvas }] = await Promise.all([
+        import("html2canvas"),
+        document.fonts?.ready ?? Promise.resolve(),
+      ]);
+      // let the chart canvas + fonts settle a frame before capture
+      await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
+      const node = document.getElementById(EXPORT_ID);
+      if (!node) return;
+      const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+      const url = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `PV-Rooftop-Savings-${Math.round(r.kWp)}kWp.png`;
+      a.click();
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
+    <>
     <ToolPage
       title="PV — Rooftop Solar Savings"
       tagline="What your rooftop or adjacent land earns you with TAQA vs the government tariff"
@@ -148,6 +184,19 @@ export default function PvYield() {
         </div>
 
         <div className="space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-slate-400">Client-ready summary, generated from the numbers on this page.</p>
+            <button
+              onClick={handleExportSlide}
+              disabled={exporting}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 h-9 text-[13px] font-semibold text-white shadow-sm transition-colors disabled:opacity-60"
+              style={{ background: ACCENT }}
+            >
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />}
+              {exporting ? "Preparing…" : "Export Slide"}
+            </button>
+          </div>
+
           <Verdict
             accent={ACCENT}
             title={`EGP ${fmtM(r.npv, 1)}M NPV over 25 years`}
@@ -240,5 +289,10 @@ export default function PvYield() {
         </div>
       </div>
     </ToolPage>
+
+    <div style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }} aria-hidden>
+      <PvSlideExport data={slideData} containerId={EXPORT_ID} />
+    </div>
+    </>
   );
 }
