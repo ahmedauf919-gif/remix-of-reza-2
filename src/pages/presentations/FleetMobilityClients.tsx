@@ -2,7 +2,7 @@ import { DeckShell } from "./DeckShell";
 
 const MEDIA = import.meta.env.BASE_URL + "presentations/media/";
 import {
-  Flame, Zap, Droplets, Truck, Car, Globe, CheckCircle2, ArrowRight, Star, BarChart2, MapPin,
+  Flame, Zap, Droplets, Truck, Car, ArrowRight, Star, BarChart2,
 } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.png";
 import {
@@ -227,17 +227,11 @@ function AboutSlide() {
 
 function RegionalSlide() {
   const metrics = [
-    { value: "8",      label: "Countries",           sub: "Egypt, GCC, Africa, Greece & South Asia", hero: true },
+    { value: "8",      label: "Countries",           sub: "Egypt, GCC, Africa, Greece & South Asia" },
     { value: "4",      label: "Operating divisions", sub: "Gas · Power · Petroleum · Water" },
     { value: "20+",    label: "Governorates",        sub: "Across Egypt" },
     { value: "3,400+", label: "Employees",           sub: "Across all divisions" },
   ];
-  const regions = [
-    { name: "GCC",    desc: "Partnered for Sovereign water-desalination projects." },
-    { name: "Africa", desc: "Pursuing gas and power opportunities across sub-Saharan markets." },
-    { name: "Greece", desc: "Expanding into European energy infrastructure." },
-  ];
-  const fleets = ["Commercial & logistics fleets", "Industrial & construction fleets", "Government & municipal fleets", "Tourism & hospitality fleets", "Oil & gas sector vehicles"];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
       <SlideStyles />
@@ -248,82 +242,47 @@ function RegionalSlide() {
         <div className="sx-up" style={d(0)}>
           <Kicker color="#0369a1">TAQA Arabia · Regional Presence</Kicker>
         </div>
-        <h2 className="sx-up mt-4 font-display text-[34px] font-bold leading-tight tracking-tight text-[#002060]" style={d(60)}>
+        <h2 className="sx-up mt-4 font-display text-[30px] font-bold leading-tight tracking-tight text-[#002060]" style={d(60)}>
           A growing platform across Egypt, the GCC, Africa and Greece
         </h2>
 
-        {/* Bento metrics */}
-        <div className="mt-6 grid grid-cols-4 gap-4">
-          {metrics.map((m, i) => (
-            <div
-              key={m.label}
-              className={`sx-up relative overflow-hidden rounded-2xl p-5 ${
-                m.hero ? "text-white shadow-lg" : "bg-white ring-1 ring-black/5 shadow-sm"
-              }`}
-              style={{
-                ...d(120 + i * 60),
-                ...(m.hero ? { background: "linear-gradient(140deg, #002060 0%, #0a2f7a 100%)" } : {}),
-              }}
-            >
-              {m.hero && <BlueprintGrid />}
-              <div
-                className="relative font-display text-[44px] font-bold leading-none tracking-tight bg-clip-text text-transparent"
-                style={{
-                  backgroundImage: m.hero
-                    ? "linear-gradient(100deg, #ffffff, #7dd3fc)"
-                    : "linear-gradient(100deg, #0369a1, #38bdf8)",
-                }}
-              >
-                {m.value}
-              </div>
-              <div className={`relative mt-2 text-[16px] font-semibold ${m.hero ? "text-white" : "text-[#002060]"}`}>{m.label}</div>
-              <div className={`relative mt-0.5 text-[14px] ${m.hero ? "text-white/70" : "text-slate-500"}`}>{m.sub}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Two feature cards */}
-        <div className="mt-4 grid min-h-0 flex-1 grid-cols-2 gap-4">
-          <div className="sx-up relative overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-black/5 shadow-sm" style={d(380)}>
-            <Bracket color="#0369a1" pos="tl" />
-            <div className="mb-3 flex items-center gap-2.5 pl-3">
-              <Globe className="h-[18px] w-[18px] text-[#0369a1]" />
-              <h3 className="font-display text-[17px] font-bold tracking-tight text-[#002060]">International Expansion</h3>
-            </div>
-            <div className="space-y-3 pl-3">
-              {regions.map(x => (
-                <div key={x.name} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: "linear-gradient(135deg, #0369a1, #38bdf8)" }}>
-                    <MapPin className="h-3.5 w-3.5" />
-                  </span>
-                  <p className="text-[16px] leading-snug text-slate-600">
-                    <span className="font-semibold text-[#002060]">{x.name}</span> — {x.desc}
-                  </p>
+        <div className="mt-5 grid min-h-0 flex-1 grid-cols-[300px_1fr] gap-6">
+          {/* Metrics, stacked */}
+          <div className="flex min-h-0 flex-col gap-3">
+            {metrics.map((m, i) => (
+              <div key={m.label} className="sx-up flex-1" style={d(120 + i * 60)}>
+                <div className="relative flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white p-4 ring-1 ring-black/5 shadow-sm">
+                  <span aria-hidden className="absolute inset-y-3 left-0 w-[3px] rounded-r-full" style={{ background: "linear-gradient(180deg, #0369a1, #38bdf8)" }} />
+                  <div className="pl-2.5">
+                    <div
+                      className="font-display text-[28px] font-bold leading-none tracking-tight bg-clip-text text-transparent"
+                      style={{ backgroundImage: "linear-gradient(100deg, #0369a1, #38bdf8)" }}
+                    >
+                      {m.value}
+                    </div>
+                    <div className="mt-1 text-[15px] font-semibold leading-tight text-[#002060]">{m.label}</div>
+                    <div className="text-[12.5px] leading-tight text-slate-500">{m.sub}</div>
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
 
-          <div
-            className="sx-up relative overflow-hidden rounded-2xl p-6 text-white shadow-lg"
-            style={{ ...d(440), background: "linear-gradient(140deg, #002060 0%, #0a2f7a 100%)" }}
-          >
-            <BlueprintGrid />
-            <div className="relative mb-2 flex items-center gap-2.5">
-              <MapPin className="h-[18px] w-[18px] text-[#FFC10E]" />
-              <h3 className="font-display text-[17px] font-bold tracking-tight text-[#FFC10E]">Geographic Footprint</h3>
+          {/* Map — real, live TAQA Arabia footprint by country */}
+          <div className="sx-up flex min-h-0 flex-col" style={d(360)}>
+            <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-white p-3 ring-1 ring-black/5 shadow-sm">
+              <Bracket color="#0369a1" pos="tr" />
+              <img
+                src={MEDIA + "taqa-regional-map.png"}
+                alt="Map of TAQA Arabia's actual presence and markets under study across Africa, the Middle East and South Asia, with per-country project detail"
+                className="max-h-full max-w-full object-contain"
+                loading="lazy"
+                onError={hideImg}
+              />
             </div>
-            <p className="relative text-[16px] leading-snug text-white/85">
-              Concessions in 8 Egyptian governorates. TAQA serves the full spectrum of fleet and mobility clients:
+            <p className="mt-2 text-center text-[13px] text-slate-500">
+              Actual presence and markets under study, with what TAQA Arabia is delivering in each country.
             </p>
-            <div className="relative mt-3 space-y-2">
-              {fleets.map(f => (
-                <div key={f} className="flex items-start gap-2 text-[15px] font-medium text-white/90">
-                  <CheckCircle2 className="mt-[1px] h-4 w-4 shrink-0 text-[#FFC10E]" />
-                  {f}
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

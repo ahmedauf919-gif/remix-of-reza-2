@@ -4,7 +4,7 @@ const MEDIA = import.meta.env.BASE_URL + "presentations/media/";
 import type { CSSProperties } from "react";
 import {
   Flame, Zap, Droplets, Truck, Battery, Globe, CheckCircle2, SunMedium,
-  ArrowRight, MapPin, Fuel, Route,
+  ArrowRight, Fuel, Route,
 } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.png";
 import {
@@ -308,82 +308,45 @@ function RegionalSlide() {
     { value: "20+",    label: "Governorates in Egypt",  sub: "Industrial, residential & touristic" },
     { value: "3,400+", label: "Employees",              sub: "Across all divisions" },
   ];
-  const customers = [
-    "Agricultural farms & agribusiness",
-    "Residential communities & compounds",
-    "Industrial zones & factories",
-    "Touristic destinations & resorts",
-  ];
   return (
     <LightSlide color={GREEN}>
       <div className="sx-up" style={d(0)}><Kicker color={GREEN}>TAQA Arabia · Regional Presence</Kicker></div>
-      <h2 className="sx-up mt-4 max-w-[1020px] font-display text-[38px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
+      <h2 className="sx-up mt-4 max-w-[1020px] font-display text-[32px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
         Presence Across Africa &amp; the Middle East
       </h2>
 
-      {/* Metric strip */}
-      <div className="mt-7 grid grid-cols-4 gap-4">
-        {metrics.map((m, idx) => (
-          <div key={m.label} className="sx-up" style={d(120 + idx * 60)}>
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-black/5 shadow-sm">
-              <div className="h-[3px] w-9 rounded-full mb-3" style={{ background: `linear-gradient(90deg, ${GREEN}, ${LIME})` }} />
-              <div className="font-display text-[38px] font-bold leading-none" style={gt(GREEN, "#4d9d2a")}>{m.value}</div>
-              <div className="mt-1.5 text-[16px] font-semibold" style={{ color: NAVY }}>{m.label}</div>
-              <div className="text-[14px] text-slate-500">{m.sub}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-5 flex-1 min-h-0 grid grid-cols-2 gap-5">
-        {/* Beyond Egypt */}
-        <div className="sx-up min-h-0" style={d(380)}>
-          <div className="relative h-full rounded-2xl bg-white p-6 ring-1 ring-black/5 shadow-sm flex flex-col overflow-hidden">
-            <Bracket color={GREEN} pos="tr" />
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg text-white" style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }}>
-                <Globe className="w-4 h-4" />
-              </div>
-              <h3 className="font-display text-[17px] font-bold" style={{ color: NAVY }}>Reach &amp; Scale</h3>
-            </div>
-            <div className="flex-1 flex flex-col justify-center gap-4">
-              <p className="text-[17px] leading-relaxed text-slate-600">
-                Actual presence and markets under study across Africa &amp; the Middle East —
-                extending TAQA's integrated energy model well beyond Egypt.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {["Egypt", "GCC", "Africa", "South Asia"].map(r => (
-                  <span key={r} className="inline-flex items-center gap-2 rounded-full px-3.5 h-8 text-[15px] font-semibold" style={{ background: GREEN + "0F", color: "#14532d" }}>
-                    <MapPin className="w-3.5 h-3.5" style={{ color: GREEN }} />
-                    {r}
-                  </span>
-                ))}
+      <div className="mt-5 flex-1 min-h-0 grid grid-cols-[300px_1fr] gap-6">
+        {/* Metrics + narrative, stacked */}
+        <div className="flex min-h-0 flex-col gap-3">
+          {metrics.map((m, idx) => (
+            <div key={m.label} className="sx-up flex-1" style={d(120 + idx * 60)}>
+              <div className="relative flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white p-4 ring-1 ring-black/5 shadow-sm">
+                <span aria-hidden className="absolute inset-y-3 left-0 w-[3px] rounded-r-full" style={{ background: `linear-gradient(180deg, ${GREEN}, ${LIME})` }} />
+                <div className="pl-2.5">
+                  <div className="font-display text-[28px] font-bold leading-none" style={gt(GREEN, "#4d9d2a")}>{m.value}</div>
+                  <div className="mt-1 text-[15px] font-semibold leading-tight" style={{ color: NAVY }}>{m.label}</div>
+                  <div className="text-[12.5px] text-slate-500 leading-tight">{m.sub}</div>
+                </div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
 
-        {/* Geographic footprint */}
-        <div className="sx-up min-h-0" style={d(440)}>
-          <div
-            className="relative h-full overflow-hidden rounded-2xl p-6 text-white flex flex-col shadow-lg"
-            style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #0c2f1a 100%)` }}
-          >
-            <BlueprintGrid />
-            <Bracket color={GOLD} pos="br" />
-            <h3 className="relative font-display text-[17px] font-bold mb-2.5" style={gt(GOLD, "#ffe08a")}>Geographic Footprint</h3>
-            <p className="relative text-[16px] text-white/85 leading-snug mb-3.5">
-              20+ governorates in Egypt. TAQA serves the full spectrum of customer types:
-            </p>
-            <div className="relative flex-1 flex flex-col justify-between">
-              {customers.map(c => (
-                <div key={c} className="flex items-center gap-2.5 text-[16px] text-white/90">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: GOLD }} />
-                  {c}
-                </div>
-              ))}
-            </div>
+        {/* Map — real, live TAQA Arabia footprint by country */}
+        <div className="sx-up flex min-h-0 flex-col" style={d(360)}>
+          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-white p-3 ring-1 ring-black/5 shadow-sm">
+            <Bracket color={GREEN} pos="tr" />
+            <img
+              src={MEDIA + "taqa-regional-map.png"}
+              alt="Map of TAQA Arabia's actual presence and markets under study across Africa, the Middle East and South Asia, with per-country project detail"
+              className="max-h-full max-w-full object-contain"
+              loading="lazy"
+              onError={hideImg}
+            />
           </div>
+          <p className="mt-2 text-center text-[13px] text-slate-500">
+            Actual presence and markets under study, with what TAQA Arabia is delivering in each country.
+          </p>
         </div>
       </div>
     </LightSlide>
