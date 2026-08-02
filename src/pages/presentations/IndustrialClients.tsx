@@ -1,12 +1,21 @@
 import { DeckShell } from "./DeckShell";
+import type { ReactNode } from "react";
 
 const MEDIA = import.meta.env.BASE_URL + "presentations/media/";
 import {
   Flame, Zap, Truck, Droplets, Battery, Globe, CheckCircle2, ArrowRight,
   Star, Sun, Layers, MapPin,
 } from "lucide-react";
+import {
+  ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
+} from "recharts";
 import taqaLogo from "@/assets/taqa-logo.png";
-import { SlideStyles, Kicker, CornerWash, GhostNum, Bracket, BlueprintGrid, ColHead, ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide, d, hideImg, lighter } from "./slides";
+import {
+  SlideStyles, Kicker, CornerWash, GhostNum, Bracket, BlueprintGrid, ColHead, ScopeSlide, ValuePropSlide,
+  TimelineSlide, TrackRecordSlide, ChartTrackRecordSlide, TrustedBySlide, statSize, d, hideImg, lighter,
+  type TrackStat,
+} from "./slides";
+import { TRUSTED_BY_LOGOS } from "./trustedByLogos";
 
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
@@ -25,14 +34,15 @@ const P: Record<string, string> = {
 
 const SECTIONS = [
   { id: "intro",       label: "Introduction",   color: "#c2410c", slides: [0, 1, 2, 3] },
-  { id: "overview",    label: "Solutions",       color: "#c2410c", slides: [4] },
-  { id: "cng",         label: "Mobile CNG",      color: "#c2410c", slides: [5, 6, 7, 8] },
-  { id: "electricity", label: "Electricity",     color: "#1d4ed8", slides: [9, 10, 11, 12] },
-  { id: "gas",         label: "Gas",             color: "#059669", slides: [13, 14, 15, 16] },
-  { id: "chp",         label: "CHP",             color: "#b45309", slides: [17, 18, 19, 20] },
-  { id: "solar",       label: "Solar",           color: "#ca8a04", slides: [21, 22, 23, 24] },
-  { id: "bess",        label: "Energy Storage",  color: "#7c3aed", slides: [25, 26, 27, 28] },
-  { id: "closing",     label: "Closing",         color: "#002060", slides: [29, 30, 31] },
+  { id: "trusted",     label: "Trusted By",      color: "#c2410c", slides: [4] },
+  { id: "overview",    label: "Solutions",       color: "#c2410c", slides: [5] },
+  { id: "cng",         label: "Mobile CNG",      color: "#c2410c", slides: [6, 7, 8, 9] },
+  { id: "electricity", label: "Electricity",     color: "#1d4ed8", slides: [10, 11, 12, 13] },
+  { id: "gas",         label: "Gas",             color: "#059669", slides: [14, 15, 16, 17] },
+  { id: "chp",         label: "CHP",             color: "#b45309", slides: [18, 19, 20, 21] },
+  { id: "solar",       label: "Solar",           color: "#ca8a04", slides: [22, 23, 24, 25] },
+  { id: "bess",        label: "Energy Storage",  color: "#7c3aed", slides: [26, 27, 28, 29] },
+  { id: "closing",     label: "Closing",         color: "#002060", slides: [30, 31, 32] },
 ];
 
 function sectionOf(idx: number) {
@@ -165,8 +175,9 @@ function AboutSlide() {
           <p className="sx-up mt-5 text-[17px] leading-relaxed text-slate-600" style={d(160)}>
             Founded in 2006 and listed on the EGX since 2023, TAQA Arabia is Egypt's largest private-sector energy and utility
             developer. Across four divisions — Gas, Power, Petroleum and Water — TAQA finances, builds, owns and operates the
-            utility backbone of industrial zones and touristic destinations. For an industrial developer, that means one
-            accredited partner with a proven delivery record can supply gas, power, water and steam under a single relationship.
+            utility backbone of residential communities, industrial zones and touristic destinations. For an industrial
+            developer, that means one accredited partner with a proven delivery record can supply gas, power, water and steam
+            under a single relationship.
           </p>
           <div className="mt-auto flex flex-wrap gap-2 pt-4">
             {["Active member of the International Gas Union (IGU)", "Accredited by the IGEM"].map((b, i) => (
@@ -228,15 +239,16 @@ function AboutSlide() {
 
 function RegionalSlide() {
   const metrics = [
-    { value: "8",      label: "Countries",           sub: "Egypt, GCC, Africa & Greece", hero: true },
+    { value: "10",     label: "Countries",           sub: "Egypt, GCC, Africa, Greece & South Asia", hero: true },
     { value: "4",      label: "Operating divisions", sub: "Gas · Power · Petroleum · Water" },
     { value: "20+",    label: "Governorates",        sub: "Across Egypt" },
     { value: "3,400+", label: "Employees",           sub: "Across all divisions" },
   ];
   const intl = [
-    { region: "GCC",    desc: "Partnered with Al Ghaneim & WETICO for sovereign water-desalination projects." },
-    { region: "Africa", desc: "Pursuing gas and power opportunities across sub-Saharan markets." },
-    { region: "Greece", desc: "Expanding into European energy infrastructure." },
+    { region: "GCC",        desc: "Partnered with Al Ghaneim & WETICO for sovereign water-desalination projects." },
+    { region: "Africa",     desc: "Pursuing gas and power opportunities across sub-Saharan markets." },
+    { region: "Greece",     desc: "Expanding into European energy infrastructure." },
+    { region: "South Asia", desc: "New markets under study, extending TAQA's integrated energy model further afield." },
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
@@ -333,15 +345,15 @@ function RegionalSlide() {
 
 function NumbersSlide() {
   const heroStats = [
-    { value: "EGP 13.4bn", label: "Revenue",       sub: "FY 2025", hero: true },
-    { value: "EGP 1.5bn",  label: "EBITDA",        sub: "FY 2025" },
-    { value: "~7M",        label: "Customers served", sub: "Approximate, all utilities" },
+    { value: "EGP 13.4bn", label: "Revenue",                    sub: "FY 2025", hero: true },
+    { value: "EGP 18bn+",  label: "Assets under Management",    sub: "Group-wide, FY 2025" },
+    { value: "~6.5M",      label: "Gas customers nationwide",   sub: "FY 2025" },
   ];
   const divCards = [
-    { div: "GAS",            icon: <Flame className="h-4 w-4" />,    color: "#c2410c", stat: "+10,000 km, 8 governorates (15yr)" },
-    { div: "POWER",          icon: <Zap className="h-4 w-4" />,      color: "#1d4ed8", stat: "+1,600 MVA, +150 MW" },
-    { div: "WATER",          icon: <Droplets className="h-4 w-4" />, color: "#0369a1", stat: "+47,000 m³/day, 15 locations" },
-    { div: "MOBILITY & CNG", icon: <Truck className="h-4 w-4" />,    color: "#7c3aed", stat: "86 stations, 1st private EV licence" },
+    { div: "GAS",            icon: <Flame className="h-4 w-4" />,    color: "#c2410c", stat: "+10,000 km network, 8 governorate concessions (15-yr)" },
+    { div: "POWER",          icon: <Zap className="h-4 w-4" />,      color: "#1d4ed8", stat: "+1,600 MVA distribution, +150 MW generation" },
+    { div: "WATER",          icon: <Droplets className="h-4 w-4" />, color: "#0369a1", stat: "+47,000 m³/day desalination, 15 operational locations" },
+    { div: "MOBILITY & CNG", icon: <Truck className="h-4 w-4" />,    color: "#7c3aed", stat: "300 total stations, 1st private EV-charging license" },
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
@@ -417,12 +429,19 @@ function NumbersSlide() {
             </div>
           ))}
         </div>
+
+        <p className="sx-up mt-3 text-center text-[13px] font-medium text-slate-400" style={d(660)}>
+          Founded 2006 · Listed on EGX 2023 · 3,400+ employees across all divisions
+        </p>
       </div>
     </div>
   );
 }
 
-// ─── Slide 4: Solutions Overview ──────────────────────────────────────────────
+// ─── Slide 4: Trusted By ──────────────────────────────────────────────────────
+// (uses shared TrustedBySlide + TRUSTED_BY_LOGOS directly in the SLIDES array)
+
+// ─── Slide 5: Solutions Overview ──────────────────────────────────────────────
 
 function SolutionsOverviewSlide() {
   const solutions = [
@@ -489,13 +508,256 @@ function SolutionsOverviewSlide() {
   );
 }
 
-// ─── Slide 29: Why One Partner ────────────────────────────────────────────────
+// ─── Bespoke: single-series growth chart (CHP · MAFI case study) ─────────────
+// The MAFI table in the source deck has only ONE data series (no comparison
+// line), so it doesn't fit ChartTrackRecordSlide's fixed 2-series shape.
+// This local component mirrors that slide's dark "moment" aesthetic with a
+// single recharts line instead.
+
+interface SingleLineTrackProps {
+  solutionNum: number;
+  solutionLabel: string;
+  heading: string;
+  subheading: string;
+  body: string;
+  color: string;
+  icon: ReactNode;
+  data: Record<string, number | string>[];
+  xKey: string;
+  seriesKey: string;
+  seriesName: string;
+  yLabel: string;
+  valueFormatter?: (v: number) => string;
+  stats: TrackStat[];
+}
+
+function SingleLineTrackSlide({
+  solutionNum, solutionLabel, heading, subheading, body, color, icon, data, xKey, seriesKey, seriesName, yLabel,
+  valueFormatter = (v) => v.toLocaleString(), stats,
+}: SingleLineTrackProps) {
+  const tickColor = "rgba(255,255,255,0.55)";
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden font-deck"
+      style={{ background: "linear-gradient(140deg, #0c0a09 0%, #1c1917 55%, #292524 100%)" }}
+    >
+      <SlideStyles />
+      <div
+        className="absolute inset-0"
+        style={{ background: `linear-gradient(115deg, rgba(12,10,9,0.95) 0%, rgba(28,25,23,0.9) 52%, ${color}40 100%)` }}
+      />
+      <BlueprintGrid />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-48 -left-40 h-[560px] w-[560px] rounded-full"
+        style={{ background: `radial-gradient(circle, ${color}30, transparent 65%)` }}
+      />
+
+      <div className="relative z-10 flex h-full flex-col p-14">
+        <div className="sx-up flex items-center gap-3" style={d(0)}>
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
+            style={{ background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
+          >
+            {icon}
+          </div>
+          <Kicker color={color} dark>
+            Solution {String(solutionNum).padStart(2, "0")} · {solutionLabel} · Proven Track Record
+          </Kicker>
+        </div>
+
+        <h2 className="sx-up mt-5 max-w-[1120px] font-display text-[38px] font-bold leading-[1.1] tracking-tight text-white" style={d(80)}>
+          {heading}
+        </h2>
+        <div className="sx-up mt-3 flex items-start gap-2.5" style={d(140)}>
+          <Star className="mt-1 h-5 w-5 shrink-0" style={{ color: lighter(color), fill: lighter(color) }} />
+          <p className="max-w-[1020px] text-[17px] font-medium leading-snug text-white/90">{subheading}</p>
+        </div>
+
+        <div className="mt-6 grid min-h-0 flex-1 grid-cols-[1.35fr_1fr] gap-6">
+          {/* Chart card */}
+          <div className="sx-up relative flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white/[0.07] p-6 ring-1 ring-white/15 backdrop-blur-md" style={d(200)}>
+            <Bracket color={lighter(color)} pos="tl" />
+            <div className="mb-1 flex items-center gap-4 pl-1">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: lighter(color) }} />
+                <span className="text-[13px] font-semibold text-white/80">{seriesName}</span>
+              </div>
+              <span className="ml-auto text-[12px] text-white/40">{yLabel}</span>
+            </div>
+            <div className="min-h-0 flex-1 pl-1 pr-2 pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data} margin={{ top: 4, right: 8, left: 2, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                  <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: tickColor }} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} tickLine={false}
+                    interval={Math.max(0, Math.floor(data.length / 8) - 1)} />
+                  <YAxis tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} width={54}
+                    tickFormatter={(v: number) => valueFormatter(v)} />
+                  <Tooltip
+                    contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: "rgba(255,255,255,0.6)" }}
+                    formatter={(v: number) => [valueFormatter(v), seriesName]}
+                  />
+                  <Line type="monotone" dataKey={seriesKey} name={seriesName} stroke={lighter(color)} strokeWidth={2.75} dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Body + stats */}
+          <div className="flex min-h-0 flex-col gap-4">
+            <div className="sx-up relative flex-1 overflow-hidden rounded-2xl bg-white/[0.07] p-6 ring-1 ring-white/15 backdrop-blur-md" style={d(260)}>
+              <p className="text-[15px] leading-[1.6] text-white/90">{body}</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              {stats.map((s, i) => (
+                <div
+                  key={s.label}
+                  className="sx-up flex items-center justify-between rounded-2xl bg-white/10 px-5 py-3.5 ring-1 ring-white/15 backdrop-blur-md"
+                  style={d(320 + i * 70)}
+                >
+                  <div className="text-[14px] leading-snug text-white/75">{s.label}</div>
+                  <div
+                    className={`shrink-0 pl-3 font-display font-bold leading-none bg-clip-text text-transparent ${statSize(s.value)}`}
+                    style={{ backgroundImage: `linear-gradient(105deg, #ffffff 0%, ${lighter(color)} 100%)` }}
+                  >
+                    {s.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Bespoke: before/after bar comparison (BESS · Peak Transformer Load) ─────
+// The source table is 2 categorical bars (Before/After), not a 25-year
+// 2-series line — a bar chart fits the data shape far better.
+
+interface BeforeAfterBarProps {
+  solutionNum: number;
+  solutionLabel: string;
+  heading: string;
+  subheading: string;
+  body: string;
+  color: string;
+  icon: ReactNode;
+  data: { label: string; value: number }[];
+  yLabel: string;
+  deltaLabel: string;
+  stats: TrackStat[];
+}
+
+function BeforeAfterBarSlide({
+  solutionNum, solutionLabel, heading, subheading, body, color, icon, data, yLabel, deltaLabel, stats,
+}: BeforeAfterBarProps) {
+  const tickColor = "rgba(255,255,255,0.55)";
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden font-deck"
+      style={{ background: "linear-gradient(140deg, #0c0a09 0%, #1c1917 55%, #292524 100%)" }}
+    >
+      <SlideStyles />
+      <div
+        className="absolute inset-0"
+        style={{ background: `linear-gradient(115deg, rgba(12,10,9,0.95) 0%, rgba(28,25,23,0.9) 52%, ${color}40 100%)` }}
+      />
+      <BlueprintGrid />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-48 -left-40 h-[560px] w-[560px] rounded-full"
+        style={{ background: `radial-gradient(circle, ${color}30, transparent 65%)` }}
+      />
+
+      <div className="relative z-10 flex h-full flex-col p-14">
+        <div className="sx-up flex items-center gap-3" style={d(0)}>
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
+            style={{ background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
+          >
+            {icon}
+          </div>
+          <Kicker color={color} dark>
+            Solution {String(solutionNum).padStart(2, "0")} · {solutionLabel} · Proven Track Record
+          </Kicker>
+        </div>
+
+        <h2 className="sx-up mt-5 max-w-[1120px] font-display text-[38px] font-bold leading-[1.1] tracking-tight text-white" style={d(80)}>
+          {heading}
+        </h2>
+        <div className="sx-up mt-3 flex items-start gap-2.5" style={d(140)}>
+          <Star className="mt-1 h-5 w-5 shrink-0" style={{ color: lighter(color), fill: lighter(color) }} />
+          <p className="max-w-[1020px] text-[17px] font-medium leading-snug text-white/90">{subheading}</p>
+        </div>
+
+        <div className="mt-6 grid min-h-0 flex-1 grid-cols-[1.05fr_1fr] gap-6">
+          {/* Chart card */}
+          <div className="sx-up relative flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white/[0.07] p-6 ring-1 ring-white/15 backdrop-blur-md" style={d(200)}>
+            <Bracket color={lighter(color)} pos="tl" />
+            <div className="mb-1 flex items-center justify-between pl-1">
+              <span className="text-[13px] font-semibold text-white/80">{deltaLabel}</span>
+              <span className="text-[12px] text-white/40">{yLabel}</span>
+            </div>
+            <div className="min-h-0 flex-1 pl-1 pr-2 pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }} barCategoryGap="35%">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 13, fill: tickColor, fontWeight: 600 }} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} width={40} />
+                  <Tooltip
+                    contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: "rgba(255,255,255,0.6)" }}
+                    formatter={(v: number) => [`${v} (index)`, "Relative load"]}
+                  />
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]} isAnimationActive={false}>
+                    {data.map((row, i) => (
+                      <Cell key={row.label} fill={i === 0 ? "rgba(255,255,255,0.35)" : lighter(color)} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Body + stats */}
+          <div className="flex min-h-0 flex-col gap-4">
+            <div className="sx-up relative flex-1 overflow-hidden rounded-2xl bg-white/[0.07] p-6 ring-1 ring-white/15 backdrop-blur-md" style={d(260)}>
+              <p className="text-[15px] leading-[1.6] text-white/90">{body}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {stats.map((s, i) => (
+                <div
+                  key={s.label}
+                  className="sx-up flex flex-col justify-center rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-md"
+                  style={d(320 + i * 60)}
+                >
+                  <div
+                    className={`font-display font-bold leading-[1.05] tracking-tight bg-clip-text text-transparent ${statSize(s.value)}`}
+                    style={{ backgroundImage: `linear-gradient(105deg, #ffffff 0%, ${lighter(color)} 100%)` }}
+                  >
+                    {s.value}
+                  </div>
+                  <div className="mt-1.5 text-[13px] leading-snug text-white/75">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Slide 30: Why One Partner ────────────────────────────────────────────────
 
 function WhyOnePartnerSlide() {
   const benefits = [
     { label: "One SLA",                     desc: "A single service-level agreement governs gas, power, CHP, solar and storage — one uptime guarantee, one renewal." },
     { label: "One Communication Point",     desc: "A single account team and 24/7 hotline for every utility — no chasing multiple contractors." },
-    { label: "One Commercial Relationship", desc: "Consolidated billing, aligned contract terms and a single negotiation." },
+    { label: "One Commercial Relationship", desc: "Consolidated billing, aligned contract terms and a single negotiation instead of separate procurement cycles." },
     { label: "One Engineering Standard",    desc: "Utilities designed to interoperate from day one — shared infrastructure, metering and monitoring." },
     { label: "One Accountable Owner",       desc: "End-to-end responsibility removes interface risk and finger-pointing between specialised vendors." },
   ];
@@ -573,7 +835,7 @@ function WhyOnePartnerSlide() {
   );
 }
 
-// ─── Slide 30: Bundle ─────────────────────────────────────────────────────────
+// ─── Slide 31: Bundle ─────────────────────────────────────────────────────────
 
 function BundleSlide() {
   const bundles = [
@@ -629,7 +891,8 @@ function BundleSlide() {
           <BlueprintGrid />
           <p className="relative text-[16px] leading-snug text-white/85">
             <span className="font-bold text-[#FFC10E]">Sold as one SLA:</span>{" "}
-            lower combined energy cost · shared infrastructure · one billing &amp; monitoring platform · stronger ESG / decarbonisation story · single accountable operator.
+            lower combined energy cost · shared infrastructure · one billing &amp; monitoring platform · stronger ESG / decarbonisation
+            story · single accountable operator for the entire site's energy backbone.
           </p>
         </div>
       </div>
@@ -637,22 +900,20 @@ function BundleSlide() {
   );
 }
 
-// ─── Slide 31: Success Story — dark closing moment ───────────────────────────
+// ─── Slide 32: Success Story — dark closing moment ───────────────────────────
 
 function SuccessStorySlide() {
   const combined = [
-    { s: "Mobile CNG",               c: "#c2410c" },
-    { s: "Electricity Distribution", c: "#1d4ed8" },
-    { s: "Gas Distribution",         c: "#059669" },
-    { s: "CHP",                      c: "#b45309" },
-    { s: "Solar PV",                 c: "#ca8a04" },
-    { s: "Energy Storage (BESS)",    c: "#7c3aed" },
+    { s: "Gas Distribution",   c: "#059669" },
+    { s: "Power Distribution", c: "#1d4ed8" },
+    { s: "CHP / Solar",        c: "#ca8a04" },
+    { s: "Storage",            c: "#7c3aed" },
   ];
   const stats = [
-    { value: "6 solutions", label: "on one site" },
-    { value: "1 SLA",       label: "one bill" },
-    { value: "Lower",       label: "combined energy cost" },
-    { value: "24/7",        label: "monitoring & O&M" },
+    { value: "450 MVA", label: "Serving industrial parks" },
+    { value: "+500",    label: "Factories served" },
+    { value: "6.4 BCM", label: "Gas distributed per year" },
+    { value: "+150 MW", label: "Captive generation" },
   ];
   return (
     <div
@@ -707,10 +968,10 @@ function SuccessStorySlide() {
               </h3>
             </div>
             <p className="mt-3 pl-3 text-[17px] leading-relaxed text-white/85">
-              Across Egypt's industrial zones, TAQA Arabia serves as the complete energy backbone for manufacturing sites,
-              factories and free zones. One site, multiple TAQA solutions, one accountable operator — delivering gas, power,
-              CHP, solar and storage under a single SLA, eliminating interface risk, cutting energy costs and supporting the
-              site's decarbonisation targets.
+              Across Egypt's industrial parks, TAQA Arabia combines gas distribution, private power distribution and on-site
+              generation into a single, integrated energy system for factories — supplying the fuel, building the network and
+              running the assets under one relationship. TAQA Power operates 450 MVA across 9 industrial-park concessions
+              serving +500 factories. It is the clearest proof of the bundled, one-SLA model for industry.
             </p>
             <div className="mt-auto flex items-center gap-2.5 border-t border-white/10 pl-3 pt-4">
               <ArrowRight className="h-4 w-4 shrink-0 text-[#fbbf24]" />
@@ -759,7 +1020,57 @@ function SuccessStorySlide() {
   );
 }
 
-// ─── SLIDES Array (32 slides, 0-indexed) ─────────────────────────────────────
+// ─── Chart data ───────────────────────────────────────────────────────────────
+
+const CNG_CHART = [
+  { year: "Y1", taqa: 70.0, diesel: 100.0 }, { year: "Y2", taqa: 77.0, diesel: 110.0 },
+  { year: "Y3", taqa: 84.7, diesel: 121.0 }, { year: "Y4", taqa: 93.17, diesel: 133.1 },
+  { year: "Y5", taqa: 102.49, diesel: 146.41 }, { year: "Y6", taqa: 112.74, diesel: 161.05 },
+  { year: "Y7", taqa: 124.01, diesel: 177.16 }, { year: "Y8", taqa: 136.41, diesel: 194.87 },
+  { year: "Y9", taqa: 150.05, diesel: 214.36 }, { year: "Y10", taqa: 165.06, diesel: 235.79 },
+  { year: "Y11", taqa: 181.56, diesel: 259.37 }, { year: "Y12", taqa: 199.72, diesel: 285.31 },
+  { year: "Y13", taqa: 219.69, diesel: 313.84 }, { year: "Y14", taqa: 241.66, diesel: 345.23 },
+  { year: "Y15", taqa: 265.82, diesel: 379.75 }, { year: "Y16", taqa: 292.41, diesel: 417.72 },
+  { year: "Y17", taqa: 321.65, diesel: 459.5 }, { year: "Y18", taqa: 353.81, diesel: 505.45 },
+  { year: "Y19", taqa: 389.19, diesel: 555.99 }, { year: "Y20", taqa: 428.11, diesel: 611.59 },
+  { year: "Y21", taqa: 470.92, diesel: 672.75 }, { year: "Y22", taqa: 518.02, diesel: 740.02 },
+  { year: "Y23", taqa: 569.82, diesel: 814.03 }, { year: "Y24", taqa: 626.8, diesel: 895.43 },
+  { year: "Y25", taqa: 689.48, diesel: 984.97 },
+];
+
+const SOLAR_CHART = [
+  { year: "Y1", taqa: 2.15, gov: 2.53 }, { year: "Y2", taqa: 2.37, gov: 2.78 },
+  { year: "Y3", taqa: 2.6, gov: 3.06 }, { year: "Y4", taqa: 2.86, gov: 3.37 },
+  { year: "Y5", taqa: 3.15, gov: 3.7 }, { year: "Y6", taqa: 3.46, gov: 4.07 },
+  { year: "Y7", taqa: 3.81, gov: 4.48 }, { year: "Y8", taqa: 4.19, gov: 4.93 },
+  { year: "Y9", taqa: 4.61, gov: 5.42 }, { year: "Y10", taqa: 5.07, gov: 5.97 },
+  { year: "Y11", taqa: 5.58, gov: 6.56 }, { year: "Y12", taqa: 6.13, gov: 7.22 },
+  { year: "Y13", taqa: 6.75, gov: 7.94 }, { year: "Y14", taqa: 7.42, gov: 8.73 },
+  { year: "Y15", taqa: 8.16, gov: 9.61 }, { year: "Y16", taqa: 8.98, gov: 10.57 },
+  { year: "Y17", taqa: 9.88, gov: 11.63 }, { year: "Y18", taqa: 10.87, gov: 12.79 },
+  { year: "Y19", taqa: 11.95, gov: 14.07 }, { year: "Y20", taqa: 13.15, gov: 15.47 },
+  { year: "Y21", taqa: 14.46, gov: 17.02 }, { year: "Y22", taqa: 15.91, gov: 18.72 },
+  { year: "Y23", taqa: 17.5, gov: 20.59 }, { year: "Y24", taqa: 19.25, gov: 22.65 },
+  { year: "Y25", taqa: 21.18, gov: 24.92 },
+];
+
+// MAFI chart values converted from EGP to EGP-millions for readable axis ticks.
+const MAFI_CHART = [
+  { year: "Y1", value: 120 }, { year: "Y2", value: 126 }, { year: "Y3", value: 136 },
+  { year: "Y4", value: 142 }, { year: "Y5", value: 151 }, { year: "Y6", value: 160 },
+  { year: "Y7", value: 170 }, { year: "Y8", value: 179 }, { year: "Y9", value: 191 },
+  { year: "Y10", value: 200 }, { year: "Y11", value: 210 }, { year: "Y12", value: 219 },
+  { year: "Y13", value: 262 }, { year: "Y14", value: 314 }, { year: "Y15", value: 370 },
+  { year: "Y16", value: 435 }, { year: "Y17", value: 509 }, { year: "Y18", value: 592 },
+  { year: "Y19", value: 685 }, { year: "Y20", value: 789 },
+];
+
+const BESS_CHART = [
+  { label: "Before BESS", value: 100 },
+  { label: "After BESS",  value: 65 },
+];
+
+// ─── SLIDES Array (33 slides, 0-indexed) ─────────────────────────────────────
 
 const cngIcon   = <Truck className="w-5 h-5" />;
 const elecIcon  = <Zap className="w-5 h-5" />;
@@ -778,10 +1089,22 @@ const SLIDES = [
   // 3
   { title: "In Numbers", render: () => <NumbersSlide /> },
   // 4
+  {
+    title: "Trusted By",
+    render: () => (
+      <TrustedBySlide
+        color="#c2410c"
+        heading="Clients and Partners Served Across Multiple Divisions"
+        subheading="A representative cross-section of the developers, industrials, hospitality groups and institutions TAQA Arabia serves today."
+        logos={TRUSTED_BY_LOGOS}
+      />
+    ),
+  },
+  // 5
   { title: "Solutions Overview", render: () => <SolutionsOverviewSlide /> },
 
   // ── Mobile CNG ──────────────────────────────────────────────────────────────
-  // 5
+  // 6
   {
     title: "Mobile CNG: Scope",
     render: () => (
@@ -794,14 +1117,14 @@ const SLIDES = [
           "Gas is compressed at a TAQA mother station to ~250 bar.",
           "Trailers deliver it to your plant as a virtual pipeline.",
           "On-site skids decompress and regulate to process pressure.",
-          "Metered gas feeds boilers, furnaces and process lines.",
+          "Gas feeds boilers, furnaces and process lines.",
           "TAQA tracks usage and refills ahead of demand.",
         ]}
         whatYouReceive={["Pipeline-grade gas without a pipeline", "Continuous feed for industrial processes", "Managed supply and refills"]}
       />
     ),
   },
-  // 6
+  // 7
   {
     title: "Mobile CNG: Value Proposition",
     render: () => (
@@ -809,20 +1132,20 @@ const SLIDES = [
         solutionNum={1} solutionLabel="Mobile CNG" color="#c2410c" icon={cngIcon} photo={P.cng}
         whatYouGain={[
           { label: "Off-Grid Gas Supply",           desc: "Reliable natural gas to the factory without pipeline access." },
-          { label: "Cost Savings vs. Diesel & LPG", desc: "≈40% lower fuel cost than diesel; replaces LPG and electric heating." },
-          { label: "Cleaner Emissions",             desc: "Cuts CO₂ by ~24% vs. diesel and lowers NOx & particulates — supports ESG." },
-          { label: "99.5% Uptime SLA",              desc: "SCADA-monitored hot-swap replenishment guarantees uninterrupted supply to every factory." },
+          { label: "Cost Savings vs. Diesel & LPG", desc: "Lower fuel cost than diesel; replaces LPG and electric heating across the development." },
+          { label: "Cleaner Emissions",             desc: "Cuts CO₂ by ~24% vs. diesel and lowers NOx & particulates — supports ESG and green-rating targets." },
+          { label: "Offset Diesel Quota",           desc: "Reduce reliance on diesel quotas by providing cleaner and more cost-effective fuel alternatives." },
         ]}
         taqaEdge={[
-          { label: "Flexible Delivery Approach",          desc: "BOO/BOOT or EPC via Capacity-as-a-Service — no upfront infrastructure cost." },
-          { label: "Nationwide Logistics Via Master Gas", desc: "A dedicated trailer fleet keeps refills on schedule across governorates." },
-          { label: "Scalable to Any Load",                desc: "Starter (500 Nm³/day) to Heavy (5,000+ Nm³/day) — scales with occupancy." },
-          { label: "Reliability & Smart O&M",             desc: "24/7 predictive maintenance and rapid-response teams." },
+          { label: "Flexible Delivery Approach",          desc: "BOO/BOOT or EPC via Capacity-as-a-Service — no upfront infrastructure cost for the developer." },
+          { label: "Nationwide Logistics",     desc: "A dedicated trailer fleet refills clients on schedule via Master Gas stations nationwide." },
+          { label: "Scalable to Any Load",     desc: "Starter (550 litres/day of diesel) to Heavy (5,500+ litres/day) — scales with occupancy, bridges to grid later." },
+          { label: "Broad Governorate Reach",  desc: "A nationwide portfolio of Mobile CNG projects extends gas access and lowers fuel costs." },
         ]}
       />
     ),
   },
-  // 7
+  // 8
   {
     title: "Mobile CNG: Timeline",
     render: () => (
@@ -845,27 +1168,35 @@ const SLIDES = [
       />
     ),
   },
-  // 8
+  // 9
   {
     title: "Mobile CNG: Track Record",
     render: () => (
-      <TrackRecordSlide
-        solutionNum={1} solutionLabel="Mobile CNG" color="#c2410c" icon={cngIcon} photo={P.cng}
-        heading="Virtual Pipeline — 4 Governorates"
+      <ChartTrackRecordSlide
+        solutionNum={1} solutionLabel="Mobile CNG" color="#c2410c" icon={cngIcon}
+        heading="TAQA CNG Price vs. Diesel Price — 25-Year Outlook"
         subheading="First company in Egypt to supply natural gas through a mobile virtual pipeline"
-        body="TAQA Arabia pioneered mobile CNG in Egypt, using its network of 86 CNG stations to extend a virtual pipeline into four governorates with no fixed gas infrastructure. The model now serves ceramics, glass, food-processing and other industrial clients — proving off-grid factories can run on clean natural gas years before the pipeline arrives."
+        body="TAQA pioneered mobile CNG in Egypt, reaching 4 off-grid governorates via an 86-station network."
+        data={CNG_CHART}
+        xKey="year"
+        series={[
+          { key: "taqa", name: "TAQA CNG Price", color: "#fb923c" },
+          { key: "diesel", name: "Diesel Price", color: "#f87171" },
+        ]}
+        yLabel="Indicative unit price (EGP)"
+        valueFormatter={(v) => (v >= 1000 ? "1k" : `${Math.round(v)}`)}
         stats={[
-          { value: "86",     label: "CNG stations feeding the virtual pipeline" },
-          { value: "4",      label: "Governorates served off-grid" },
-          { value: "+2,350", label: "mmscf CNG delivered per year" },
-          { value: "+10",    label: "Active mobile-CNG clients" },
+          { value: "86",       label: "CNG stations across the network" },
+          { value: "20",       label: "Governorates covered nationwide" },
+          { value: "4",        label: "Off-grid governorates reached via virtual pipeline" },
+          { value: "10",       label: "Existing Mobile CNG projects — incl. a full governorate (El Kharga)" },
         ]}
       />
     ),
   },
 
   // ── Electricity Distribution ─────────────────────────────────────────────────
-  // 9
+  // 10
   {
     title: "Electricity Distribution: Scope",
     render: () => (
@@ -884,7 +1215,7 @@ const SLIDES = [
       />
     ),
   },
-  // 10
+  // 11
   {
     title: "Electricity Distribution: Value Proposition",
     render: () => (
@@ -893,19 +1224,19 @@ const SLIDES = [
         whatYouGain={[
           { label: "Potential New Revenue Stream", desc: "The profit-share model turns the distribution network from a cost center into recurring income." },
           { label: "Lower Factory Bills",          desc: "Demand-side management and tariff optimization reduce consumption and end-user charges." },
-          { label: "Guaranteed Power Quality",     desc: "Stable, metered, billable electricity to every unit from handover." },
-          { label: "Future-Ready Network",         desc: "Designed for solar, storage and EV loads from day one." },
+          { label: "Guaranteed Power Quality",     desc: "Stable, metered, billable electricity to every unit from handover — no reliance on stretched public utilities." },
+          { label: "Future-Ready Network",         desc: "Designed for solar, storage and EV loads from day one — the factory scales without re-builds." },
         ]}
         taqaEdge={[
           { label: "Flexible Delivery Approach", desc: "Take it as EPC build, licensed O&M, or a profit-share — TAQA flexes from substation to metering." },
-          { label: "Faster Time-to-Handover",    desc: "Integrated teams for power sourcing, engineering and construction cut the critical path." },
-          { label: "Deep Industrial Experience", desc: "Designed and operated 450+ MVA across industrial zones." },
-          { label: "24/7 Control Room",          desc: "Dedicated SCADA, predictive maintenance and rapid-response O&M." },
+          { label: "Faster Time-to-Handover",    desc: "TAQA's licensing relationships and in-house engineering compress approvals, so units energize on schedule." },
+          { label: "Single Accountable Operator", desc: "One licensed party owns sourcing, network, metering and O&M — no finger-pointing between contractors." },
+          { label: "Reliability & Smart O&M",    desc: "24/7 predictive maintenance and rapid-response teams with guaranteed SAIDI / SAIFI performance." },
         ]}
       />
     ),
   },
-  // 11
+  // 12
   {
     title: "Electricity Distribution: Timeline",
     render: () => (
@@ -927,27 +1258,27 @@ const SLIDES = [
       />
     ),
   },
-  // 12
+  // 13
   {
     title: "Electricity Distribution: Track Record",
     render: () => (
       <TrackRecordSlide
         solutionNum={2} solutionLabel="Electricity Distribution" color="#1d4ed8" icon={elecIcon} photo={P.electric}
-        heading="Powering industrial zones across Egypt"
-        subheading="Egypt's largest private power infrastructure operator"
-        body="TAQA Power designs, builds and operates licensed electrical distribution networks for industrial zones, free zones and mixed-use developments across Egypt, with +450 MVA distributed across zones. As Egypt's largest private power infrastructure operator, TAQA brings the same turnkey discipline — from grid interconnection to smart metering — to any industrial site."
+        heading="TAQA Power: Scale, Efficiency & Yield"
+        subheading="One of Egypt's first private utilities licensed for power generation and distribution"
+        body="Anchored by major substations like 6th of October (250 MVA) and Nabq (160 MVA), TAQA Power delivers end-to-end infrastructure — engineering, EPC, substations, grid connections and distribution networks — plus smart energy management, advanced metering and digital tools for uninterrupted supply. Trusted by tier-1 developers including LMD, Marakez, Pioneer Property and Emaar for integrated utility management and renewable-energy integration that maximizes asset value long term."
         stats={[
-          { value: "+450 MVA", label: "distributed across industrial zones" },
-          { value: "26",       label: "licensed distribution concessions" },
-          { value: "+12,000",  label: "customers served" },
-          { value: "24/7",     label: "SCADA monitoring" },
+          { value: "1,600+", label: "Total MVA distributed across Egypt" },
+          { value: "31M m²", label: "Area covered across concessions" },
+          { value: "12k+",   label: "End users connected to electricity" },
+          { value: "Tier-1", label: "Developers trust TAQA — LMD, Marakez, Emaar & more" },
         ]}
       />
     ),
   },
 
   // ── Gas Distribution ─────────────────────────────────────────────────────────
-  // 13
+  // 14
   {
     title: "Gas Distribution: Scope",
     render: () => (
@@ -958,15 +1289,15 @@ const SLIDES = [
         steps={[
           "TAQA secures the concession and designs the gas grid.",
           "Mains and service lines are laid across the zone.",
-          "Pressure is regulated to each factory's process requirement.",
-          "Industrial meters commission and bill per consumption.",
-          "TAQA operates, inspects and maintains the network.",
+          "Pressure is regulated to each factory's process needs.",
+          "Connections are metered, tested and commissioned.",
+          "TAQA operates, inspects and bills for gas delivered.",
         ]}
-        whatYouReceive={["A licensed industrial gas network", "Safe, metered gas to every factory", "Lifetime operation and emergency response"]}
+        whatYouReceive={["A licensed industrial gas network", "6.4 BCM per year", "Process-grade gas to every factory", "Lifetime O&M and emergency response"]}
       />
     ),
   },
-  // 14
+  // 15
   {
     title: "Gas Distribution: Value Proposition",
     render: () => (
@@ -974,20 +1305,20 @@ const SLIDES = [
         solutionNum={3} solutionLabel="Gas Distribution" color="#059669" icon={gasIcon} photo={P.pipeline}
         whatYouGain={[
           { label: "Diesel & LPG Fuel-Switching",          desc: "Manage the full transition from diesel and LPG to cleaner, cheaper natural gas." },
-          { label: "Flexible Gas Sourcing — M-CNG or SNG", desc: "Where no fixed pipeline exists yet, gas is supplied via M-CNG or SNG — no factory waits." },
+          { label: "Flexible Gas Sourcing — M-CNG or SNG", desc: "Where no fixed pipeline exists yet, gas is supplied via M-CNG (mobile CNG) or SNG — no factory waits." },
           { label: "Lower Factory Bills",                  desc: "Subsidized piped natural gas is far cheaper than LPG cylinders or electric heating." },
-          { label: "Higher Asset Value",                   desc: "Connection to the national gas grid lifts site value and tenancy." },
+          { label: "Higher Asset Value",                   desc: "Connection to the national gas grid is a core industrial utility that lifts site value and tenancy." },
         ]}
         taqaEdge={[
-          { label: "Flexible Commercial Models",    desc: "Delivered as EPC, long-term O&M or BOO." },
+          { label: "Flexible Commercial Models",    desc: "Delivered as EPC, long-term O&M or BOO — choose the structure that fits your balance sheet." },
           { label: "External & Internal Networks",  desc: "TAQA builds the external distribution backbone and the internal factory network." },
-          { label: "One Partner Across All Phases", desc: "Single accountable party from feasibility to handover." },
-          { label: "Standards Compliance",          desc: "Aligned with IGEM, EGAS and international gas-safety standards." },
+          { label: "One Partner Across All Phases", desc: "One accountable party from feasibility to handover — in-house engineering arm EGUSCO builds to spec." },
+          { label: "Standards Compliance",          desc: "Aligned with IGEM, EGAS and international gas-safety standards — de-risks approvals." },
         ]}
       />
     ),
   },
-  // 15
+  // 16
   {
     title: "Gas Distribution: Timeline",
     render: () => (
@@ -1009,27 +1340,27 @@ const SLIDES = [
       />
     ),
   },
-  // 16
+  // 17
   {
     title: "Gas Distribution: Track Record",
     render: () => (
       <TrackRecordSlide
         solutionNum={3} solutionLabel="Gas Distribution" color="#059669" icon={gasIcon} photo={P.pipeline}
-        heading="Egypt's largest private gas distribution network — built, owned and operated by TAQA"
-        subheading="+10,000 km of distribution mains across 8 governorates with 15-year renewable concessions"
-        body="TAQA Gas operates one of Egypt's largest private piped-gas networks: +10,000 km of distribution mains across 8 governorates with 15-year renewable concessions. As the holder of 66% of Egypt's private gas concessions, TAQA brings the same proven engineering and O&M platform to industrial zones, free zones and large-scale industrial developments."
+        heading="Egypt's Largest Private Gas Distribution Network"
+        subheading="Egypt's first private natural gas distributor, licensed by EGAS"
+        body="TAQA Gas is Egypt's first private natural gas distributor, licensed by EGAS — running the country's largest private pipeline network end-to-end, from engineering to 24/7 emergency response, and ISO-certified throughout."
         stats={[
-          { value: "+10,000 km", label: "network" },
-          { value: "8",          label: "governorate concessions (15yr)" },
-          { value: "66%",        label: "private concession share" },
-          { value: "~7M",        label: "customers served (approx.)" },
+          { value: "1.9M",  label: "Customers — residential, commercial & industrial" },
+          { value: "+25",   label: "Exclusive governorate concessions" },
+          { value: "66%",   label: "Share of Egypt's private gas concessions" },
+          { value: "10k+",  label: "Kilometers of high-pressure pipeline" },
         ]}
       />
     ),
   },
 
   // ── CHP ──────────────────────────────────────────────────────────────────────
-  // 17
+  // 18
   {
     title: "CHP: Scope",
     render: () => (
@@ -1048,7 +1379,7 @@ const SLIDES = [
       />
     ),
   },
-  // 18
+  // 19
   {
     title: "CHP: Value Proposition",
     render: () => (
@@ -1061,15 +1392,15 @@ const SLIDES = [
           { label: "Reduced CO₂ Emissions",    desc: "Higher fuel utilization translates into a smaller carbon footprint per unit of output." },
         ]}
         taqaEdge={[
-          { label: "Flexible Commercial Models",    desc: "Delivered as EPC, long-term O&M or BOO." },
-          { label: "Integrated Gas + CHP Solution", desc: "TAQA can supply both the natural gas and the CHP plant — one provider for fuel and energy." },
-          { label: "Guaranteed Performance",        desc: "Performance SLA backed by 24/7 monitoring and rapid response." },
-          { label: "Deep Cogeneration Experience",  desc: "6 captive power plants and +150 MW contracted generation including flare-to-power and CHP systems." },
+          { label: "Flexible Commercial Models",    desc: "Delivered as EPC, long-term O&M or BOO — choose the structure that fits your balance sheet." },
+          { label: "Integrated Gas + CHP Solution", desc: "TAQA can supply both the natural gas and the CHP plant — one accountable provider for fuel and power." },
+          { label: "Guaranteed Performance",        desc: "TAQA's O&M and performance guarantees keep the system running at peak efficiency." },
+          { label: "Reliability & Smart O&M",       desc: "24/7 predictive maintenance and rapid-response teams with guaranteed SAIDI / SAIFI performance." },
         ]}
       />
     ),
   },
-  // 19
+  // 20
   {
     title: "CHP: Timeline",
     render: () => (
@@ -1084,34 +1415,40 @@ const SLIDES = [
           { days: "Day 270+",    label: "O&M" },
         ]}
         groups={[
-          { label: "AUDIT & DESIGN",           range: "Day 0–60" },
-          { label: "FINANCE, PROCURE & BUILD", range: "Day 45–270" },
-          { label: "OPERATE",                  range: "Day 270+" },
+          { label: "AUDIT & DESIGN", range: "Day 0–60" },
+          { label: "FINANCE & BUILD", range: "Day 45–270" },
+          { label: "OPERATE",        range: "Day 270+" },
         ]}
       />
     ),
   },
-  // 20
+  // 21
   {
-    title: "CHP: Track Record",
+    title: "CHP: Case Study “MAFI”",
     render: () => (
-      <TrackRecordSlide
-        solutionNum={4} solutionLabel="CHP" color="#b45309" icon={chpIcon} photo={P.chp}
-        heading="Captive Power & Cogeneration"
-        subheading="Owning and operating high-efficiency captive generation"
-        body="TAQA Power owns and operates 6 captive power plants and +150 MW of contracted generation through long-term agreements, including flare-to-power and combined-heat-and-power systems. The same engineering, fuel-logistics and 24/7 O&M discipline underpins TAQA's CHP offering for industrial clients."
+      <SingleLineTrackSlide
+        solutionNum={4} solutionLabel="CHP" color="#b45309" icon={chpIcon}
+        heading="Owning and Operating High-Efficiency Captive Generation"
+        subheading="A show of muscle — what TAQA Arabia has already delivered · Captive Power & Cogeneration"
+        body="A 9 MW captive CHP station saves the client EGP 6bn over the project life at 65%+ efficiency."
+        data={MAFI_CHART}
+        xKey="year"
+        seriesKey="value"
+        seriesName="MAFI value delivered"
+        yLabel="EGP, millions"
+        valueFormatter={(v) => `${v}M`}
         stats={[
-          { value: "6",       label: "Captive power plants operated" },
-          { value: "+150 MW", label: "contracted generation" },
-          { value: "CHP",     label: "Flare-to-power & CHP experience" },
-          { value: "24/7",    label: "O&M and SCADA" },
+          { value: "4 Products", label: "Electricity, steam, chilled water and boiled water" },
+          { value: "6 Billion",  label: "EGP savings over 20 years" },
+          { value: "~85%",       label: "CHP fuel efficiency" },
+          { value: "24/7",       label: "Performance-guaranteed O&M" },
         ]}
       />
     ),
   },
 
   // ── Solar ─────────────────────────────────────────────────────────────────────
-  // 21
+  // 22
   {
     title: "Solar: Scope",
     render: () => (
@@ -1120,17 +1457,17 @@ const SLIDES = [
         subtitle="Tailored solar PV solutions delivering measurable value across financing, sustainability and operations."
         taqaInvests={["Rooftop & ground-mount PV", "Inverters & transformers", "Connection & net-metering works", "Monitoring & SCADA"]}
         steps={[
-          "TAQA assesses roof, land and the factory's energy profile.",
-          "Arrays are sized and designed for optimal yield.",
-          "Panels are installed; grid tie-in and metering completed.",
-          "Solar generation offsets grid purchases at zero marginal cost.",
-          "TAQA monitors output and guarantees performance for 25+ years.",
+          "TAQA assesses roof, land and the plant's load curve.",
+          "PV arrays and inverters are installed and grid-tied.",
+          "Panels generate clean power across the working day.",
+          "Solar offsets daytime process and facility loads.",
+          "TAQA monitors yield and maintains the system.",
         ]}
-        whatYouReceive={["Lowest-cost energy from day one", "Net metering and grid tie-in", "Zero-capex PPA option", "25-year performance guarantee"]}
+        whatYouReceive={["On-site solar cutting daytime grid draw", "Lower, hedged energy cost from day one", "Monitored, maintained PV assets"]}
       />
     ),
   },
-  // 22
+  // 23
   {
     title: "Solar: Value Proposition",
     render: () => (
@@ -1140,18 +1477,18 @@ const SLIDES = [
           { label: "Lower Energy Bills",       desc: "Solar's cost per kWh sits well below the grid tariff — factories save from day one." },
           { label: "Tariff-Hike Hedge",        desc: "Lock in clean-energy cost for decades and insulate the factory from grid-price escalation." },
           { label: "Higher Property Value",    desc: "Solar-equipped, lower-running-cost sites command a premium." },
-          { label: "Green Living Credentials", desc: "Visible clean energy strengthens ESG and sustainability story." },
+          { label: "Green Living Credentials", desc: "Visible clean energy strengthens the site's ESG and sustainability story." },
         ]}
         taqaEdge={[
           { label: "Egypt's Solar Pioneer",      desc: "TAQA was the first national company to commercially operate a plot at the Benban solar park." },
           { label: "Flexible Models",            desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
-          { label: "Turnkey Engineering",        desc: "Survey, design, supply, installation and grid tie-in delivered end-to-end." },
-          { label: "Lifecycle O&M & Guarantee", desc: "Remote monitoring, maintenance and performance guarantees for 25+ years." },
+          { label: "Turnkey Engineering",        desc: "Survey, design, supply, installation and grid tie-in delivered end-to-end by one partner." },
+          { label: "Lifecycle O&M & Guarantee", desc: "Remote monitoring, maintenance and performance guarantees keep output high for 25+ years." },
         ]}
       />
     ),
   },
-  // 23
+  // 24
   {
     title: "Solar: Timeline",
     render: () => (
@@ -1173,27 +1510,34 @@ const SLIDES = [
       />
     ),
   },
-  // 24
+  // 25
   {
-    title: "Solar: Track Record",
+    title: "Solar: Case Study “ASCOM”",
     render: () => (
-      <TrackRecordSlide
-        solutionNum={5} solutionLabel="Solar" color="#ca8a04" icon={solarIcon} photo={P.solar}
-        heading="Solar Development & Investment"
-        subheading="Developing and investing in tailored solar across Egypt"
-        body="TAQA Arabia develops, finances and operates solar PV assets under tailored PPA agreements, integrating solar with its power-distribution and storage offering. As the first national company to commercially operate at the Benban solar park, TAQA brings utility-scale solar expertise to industrial rooftops and ground mounts. 65 MW solar plant in Benban, Upper Egypt (est. 2019)."
+      <ChartTrackRecordSlide
+        solutionNum={5} solutionLabel="Solar" color="#ca8a04" icon={solarIcon}
+        heading="Developing and Investing in Tailored Solar Across Egypt"
+        subheading="A show of muscle — what TAQA Arabia has already delivered · 7 MW ASCOM solar plant"
+        body="TAQA's 7 MW ASCOM solar plant cuts tariffs 15% and saved the client EGP 340M over 25 years."
+        data={SOLAR_CHART}
+        xKey="year"
+        series={[
+          { key: "taqa", name: "TAQA Tariff", color: "#facc15" },
+          { key: "gov", name: "Government (MV) Tariff", color: "#94a3b8" },
+        ]}
+        yLabel="EGP / kWh"
         stats={[
-          { value: "65 MW",    label: "Benban solar plant" },
-          { value: "1st",      label: "to operate at Benban" },
-          { value: "BOO/BOOT", label: "& PPA models" },
-          { value: "25+ yr",   label: "performance guarantee" },
+          { value: "BOO/BOOT",     label: "PPA models, no client capex" },
+          { value: "~1,000",       label: "t CO₂ avoided / MWp / yr" },
+          { value: "340 Million",  label: "EGP total savings over 25 years" },
+          { value: "24/7",         label: "Monitoring & O&M" },
         ]}
       />
     ),
   },
 
   // ── Energy Storage (BESS) ─────────────────────────────────────────────────────
-  // 25
+  // 26
   {
     title: "Energy Storage (BESS): Scope",
     render: () => (
@@ -1202,17 +1546,17 @@ const SLIDES = [
         subtitle="Battery Energy Storage Systems — storing clean power to cut peak charges, firm up solar and secure supply."
         taqaInvests={["Battery energy-storage units", "Power-conversion system & inverters", "Switchgear & grid interface", "EMS & SCADA controls"]}
         steps={[
-          "TAQA sizes storage to the factory's peak profile and solar surplus.",
-          "Batteries charge during off-peak or peak-solar hours.",
-          "Stored energy dispatches during peak demand — shaving the most expensive part of the bill.",
-          "EMS optimises charge/discharge against tariff and solar signals.",
-          "TAQA monitors and guarantees performance.",
+          "TAQA sizes storage to the plant's load and tariff profile.",
+          "Battery units and conversion systems are installed.",
+          "Storage charges when power is cheap or solar is surplus.",
+          "It discharges to shave peaks and bridge outages.",
+          "An energy-management system optimizes every cycle.",
         ]}
-        whatYouReceive={["Peak-demand charge reduction", "Solar firming through the evening", "Backup supply on grid failure", "EMS-optimised dispatch"]}
+        whatYouReceive={["Peak shaving and lower demand charges", "Backup through grid disturbances", "Stored surplus from solar or off-peak"]}
       />
     ),
   },
-  // 26
+  // 27
   {
     title: "Energy Storage (BESS): Value Proposition",
     render: () => (
@@ -1222,18 +1566,18 @@ const SLIDES = [
           { label: "Peak-Demand Savings",      desc: "Discharge stored energy during peak hours to slash demand charges and tariff exposure." },
           { label: "Uninterrupted Production", desc: "Instant-response backup protects critical lines and avoids costly downtime during outages." },
           { label: "Grid Services Revenue",    desc: "Frequency regulation and load balancing can create new value streams." },
-          { label: "Future-Proof & Green",     desc: "Enables deeper renewable integration and supports the factory's carbon-reduction targets." },
+          { label: "Future-Proof & Green",     desc: "Enables deeper renewable integration and supports the plant's decarbonisation roadmap." },
         ]}
         taqaEdge={[
-          { label: "Flexible Financing",      desc: "CAPEX, BOOT/BOO — choose the structure that fits the balance sheet." },
-          { label: "Integrated Solar + BESS", desc: "Pair storage with TAQA's solar PV for round-the-clock clean power." },
-          { label: "Smart EMS",               desc: "AI-driven charge/discharge optimisation against loads, tariffs and solar signals." },
-          { label: "Proven Operator",         desc: "Same 24/7 O&M discipline applied across TAQA's generation, distribution and solar assets." },
+          { label: "Flexible Models",           desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
+          { label: "Smart Energy Management",   desc: "EMS analytics optimize charge/discharge automatically against tariffs and loads." },
+          { label: "Lifecycle O&M & Guarantee", desc: "Remote monitoring, maintenance and performance guarantees keep output high for 25+ years." },
+          { label: "One Energy Stack",          desc: "Storage, solar, power and gas from a single provider." },
         ]}
       />
     ),
   },
-  // 27
+  // 28
   {
     title: "Energy Storage (BESS): Timeline",
     render: () => (
@@ -1255,31 +1599,34 @@ const SLIDES = [
       />
     ),
   },
-  // 28
+  // 29
   {
-    title: "Energy Storage (BESS): Track Record",
+    title: "BESS: Backup Power & Grid Relief",
     render: () => (
-      <TrackRecordSlide
-        solutionNum={6} solutionLabel="Energy Storage (BESS)" color="#7c3aed" icon={bessIcon} photo={P.battery}
-        heading="Solar-Plus-Storage Integration"
-        subheading="Integrating storage with solar and distribution for round-the-clock clean power"
-        body="As Egypt's largest private power player, TAQA Arabia pairs Battery Energy Storage with its solar and distribution assets to deliver dispatchable, lower-carbon energy. Storage lets industrial clients shift solar into the evening, shave peaks and secure supply — the natural next step in TAQA's integrated energy model."
+      <BeforeAfterBarSlide
+        solutionNum={6} solutionLabel="Energy Storage (BESS)" color="#7c3aed" icon={bessIcon}
+        heading="From Diesel Backup to Smart Grid Support"
+        subheading="Replacing diesel backup with BESS, paired with solar for a smarter grid"
+        body="TAQA Arabia is currently deploying BESS as a direct alternative to diesel generators for backup power — cutting fuel logistics, maintenance, and emissions from standby operations. Paired with solar PV, the same BESS asset shifts stored daytime generation into peak-demand hours, easing the load carried by client transformers and helping defer costly infrastructure upgrades."
+        data={BESS_CHART}
+        yLabel="Relative peak transformer load (index, Before = 100)"
+        deltaLabel="Peak Transformer Load — Before vs After BESS"
         stats={[
-          { value: "Peak shaving",  label: "cuts costly demand charges" },
-          { value: "Solar firming", label: "day-to-night energy shift" },
-          { value: "BOO/BOOT",      label: "no client capex" },
-          { value: "24/7",          label: "EMS monitoring & O&M" },
+          { value: "35%",               label: "Reduction in peak transformer loading" },
+          { value: "Diesel Displacement", label: "Backup runtime shifted from diesel to BESS" },
+          { value: "Peak Shifting",     label: "Solar stored by day, discharged at peak demand" },
+          { value: "BOO/BOOT",          label: "No client capex" },
         ]}
       />
     ),
   },
 
   // ── Closing ───────────────────────────────────────────────────────────────────
-  // 29
-  { title: "Why One Partner", render: () => <WhyOnePartnerSlide /> },
   // 30
-  { title: "Cross-Solution Benefits", render: () => <BundleSlide /> },
+  { title: "Why One Partner", render: () => <WhyOnePartnerSlide /> },
   // 31
+  { title: "Cross-Solution Benefits", render: () => <BundleSlide /> },
+  // 32
   { title: "Success Story: Integrated Industrial Energy", render: () => <SuccessStorySlide /> },
 ];
 
@@ -1289,7 +1636,7 @@ export default function IndustrialClients() {
   return (
     <DeckShell
       title="Industrial Clients"
-      subtitle="TAQA Arabia · Integrated Industrial Energy Solutions · Jun 2026"
+      subtitle="TAQA Arabia · Integrated Energy & Utility Solutions · Jan 2026"
       sections={SECTIONS}
       slides={SLIDES}
       pdf="industrial-clients.pdf"

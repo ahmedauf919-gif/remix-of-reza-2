@@ -7,8 +7,9 @@ import {
 import taqaLogo from "@/assets/taqa-logo.png";
 import {
   SlideStyles, Kicker, CornerWash, Bracket, BlueprintGrid, ColHead,
-  ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide, d, hideImg, lighter,
+  ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide, TrustedBySlide, d, hideImg, lighter,
 } from "./slides";
+import { TRUSTED_BY_LOGOS } from "./trustedByLogos";
 
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
@@ -27,13 +28,14 @@ const P: Record<string, string> = {
 
 const SECTIONS = [
   { id: "intro",     label: "Introduction",   color: "#0369a1", slides: [0, 1, 2, 3] },
-  { id: "challenge", label: "Fleet Challenge", color: "#dc2626", slides: [4, 5] },
-  { id: "overview",  label: "Solutions",       color: "#0369a1", slides: [6] },
-  { id: "fuel",      label: "Fuel Stations",   color: "#b45309", slides: [7, 8, 9, 10] },
-  { id: "cng",       label: "Natural Gas",     color: "#059669", slides: [11, 12, 13, 14] },
-  { id: "ev",        label: "EV Charging",     color: "#7c3aed", slides: [15, 16, 17, 18] },
-  { id: "waqood",    label: "Waqood",          color: "#0369a1", slides: [19, 20, 21, 22] },
-  { id: "closing",   label: "Closing",         color: "#002060", slides: [23, 24, 25] },
+  { id: "trusted",   label: "Trusted By",     color: "#0d9488", slides: [4] },
+  { id: "challenge", label: "Fleet Challenge", color: "#dc2626", slides: [5, 6] },
+  { id: "overview",  label: "Solutions",       color: "#0369a1", slides: [7] },
+  { id: "fuel",      label: "Fuel Stations",   color: "#b45309", slides: [8, 9, 10, 11] },
+  { id: "cng",       label: "Natural Gas",     color: "#059669", slides: [12, 13, 14, 15] },
+  { id: "ev",        label: "EV Charging",     color: "#7c3aed", slides: [16, 17, 18, 19] },
+  { id: "waqood",    label: "Waqood",          color: "#0369a1", slides: [20, 21, 22, 23] },
+  { id: "closing",   label: "Closing",         color: "#002060", slides: [24, 25, 26] },
 ];
 
 function sectionOf(slideIdx: number) {
@@ -225,7 +227,7 @@ function AboutSlide() {
 
 function RegionalSlide() {
   const metrics = [
-    { value: "8",      label: "Countries",           sub: "Egypt, GCC, Africa & Greece", hero: true },
+    { value: "8",      label: "Countries",           sub: "Egypt, GCC, Africa, Greece & South Asia", hero: true },
     { value: "4",      label: "Operating divisions", sub: "Gas · Power · Petroleum · Water" },
     { value: "20+",    label: "Governorates",        sub: "Across Egypt" },
     { value: "3,400+", label: "Employees",           sub: "Across all divisions" },
@@ -335,7 +337,7 @@ function NumbersSlide() {
   const heroStats = [
     { value: "EGP 13.4bn", label: "Revenue",                   sub: "FY 2025", hero: true },
     { value: "EGP 1.5bn",  label: "EBITDA",                    sub: "FY 2025" },
-    { value: "~7M",        label: "Customers served", sub: "Approximate, all utilities" },
+    { value: "~6.5M",      label: "Residential gas customers", sub: "Gas division" },
   ];
   const divCards = [
     { div: "GAS",       icon: <Flame className="h-4 w-4" />, color: "#059669", stats: ["86 CNG stations", "18 conversion centers", "Capacity 12K cars/year", "Master Gas virtual pipeline"] },
@@ -417,6 +419,10 @@ function NumbersSlide() {
             </div>
           ))}
         </div>
+
+        <p className="sx-up mt-3 shrink-0 text-center text-[14px] font-medium text-slate-500" style={d(660)}>
+          Founded 2006 · Listed on EGX 2023 · 3,400+ employees across all divisions
+        </p>
       </div>
     </div>
   );
@@ -426,10 +432,10 @@ function NumbersSlide() {
 
 function FleetChallengeSlide() {
   const pains = [
-    { label: "HIGH FUEL COST",            desc: "Diesel and petrol are the biggest operating cost — volatile, exposed to every oil-price spike.", color: "#dc2626" },
-    { label: "FRAGMENTED SUPPLIERS",      desc: "Fuel, gas, chargers and software from separate vendors — no single view or accountability.",     color: "#b45309" },
-    { label: "FUEL LEAKAGE & FRAUD",      desc: "Cash, paper receipts and no per-vehicle control quietly inflate the bill.",                      color: "#7c3aed" },
-    { label: "RISING CARBON & CITY RISK", desc: "100% combustion means maximum emissions and exposure to low-emission zones.",                    color: "#059669" },
+    { label: "FUEL IS THE BIGGEST LEVER",       desc: "Fuel is typically 30–50% of fleet operating cost — small per-litre moves swing the entire P&L.",         color: "#dc2626" },
+    { label: "VOLATILE, UNPREDICTABLE PRICES",  desc: "Diesel and petrol track global oil and policy — budgeting fuel becomes guesswork year to year.",           color: "#b45309" },
+    { label: "TIGHTENING EMISSIONS PRESSURE",   desc: "ESG targets, low-emission city zones and customer mandates are closing in on combustion fleets.",          color: "#059669" },
+    { label: "FRAGMENTED SUPPLIERS",            desc: "Fuel, gas, chargers and telematics from separate vendors means many contracts and no single view.",       color: "#7c3aed" },
   ];
   return (
     <div
@@ -461,10 +467,13 @@ function FleetChallengeSlide() {
           <Kicker color="#dc2626" dark>Fleet &amp; Mobility · The Challenge</Kicker>
         </div>
         <h2 className="sx-up mt-4 font-display text-[44px] font-bold leading-[1.08] tracking-tight text-white" style={d(70)}>
-          The fleet operator's energy challenge
+          The Fleet Operator's Challenge
         </h2>
+        <p className="sx-up mt-2 text-[17px] text-white/75" style={d(110)}>
+          Why fleet energy is the biggest cost — and the hardest one to control.
+        </p>
 
-        <div className="mt-7 grid min-h-0 flex-1 grid-cols-2 gap-4">
+        <div className="mt-6 grid min-h-0 flex-1 grid-cols-2 gap-4">
           {pains.map((c, i) => (
             <div
               key={c.label}
@@ -504,7 +513,7 @@ function PathwaySlide() {
   const stages = [
     { label: "NOW",    title: "Optimise the Combustion Fleet", desc: "Consolidate diesel and petrol under one Waqood account with depot fuelling — squeeze cost and visibility out of the fleet you run today.",                            color: "#b45309", icon: <Truck className="h-5 w-5" /> },
     { label: "BRIDGE", title: "Convert to Natural Gas",        desc: "Convert suitable vehicles to CNG and fuel them via the station network or the Master Gas mobile virtual pipeline — the fastest payback in the transition, up to ~40% lower fuel cost.", color: "#059669", icon: <Flame className="h-5 w-5" /> },
-    { label: "FUTURE", title: "Electrify the Fleet",           desc: "Roll out depot and en-route charging — backed by TAQA Power's EV licence and distribution expertise.",                                                               color: "#7c3aed", icon: <Zap className="h-5 w-5" /> },
+    { label: "FUTURE", title: "Electrify the Fleet",           desc: "Roll out depot and en-route charging — backed by Egypt's first EV licence, +1,600 MVA of grid, solar and storage — for the lowest cost per km and zero tailpipe emissions.", color: "#7c3aed", icon: <Zap className="h-5 w-5" /> },
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
@@ -576,9 +585,9 @@ function PathwaySlide() {
 function SolutionsOverviewSlide() {
   const solutions = [
     { num: "01", label: "Fuel Stations",       desc: "Keep today's fleet moving — diesel and gasoline from a nationwide TAQA-operated station network and two terminals.",                   icon: <Truck className="h-5 w-5" />,     color: "#b45309" },
-    { num: "02", label: "Natural Gas (CNG)",   desc: "Convert the fleet you own to gas — licensed NGV conversion plus TAQA's CNG network and the Master Gas mobile virtual pipeline.",       icon: <Flame className="h-5 w-5" />,     color: "#059669" },
+    { num: "02", label: "Natural Gas (CNG)",   desc: "Convert the fleet you own to gas — and fuel it: licensed NGV conversion plus TAQA's CNG network and the Master Gas mobile virtual pipeline.", icon: <Flame className="h-5 w-5" />,     color: "#059669" },
     { num: "03", label: "EV Charging",         desc: "Electrify with the holder of Egypt's first private EV-charging licence — depot, destination and en-route AC/DC charging, end-to-end.", icon: <Zap className="h-5 w-5" />,       color: "#7c3aed" },
-    { num: "04", label: "Waqood Smart System", desc: "See and control the whole fleet from one screen — fuel, CNG and EV data in a single dashboard.",                                       icon: <BarChart2 className="h-5 w-5" />, color: "#0369a1" },
+    { num: "04", label: "Waqood Smart System", desc: "See and control the whole fleet from one screen — TAQA's EnerTech platform that digitalizes fueling, spend and control.",               icon: <BarChart2 className="h-5 w-5" />, color: "#0369a1" },
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
@@ -642,9 +651,9 @@ function WhyOnePartnerSlide() {
   const pillars = [
     { label: "One SLA",                     desc: "A single service-level agreement governs fuel, gas, conversion, charging and Waqood — one uptime guarantee, one renewal." },
     { label: "One Communication Point",     desc: "A single account team and 24/7 hotline — no chasing multiple contractors." },
-    { label: "One Commercial Relationship", desc: "Consolidated billing, aligned contract terms and a single negotiation." },
+    { label: "One Commercial Relationship", desc: "Consolidated billing, aligned contract terms and a single negotiation instead of six separate procurement cycles." },
     { label: "One Engineering Standard",    desc: "Solutions designed to interoperate — shared accounts, shared monitoring." },
-    { label: "One Accountable Owner",       desc: "End-to-end responsibility removes interface risk." },
+    { label: "One Accountable Owner",       desc: "End-to-end responsibility removes interface risk and finger-pointing between specialised vendors." },
   ];
   const services = [
     { label: "Fuel Stations",       color: "#f59e0b" },
@@ -734,7 +743,7 @@ function IntegratedEconomicsSlide() {
     { label: "High, volatile fuel bill",  desc: "Diesel and petrol are the biggest cost — exposed to every oil-price spike." },
     { label: "Fragmented suppliers",      desc: "Fuel, gas, chargers and software from separate vendors — no single view." },
     { label: "Fuel leakage & fraud",      desc: "Cash, paper receipts and no per-vehicle control quietly inflate the bill." },
-    { label: "Rising carbon & city risk", desc: "100% combustion means maximum emissions and low-emission zone exposure." },
+    { label: "Rising carbon & city risk", desc: "100% combustion means maximum emissions and exposure to low-emission zones." },
   ];
   const taqaItems = [
     { label: "Up to ~40% lower fuel cost", desc: "CNG and EV displace the most expensive litres — predictable, managed pricing (illustrative)." },
@@ -875,6 +884,13 @@ function ClosingSlide() {
               CNG, conversion, charging and the Waqood platform that ties them together, financed and measured at every
               step.
             </p>
+            <div className="mt-4 rounded-xl bg-white/10 p-4 pl-3.5 ring-1 ring-white/10">
+              <p className="text-[15px] leading-snug text-white/90">
+                <span className="font-display text-[13px] font-bold uppercase tracking-[0.18em] text-[#7dd3fc]">The Next Step</span>{" "}
+                — let TAQA build your fleet's transition map: a complimentary baseline of your current fuel cost,
+                emissions and the savings available at each stage of the journey.
+              </p>
+            </div>
             <div className="mt-auto flex items-center gap-2.5 border-t border-white/10 pl-3 pt-4">
               <ArrowRight className="h-4 w-4 shrink-0 text-[#7dd3fc]" />
               <p className="font-display text-[14px] font-semibold uppercase tracking-[0.22em] text-white/60">
@@ -910,7 +926,7 @@ function ClosingSlide() {
   );
 }
 
-// ─── SLIDES Array (26 slides, 0-indexed) ─────────────────────────────────────
+// ─── SLIDES Array (27 slides, 0-indexed) ─────────────────────────────────────
 
 const fuelIcon   = <Truck className="w-5 h-5" />;
 const cngIcon    = <Flame className="w-5 h-5" />;
@@ -927,54 +943,66 @@ const SLIDES = [
   // 3
   { title: "In Numbers",                     render: () => <NumbersSlide /> },
   // 4
-  { title: "The Fleet Challenge",            render: () => <FleetChallengeSlide /> },
+  {
+    title: "Trusted By",
+    render: () => (
+      <TrustedBySlide
+        color="#0d9488"
+        heading="Clients and Partners Served Across Multiple Divisions"
+        subheading="A representative cross-section of the developers, industrials, hospitality groups and institutions TAQA Arabia serves today."
+        logos={TRUSTED_BY_LOGOS}
+      />
+    ),
+  },
   // 5
-  { title: "The Mobility Energy Pathway",    render: () => <PathwaySlide /> },
+  { title: "The Fleet Challenge",            render: () => <FleetChallengeSlide /> },
   // 6
+  { title: "The Mobility Energy Pathway",    render: () => <PathwaySlide /> },
+  // 7
   { title: "Solutions Overview",             render: () => <SolutionsOverviewSlide /> },
 
   // ── Fuel Stations ────────────────────────────────────────────────────────────
-  // 7
+  // 8
   {
     title: "Fuel Stations: Scope",
     render: () => (
       <ScopeSlide
         solutionNum={1} solutionLabel="Fuel Stations" color="#b45309" icon={fuelIcon} photo={P.fuel}
         subtitle="Keep today's fleet moving — diesel and gasoline from a nationwide TAQA-operated station network and two owned terminals."
-        taqaInvests={["National station network & depot fuelling", "Two owned terminals (Suez & Alexandria)", "Quality-assured supply chain", "Cashless fleet-card system", "Consolidated billing & reporting"]}
+        taqaInvests={["Forecourt, tanks & dispensers", "Canopy, shop & safety systems", "Automation, POS & fuel-management", "Fleet cards & telemetry", "Station financing & licensing"]}
         steps={[
-          "Fleet profiled — fuel type, volume and routes mapped.",
-          "Account activated for cashless fuelling across the network.",
-          "Depot or on-site fuelling installed where required.",
-          "Fleet refuels at TAQA/Wataniya stations or depot bowsers.",
-          "Consumption reported monthly — one consolidated bill.",
+          "TAQA secures the licence and builds the station to spec.",
+          "Tanks, dispensers and automation are installed and certified.",
+          "Fleet vehicles fuel using cards linked to each driver and vehicle.",
+          "Every litre is captured digitally against limits and rules.",
+          "TAQA supplies fuel, runs the site and reports consumption.",
         ]}
-        whatYouReceive={["Nationwide fuelling access", "Depot & on-site supply options", "Spec-compliant, quality-assured fuel", "One consolidated bill"]}
+        whatYouReceive={["Reliable fuel supply for your fleet", "172 Wataniya stations added to the network", "Controlled, card-based fuelling", "Full station operation and reporting"]}
       />
     ),
   },
-  // 8
+  // 9
   {
     title: "Fuel Stations: Value Proposition",
     render: () => (
       <ValuePropSlide
         solutionNum={1} solutionLabel="Fuel Stations" color="#b45309" icon={fuelIcon} photo={P.fuel}
         whatYouGain={[
-          { label: "Depot & On-Site Fueling",   desc: "Bulk and on-site delivery keep heavy fleets fueled at base — no detours, no queueing." },
+          { label: "Depot & On-Site Fueling",   desc: "Bulk and on-site delivery keep heavy fleets fueled at base — no detours, no queueing at the pump." },
           { label: "Spec-Compliant Supply",     desc: "Quality-assured fuel from owned terminals protects engines, warranties and resale value." },
           { label: "Predictable Fuel Spend",    desc: "Consolidated billing and consumption reporting turn fuel from a blind cost into a managed, forecastable line." },
           { label: "A Single Point of Contact", desc: "One TAQA account team handles fuel, delivery and logistics — no juggling multiple suppliers." },
         ]}
         taqaEdge={[
-          { label: "Assured Fuel Quality",     desc: "Two owned terminals and a controlled logistics chain — traceable, spec-compliant fuel." },
-          { label: "Nationwide Fueling Reach", desc: "230+ stations (TAQA + Wataniya/Quick Fuel) covering Egypt's major corridors." },
-          { label: "Fleet Card & Cashless",    desc: "Per-driver and per-vehicle fuel cards eliminate cash and paper receipts." },
-          { label: "Depot Fuelling Option",    desc: "On-site tanks and bowsers keep heavy fleets fueled without leaving the base." },
+          { label: "Assured Fuel Quality",        desc: "Two owned terminals and a controlled logistics chain mean traceable, spec-compliant fuel that protects engines." },
+          { label: "Nationwide Fueling Reach",     desc: "TAQA's own stations plus 172 newly managed Wataniya sites mean drivers refuel wherever the route goes." },
+          { label: "A Ready Transition Partner",   desc: "The partner fueling you today is the one that converts you to CNG and electrifies you tomorrow." },
+          { label: "One Cashless Account",         desc: "A single fuel account replaces cash and scattered receipts — every liter logged to the right vehicle." },
         ]}
       />
     ),
   },
-  // 9
+  // 10
   {
     title: "Fuel Stations: Timeline",
     render: () => (
@@ -996,7 +1024,7 @@ const SLIDES = [
       />
     ),
   },
-  // 10
+  // 11
   {
     title: "Fuel Stations: Track Record",
     render: () => (
@@ -1016,26 +1044,26 @@ const SLIDES = [
   },
 
   // ── Natural Gas (CNG) ────────────────────────────────────────────────────────
-  // 11
+  // 12
   {
     title: "Natural Gas (CNG): Scope",
     render: () => (
       <ScopeSlide
         solutionNum={2} solutionLabel="Natural Gas (CNG)" color="#059669" icon={cngIcon} photo={P.cng}
         subtitle="Convert the fleet you own to gas — and fuel it: licensed NGV conversion plus TAQA's CNG network and the Master Gas mobile virtual pipeline."
-        taqaInvests={["Licensed conversion workshops across Egypt", "CNG station network (86 stations)", "Master Gas mobile virtual pipeline", "SCADA-monitored dispatch", "Cylinder certification & re-testing"]}
+        taqaInvests={["CNG mother & daughter stations", "Compression & dispensing skids", "Vehicle conversion workshops", "Virtual-pipeline trailers", "Station financing"]}
         steps={[
-          "Fleet assessed — suitable vehicles, routes and payback analysed.",
-          "Bi-fuel or dedicated CNG chosen; fuelling via network or Master Gas.",
-          "Licensed conversion — cylinder fitted, safety sign-off.",
-          "Fleet switches to CNG fuelling via stations or depot.",
-          "TAQA dispatches refills, re-tests cylinders and monitors uptime.",
+          "TAQA converts fleet vehicles to run on compressed natural gas.",
+          "Gas is compressed and dispensed at TAQA CNG stations.",
+          "Where no pipeline exists, trailers supply gas as a virtual pipeline.",
+          "Drivers fuel with cards that log every fill.",
+          "TAQA maintains stations, skids and converted vehicles.",
         ]}
-        whatYouReceive={["Licensed NGV conversions", "86 CNG stations + mobile pipeline", "Per-vehicle cylinder management", "~40% fuel cost saving"]}
+        whatYouReceive={["Lower-cost CNG fuel for the fleet", "Cheaper fuel cost per kilometre", "Conversion and refuelling network", "Managed supply, even off-pipeline"]}
       />
     ),
   },
-  // 12
+  // 13
   {
     title: "Natural Gas (CNG): Value Proposition",
     render: () => (
@@ -1056,7 +1084,7 @@ const SLIDES = [
       />
     ),
   },
-  // 13
+  // 14
   {
     title: "Natural Gas (CNG): Timeline",
     render: () => (
@@ -1078,7 +1106,7 @@ const SLIDES = [
       />
     ),
   },
-  // 14
+  // 15
   {
     title: "Natural Gas (CNG): Track Record",
     render: () => (
@@ -1098,26 +1126,26 @@ const SLIDES = [
   },
 
   // ── EV Charging ──────────────────────────────────────────────────────────────
-  // 15
+  // 16
   {
     title: "EV Charging: Scope",
     render: () => (
       <ScopeSlide
         solutionNum={3} solutionLabel="EV Charging" color="#7c3aed" icon={evIcon} photo={P.ev}
         subtitle="Electrify with the holder of Egypt's first private EV-charging licence — depot, destination and en-route AC/DC charging, end-to-end."
-        taqaInvests={["AC & DC charging infrastructure", "Grid-capacity upgrades", "Energy management & load balancing", "Operator/user mobile app"]}
+        taqaInvests={["Depot AC/DC fast chargers", "Grid connection & transformer upgrades", "Smart charge-management system", "Driver app, RFID & billing", "Charger financing"]}
         steps={[
-          "TAQA surveys the depot grid, fleet duty-cycle and charging mix.",
-          "AC chargers overnight at depot; DC chargers for en-route top-ups.",
-          "Grid upgrades installed to support charging load.",
-          "App onboarded — drivers authenticate and charge.",
-          "TAQA operates, maintains and manages billing.",
+          "TAQA sizes depot and route charging to fleet duty cycles.",
+          "Chargers and grid upgrades are installed at depots and hubs.",
+          "Smart scheduling charges vehicles overnight at lowest cost.",
+          "Drivers authenticate; every kWh is logged per vehicle.",
+          "TAQA operates, maintains and reports on the network.",
         ]}
-        whatYouReceive={["Depot + en-route coverage", "Managed charging & billing app", "24/7 hotline & lifecycle O&M", "Grid-capacity secured"]}
+        whatYouReceive={["Depot and en-route charging ready to use", "Depot-to-road coverage", "Optimised, low-cost charging windows", "Maintained uptime with full reporting"]}
       />
     ),
   },
-  // 16
+  // 17
   {
     title: "EV Charging: Value Proposition",
     render: () => (
@@ -1133,12 +1161,12 @@ const SLIDES = [
           { label: "Flexible Financing Options", desc: "TAQA can fund the whole charging network under a profit-share model — zero charging capex." },
           { label: "Depot-to-Highway Coverage",  desc: "Overnight depot AC plus en-route DC fast charging — both the base and the road are covered." },
           { label: "Grid Capacity Secured",      desc: "The power-distribution arm de-risks the hardest part of EV adoption — getting power to site." },
-          { label: "One Energy Partner",         desc: "Charging integrates with CNG conversion and fuel management — single account." },
+          { label: "One Energy Partner",         desc: "Charging integrates with TAQA's fuel and CNG offering — one partner across the whole transition." },
         ]}
       />
     ),
   },
-  // 17
+  // 18
   {
     title: "EV Charging: Timeline",
     render: () => (
@@ -1160,7 +1188,7 @@ const SLIDES = [
       />
     ),
   },
-  // 18
+  // 19
   {
     title: "EV Charging: Track Record",
     render: () => (
@@ -1168,7 +1196,7 @@ const SLIDES = [
         solutionNum={3} solutionLabel="EV Charging" color="#7c3aed" icon={evIcon} photo={P.ev}
         heading="Pioneering Egypt's EV-charging rollout from the front."
         subheading="Egypt's first private EV-charging licence holder."
-        body="TAQA Power secured Egypt's first private EV-charging licence and is rolling out AC and DC charging across depot, commercial and highway locations, supported by an operator/user app and a 24/7 hotline. As Egypt's largest private power player, TAQA pairs charging with on-site solar and distribution — a complete green-mobility package."
+        body="TAQA Power secured Egypt's first private EV-charging licence and is rolling out AC and DC charging across depot, commercial and highway locations, supported by an operator/user app and a 24/7 hotline. As Egypt's largest private power distributor with 130+ chargers capacity, TAQA pairs charging with the grid, solar and storage — the complete electrification package for any fleet."
         stats={[
           { value: "1st",   label: "Private EV-charging licence in Egypt" },
           { value: "130+",  label: "EV charge points live" },
@@ -1180,26 +1208,26 @@ const SLIDES = [
   },
 
   // ── Waqood Smart System ──────────────────────────────────────────────────────
-  // 19
+  // 20
   {
     title: "Waqood Smart System: Scope",
     render: () => (
       <ScopeSlide
         solutionNum={4} solutionLabel="Waqood Smart System" color="#0369a1" icon={waqoodIcon} photo={P.digital}
-        subtitle="See and control the whole fleet from one screen — fuel, CNG and EV data in a single dashboard."
-        taqaInvests={["Waqood EnerTech platform", "Per-vehicle stickers & per-driver PINs", "Integration with fuel, CNG & EV stations", "Real-time fraud alerts", "Consolidated analytics & billing"]}
+        subtitle="See and control the whole fleet from one screen — TAQA's EnerTech platform that digitalizes fueling, spend and control."
+        taqaInvests={["Vehicle RFID tags & stickers", "Driver PIN & access devices", "Station-side reader integration", "Waqood platform & dashboards", "Onboarding & configuration"]}
         steps={[
-          "Vehicles and drivers are scoped and rules configured.",
-          "Vehicle stickers and per-driver PINs activated.",
-          "Fuel, CNG and EV data connected to the Waqood platform.",
-          "Single-pane dashboard goes live with consolidated billing.",
-          "Analytics, alerts and spend reviews run continuously.",
+          "Vehicles, drivers and rules are configured in the Waqood platform.",
+          "RFID stickers and driver PINs are issued and linked.",
+          "At the pump, the system verifies vehicle, driver and limit.",
+          "Only authorized fuelling within set limits is allowed.",
+          "Every transaction streams to live dashboards and reports.",
         ]}
-        whatYouReceive={["One dashboard for fuel, CNG & EV", "Per-driver PINs and daily limits", "Real-time fraud alerts", "Consolidated billing"]}
+        whatYouReceive={["Total control over fleet fuelling", "Every litre tracked", "Real-time consumption dashboards", "Leakage and fraud designed out"]}
       />
     ),
   },
-  // 20
+  // 21
   {
     title: "Waqood Smart System: Value Proposition",
     render: () => (
@@ -1220,7 +1248,7 @@ const SLIDES = [
       />
     ),
   },
-  // 21
+  // 22
   {
     title: "Waqood Smart System: Timeline",
     render: () => (
@@ -1242,7 +1270,7 @@ const SLIDES = [
       />
     ),
   },
-  // 22
+  // 23
   {
     title: "Waqood Smart System: Track Record",
     render: () => (
@@ -1262,11 +1290,11 @@ const SLIDES = [
   },
 
   // ── Closing ──────────────────────────────────────────────────────────────────
-  // 23
-  { title: "Why One Partner",      render: () => <WhyOnePartnerSlide /> },
   // 24
-  { title: "Integrated Economics", render: () => <IntegratedEconomicsSlide /> },
+  { title: "Why One Partner",      render: () => <WhyOnePartnerSlide /> },
   // 25
+  { title: "Integrated Economics", render: () => <IntegratedEconomicsSlide /> },
+  // 26
   { title: "From Pump to Plug",    render: () => <ClosingSlide /> },
 ];
 

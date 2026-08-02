@@ -3,14 +3,18 @@ import { DeckShell } from "./DeckShell";
 const MEDIA = import.meta.env.BASE_URL + "presentations/media/";
 import {
   Flame, Zap, Droplets, Truck, Battery, Car, Sun, Globe, CheckCircle2,
-  ArrowRight, Star, MapPin,
+  ArrowRight, Star, MapPin, Wrench,
 } from "lucide-react";
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
+} from "recharts";
 import taqaLogo from "@/assets/taqa-logo.png";
 import {
   SlideStyles, Kicker, CornerWash, GhostNum, Bracket, BlueprintGrid,
-  ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide,
+  ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide, ChartTrackRecordSlide, TrustedBySlide,
   d, hideImg, lighter,
 } from "./slides";
+import { TRUSTED_BY_LOGOS } from "./trustedByLogos";
 
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
@@ -35,18 +39,19 @@ const GOLD = "#FFC10E";
 const VIOLET = "#7c3aed";
 
 // ─── Sections ────────────────────────────────────────────────────────────────
+// 37 slides (0-indexed). "Trusted By" is new — inserted after "In Numbers".
 
 const SECTIONS = [
-  { id: "intro",       label: "Introduction",       color: "#7c3aed", slides: [0,1,2,3] },
-  { id: "overview",    label: "Solutions Overview",  color: "#7c3aed", slides: [4] },
-  { id: "cng",         label: "Mobile CNG",          color: "#E68A00", slides: [5,6,7,8] },
-  { id: "electricity", label: "Electricity",         color: "#d97706", slides: [9,10,11,12] },
-  { id: "water",       label: "Water",               color: "#0095C8", slides: [13,14,15,16] },
-  { id: "gas",         label: "Gas Distribution",    color: "#009045", slides: [17,18,19,20] },
-  { id: "diesel",      label: "Diesel Rental",       color: "#6B6B6B", slides: [21,22,23,24] },
-  { id: "ev",          label: "EV Chargers",         color: "#7c3aed", slides: [25,26,27,28] },
-  { id: "solar",       label: "Solar PV",            color: "#16a34a", slides: [29,30,31,32] },
-  { id: "closing",     label: "Closing",             color: "#002060", slides: [33,34,35] },
+  { id: "intro",       label: "Introduction",       color: "#7c3aed", slides: [0,1,2,3,4] },
+  { id: "overview",    label: "Solutions Overview",  color: "#7c3aed", slides: [5] },
+  { id: "cng",         label: "Mobile CNG",          color: "#E68A00", slides: [6,7,8,9] },
+  { id: "electricity", label: "Electricity",         color: "#d97706", slides: [10,11,12,13] },
+  { id: "water",       label: "Water",               color: "#0095C8", slides: [14,15,16,17] },
+  { id: "gas",         label: "Gas Distribution",    color: "#009045", slides: [18,19,20,21] },
+  { id: "diesel",      label: "Diesel Rental",       color: "#6B6B6B", slides: [22,23,24,25] },
+  { id: "ev",          label: "EV Chargers",         color: "#7c3aed", slides: [26,27,28,29] },
+  { id: "solar",       label: "Solar PV",            color: "#16a34a", slides: [30,31,32,33] },
+  { id: "closing",     label: "Closing",             color: "#002060", slides: [34,35,36] },
 ];
 
 const SOLUTION_CHIPS: { s: string; c: string }[] = [
@@ -145,14 +150,14 @@ function CoverSlide() {
   );
 }
 
-// ─── Slide 1: About ───────────────────────────────────────────────────────────
+// ─── Slide 1: Who We Are ──────────────────────────────────────────────────────
 
 function AboutSlide() {
   const divisions = [
-    { label: "Gas",       icon: <Flame className="h-5 w-5" />,    desc: "Distribution, EPC & virtual pipeline",   color: "#E68A00" },
-    { label: "Power",     icon: <Zap className="h-5 w-5" />,      desc: "MV/LV distribution, generation & solar", color: "#d97706" },
-    { label: "Petroleum", icon: <Truck className="h-5 w-5" />,    desc: "Mobile CNG & fuel retail",               color: "#7c3aed" },
-    { label: "Water",     icon: <Droplets className="h-5 w-5" />, desc: "Desalination & treatment",               color: "#0095C8" },
+    { label: "Gas",       icon: <Flame className="h-5 w-5" />,    desc: "Distribution, EPC & mobile CNG/LNG",     color: "#E68A00" },
+    { label: "Power",     icon: <Zap className="h-5 w-5" />,      desc: "Generation (+1,600 MVA), solar & EV",    color: "#d97706" },
+    { label: "Petroleum", icon: <Truck className="h-5 w-5" />,    desc: "Oil-marketing stations & fuel logistics", color: "#7c3aed" },
+    { label: "Water",     icon: <Droplets className="h-5 w-5" />, desc: "Desalination & solar-powered treatment",  color: "#0095C8" },
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
@@ -167,7 +172,7 @@ function AboutSlide() {
             <Kicker color={VIOLET}>TAQA Arabia · Who We Are</Kicker>
           </div>
           <h2 className="sx-up mt-5 font-display text-[30px] font-bold leading-[1.15] tracking-tight text-[#002060]" style={d(60)}>
-            Egypt's leading integrated energy infrastructure developer — a true one-stop-shop for residential utilities
+            A World of Energy, Delivered End-to-End
           </h2>
           <div
             className="sx-up mt-4 h-[3px] w-14 rounded-full"
@@ -181,8 +186,16 @@ function AboutSlide() {
           <p className="sx-up mt-4 text-[17px] leading-relaxed text-slate-600" style={d(220)}>
             For a residential developer, that means{" "}
             <strong className="font-semibold text-[#002060]">one accredited partner</strong> can deliver gas, electricity,
-            water, back-up power and EV charging — under a single SLA, with one point of contact.
+            water, back-up power and EV charging — under a single relationship.
           </p>
+          <div className="sx-up mt-5 flex flex-wrap gap-2" style={d(260)}>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 ring-1 ring-black/10 shadow-sm">
+              <CheckCircle2 className="h-3.5 w-3.5 text-[#7c3aed]" /> Active member of the International Gas Union (IGU)
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 ring-1 ring-black/10 shadow-sm">
+              <CheckCircle2 className="h-3.5 w-3.5 text-[#7c3aed]" /> Accredited by the IGEM
+            </span>
+          </div>
         </div>
 
         {/* Right — photo + divisions */}
@@ -232,15 +245,15 @@ function AboutSlide() {
 
 function RegionalSlide() {
   const metrics = [
-    { value: "8",      label: "Countries",           sub: "Egypt, GCC, Africa & Greece", hero: true },
-    { value: "4",      label: "Operating divisions", sub: "Gas · Power · Petroleum · Water" },
-    { value: "20+",    label: "Governorates",        sub: "Across Egypt" },
-    { value: "3,400+", label: "Employees",           sub: "Across all divisions" },
+    { value: "10",     label: "Countries of presence", sub: "Egypt, GCC, Africa & South Asia", hero: true },
+    { value: "4",      label: "Operating divisions",    sub: "Gas · Power · Petroleum · Water" },
+    { value: "20+",    label: "Governorates",           sub: "Industrial, residential & touristic" },
+    { value: "3,400+", label: "Employees",              sub: "Across all divisions" },
   ];
   const intl = [
-    { region: "GCC",    desc: "Partnered for Sovereign water-desalination projects." },
-    { region: "Africa", desc: "Pursuing gas and power opportunities across sub-Saharan markets." },
-    { region: "Greece", desc: "Expanding into European energy infrastructure." },
+    { region: "GCC",       desc: "Partnered for sovereign water-desalination projects." },
+    { region: "Africa",    desc: "Pursuing gas and power opportunities across sub-Saharan markets." },
+    { region: "South Asia", desc: "Extending TAQA's integrated energy model into new markets under study." },
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
@@ -253,11 +266,14 @@ function RegionalSlide() {
           <Kicker color={VIOLET}>TAQA Arabia · Regional Presence</Kicker>
         </div>
         <h2 className="sx-up mt-4 font-display text-[34px] font-bold leading-tight tracking-tight text-[#002060]" style={d(60)}>
-          A growing platform across Egypt, the GCC, Africa and Greece
+          Presence Across Africa &amp; the Middle East
         </h2>
+        <p className="sx-up mt-2 text-[15px] leading-snug text-slate-500" style={d(90)}>
+          Actual presence and markets under study across Africa &amp; the Middle East — extending TAQA's integrated energy model well beyond Egypt.
+        </p>
 
         {/* Bento metrics */}
-        <div className="mt-6 grid grid-cols-4 gap-4">
+        <div className="mt-5 grid grid-cols-4 gap-4">
           {metrics.map((m, i) => (
             <div
               key={m.label}
@@ -265,7 +281,7 @@ function RegionalSlide() {
                 m.hero ? "text-white shadow-lg" : "bg-white ring-1 ring-black/5 shadow-sm"
               }`}
               style={{
-                ...d(120 + i * 60),
+                ...d(140 + i * 60),
                 ...(m.hero ? { background: "linear-gradient(140deg, #002060 0%, #0a2f7a 100%)" } : {}),
               }}
             >
@@ -339,15 +355,15 @@ function RegionalSlide() {
 
 function NumbersSlide() {
   const heroStats = [
-    { value: "EGP 13.4bn", label: "Revenue",                   sub: "FY 2025", hero: true },
-    { value: "EGP 1.5bn",  label: "EBITDA",                    sub: "FY 2025" },
-    { value: "~7M",        label: "Customers served", sub: "Approximate, all utilities" },
+    { value: "EGP 13.4bn", label: "Revenue",                     sub: "FY 2025", hero: true },
+    { value: "EGP 18bn+",  label: "Assets under Management",     sub: "Group-wide" },
+    { value: "~6.5M",      label: "Residential gas customers",   sub: "Across concessions" },
   ];
   const divCards = [
-    { div: "GAS",            icon: <Flame className="h-4 w-4" />,    color: "#E68A00", stat: "+10,000 km, 8 governorates (15yr)" },
-    { div: "POWER",          icon: <Zap className="h-4 w-4" />,      color: "#d97706", stat: "+1,600 MVA, +150 MW" },
-    { div: "WATER",          icon: <Droplets className="h-4 w-4" />, color: "#0095C8", stat: "+47,000 m³/day, 15 locations" },
-    { div: "MOBILITY & CNG", icon: <Truck className="h-4 w-4" />,    color: "#7c3aed", stat: "86 CNG stations, 1st EV licence" },
+    { div: "GAS",            icon: <Flame className="h-4 w-4" />,    color: "#E68A00", stat: "+10,000 km network, 8 governorate concessions (15yr)" },
+    { div: "POWER",          icon: <Zap className="h-4 w-4" />,      color: "#d97706", stat: "+1,600 MVA distribution, +150 MW generation" },
+    { div: "WATER",          icon: <Droplets className="h-4 w-4" />, color: "#0095C8", stat: "+47,000 m³/day desalination, 15 operational locations" },
+    { div: "MOBILITY & CNG", icon: <Truck className="h-4 w-4" />,    color: "#7c3aed", stat: "300 total stations, 1st private EV-charging license" },
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
@@ -426,12 +442,16 @@ function NumbersSlide() {
             </div>
           ))}
         </div>
+
+        <p className="sx-in mt-4 text-center font-display text-[14px] font-semibold uppercase tracking-[0.18em] text-slate-400" style={d(700)}>
+          Founded 2006 · Listed on EGX 2023 · 3,400+ employees across all divisions
+        </p>
       </div>
     </div>
   );
 }
 
-// ─── Slide 4: Solutions Overview ──────────────────────────────────────────────
+// ─── Slide 5: Solutions Overview ──────────────────────────────────────────────
 
 function SolutionsOverviewSlide() {
   const solutions = [
@@ -439,7 +459,7 @@ function SolutionsOverviewSlide() {
     { num: "02", label: "Electricity Distribution", desc: "Turnkey MV/LV networks, smart metering and licensed lifetime O&M.",                       icon: <Zap className="h-5 w-5" />,      color: "#d97706" },
     { num: "03", label: "Water Desalination",       desc: "Reverse-osmosis plants and digitalized, solar-powered water operations.",                 icon: <Droplets className="h-5 w-5" />, color: "#0095C8" },
     { num: "04", label: "Gas Distribution",         desc: "End-to-end gas network EPC — design, build, commission and operate.",                     icon: <Flame className="h-5 w-5" />,    color: "#009045" },
-    { num: "05", label: "Diesel Rental",            desc: "Emergency & back-up power gensets on a flexible rental/OPEX model.",                      icon: <Battery className="h-5 w-5" />,  color: "#6B6B6B" },
+    { num: "05", label: "Diesel Rental",            desc: "Emergency & back-up power gensets on a flexible rental / OPEX model.",                    icon: <Battery className="h-5 w-5" />,  color: "#6B6B6B" },
     { num: "06", label: "EV Chargers",              desc: "AC, DC and golf-car charging with full-investment green-mobility services.",              icon: <Car className="h-5 w-5" />,      color: "#7c3aed" },
     { num: "07", label: "Solar PV",                 desc: "Rooftop and common-area solar PV — cutting bills, with flexible ownership.",              icon: <Sun className="h-5 w-5" />,      color: "#16a34a" },
   ];
@@ -518,15 +538,135 @@ function SolutionsOverviewSlide() {
   );
 }
 
-// ─── Slide 33: Why One Partner ────────────────────────────────────────────────
+// ─── Water Track Record — bespoke case-study slide (Soma Bay BOO transition) ──
+// Not a 25-yr 2-series comparison like the CNG/Solar charts, so ChartTrackRecordSlide
+// doesn't fit; this is a local bar-chart component styled to match its dark aesthetic.
+
+function WaterCaseStudySlide() {
+  const color = "#0095C8";
+  const chartData = [
+    { site: "TAQA (Solar + Efficient RO)", kwh: 12045000 },
+    { site: "Conventional RO", kwh: 24090000 },
+  ];
+  const stats = [
+    { value: "~USD 9M",   label: "Invested by TAQA Water under a Build-Own-Operate model" },
+    { value: "50%",       label: "Less energy consumption vs. conventional RO" },
+    { value: "~EGP 33.6M", label: "Saved per year" },
+    { value: "~10,000 t", label: "CO₂ cut annually" },
+  ];
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden font-deck"
+      style={{ background: "linear-gradient(140deg, #0c0a09 0%, #1c1917 55%, #292524 100%)" }}
+    >
+      <SlideStyles />
+      <div
+        className="absolute inset-0"
+        style={{ background: `linear-gradient(115deg, rgba(12,10,9,0.95) 0%, rgba(28,25,23,0.9) 52%, ${color}40 100%)` }}
+      />
+      <BlueprintGrid />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-48 -left-40 h-[560px] w-[560px] rounded-full"
+        style={{ background: `radial-gradient(circle, ${color}30, transparent 65%)` }}
+      />
+
+      <div className="relative z-10 flex h-full flex-col p-14">
+        <div className="sx-up flex items-center gap-3" style={d(0)}>
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
+            style={{ background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
+          >
+            <Droplets className="h-5 w-5" />
+          </div>
+          <Kicker color={color} dark>Solution 03 · Water Desalination · Case Study — Soma Bay</Kicker>
+        </div>
+
+        <h2 className="sx-up mt-5 max-w-[1120px] font-display text-[38px] font-bold leading-[1.1] tracking-tight text-white" style={d(80)}>
+          Self-Operating Desalination, Transitioned to BOO
+        </h2>
+        <div className="sx-up mt-3 flex items-start gap-2.5" style={d(140)}>
+          <Star className="mt-1 h-5 w-5 shrink-0" style={{ color: lighter(color), fill: lighter(color) }} />
+          <p className="max-w-[1020px] text-[17px] font-medium leading-snug text-white/90">
+            Reliable water security was needed, but capital was tied up in Soma Bay's core hospitality business — and conventional RO meant high running costs.
+          </p>
+        </div>
+
+        <div className="mt-6 grid min-h-0 flex-1 grid-cols-[1.35fr_1fr] gap-6">
+          {/* Chart card */}
+          <div className="sx-up relative flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white/[0.07] p-6 ring-1 ring-white/15 backdrop-blur-md" style={d(200)}>
+            <Bracket color={lighter(color)} pos="tl" />
+            <div className="mb-1 flex items-center gap-4 pl-1">
+              <span className="text-[13px] font-semibold text-white/80">Annual Power Consumption (kWh)</span>
+              <span className="ml-auto text-[12px] text-white/40">TAQA vs. Conventional RO</span>
+            </div>
+            <div className="min-h-0 flex-1 pl-1 pr-2 pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 8, right: 16, left: 4, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                  <XAxis dataKey="site" tick={{ fontSize: 12, fill: "rgba(255,255,255,0.6)" }} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: "rgba(255,255,255,0.55)" }} axisLine={false} tickLine={false} width={56}
+                    tickFormatter={(v: number) => `${(v / 1_000_000).toFixed(0)}M`} />
+                  <Tooltip
+                    contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: "rgba(255,255,255,0.6)" }}
+                    formatter={(v: number) => [`${v.toLocaleString()} kWh`, "Annual consumption"]}
+                  />
+                  <Bar dataKey="kwh" radius={[8, 8, 0, 0]} isAnimationActive={false}>
+                    {chartData.map((entry, i) => (
+                      <Cell key={entry.site} fill={i === 0 ? lighter(color) : "#64748b"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="pl-1 pt-2 text-[13px] leading-snug text-white/60">
+              Energy-efficient RO paired with solar PV cuts annual power consumption in half versus conventional RO.
+            </p>
+          </div>
+
+          {/* Body + stats */}
+          <div className="flex min-h-0 flex-col gap-4">
+            <div className="sx-up relative shrink-0 overflow-hidden rounded-2xl bg-white/[0.07] p-5 ring-1 ring-white/15 backdrop-blur-md" style={d(260)}>
+              <p className="text-[14px] leading-[1.5] text-white/90">
+                TAQA Water invested under a Build-Own-Operate model, preserving Soma Bay's capital for core
+                operations — recognised as Power &amp; Water Project of the Year and Sustainable Initiative of the
+                Year at the Big 5 Construct Egypt Impact Awards.
+              </p>
+            </div>
+            <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-3">
+              {stats.map((s, i) => (
+                <div
+                  key={s.label}
+                  className="sx-up flex flex-col justify-center rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-md"
+                  style={d(320 + i * 70)}
+                >
+                  <div
+                    className="font-display text-[24px] font-bold leading-none tracking-tight bg-clip-text text-transparent"
+                    style={{ backgroundImage: `linear-gradient(105deg, #ffffff 0%, ${lighter(color)} 100%)` }}
+                  >
+                    {s.value}
+                  </div>
+                  <div className="mt-1.5 text-[13px] leading-snug text-white/75">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Slide 34: Why One Partner ────────────────────────────────────────────────
 
 function WhyOnePartnerSlide() {
   const benefits = [
     { label: "One SLA",                     desc: "A single service-level agreement governs gas, power, water, back-up and EV — one uptime guarantee, one penalty regime, one renewal." },
-    { label: "One Communication Point",     desc: "A single account team and 24/7 hotline for every utility." },
-    { label: "One Commercial Relationship", desc: "Consolidated billing, aligned contract terms and a single negotiation instead of six separate cycles." },
-    { label: "One Engineering Standard",    desc: "Utilities designed to interoperate from day one — shared trenches, shared metering, shared monitoring." },
-    { label: "One Accountable Owner",       desc: "End-to-end responsibility removes interface risk and finger-pointing." },
+    { label: "One Communication Point",     desc: "A single account team and 24/7 hotline for every utility — no chasing five contractors when something needs attention." },
+    { label: "One Commercial Relationship", desc: "Consolidated billing, aligned contract terms and a single negotiation instead of six separate procurement cycles." },
+    { label: "One Engineering Standard",    desc: "Utilities designed to interoperate from day one — shared trenches, shared metering platform, shared monitoring." },
+    { label: "One Accountable Owner",       desc: "End-to-end responsibility removes interface risk and finger-pointing between specialised vendors." },
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
@@ -545,7 +685,7 @@ function WhyOnePartnerSlide() {
             </h2>
           </div>
           <p className="sx-up max-w-[430px] pb-1 text-right text-[16px] leading-snug text-slate-500" style={d(120)}>
-            One SLA, one communication point, one accountable operator — across every utility in the community
+            From fragmented vendors to a single operator — one SLA, one communication point, one accountable owner
           </p>
         </div>
 
@@ -610,16 +750,16 @@ function WhyOnePartnerSlide() {
   );
 }
 
-// ─── Slide 34: Bundle ─────────────────────────────────────────────────────────
+// ─── Slide 35: Bundle ─────────────────────────────────────────────────────────
 
 function BundleSlide() {
   const bundles = [
-    { combo: "Solar + Desalination",         desc: "On-site solar PV powers the RO plant — the greenest, lowest-cost water in the community.",  color: "#0095C8" },
-    { combo: "Solar + EV Charging",          desc: "Pair rooftop solar with EV chargers — charge with clean energy, strengthen the ESG story.", color: "#7c3aed" },
-    { combo: "Gas + Mobile CNG",             desc: "Mobile CNG bridges supply until the permanent gas network goes live — no community waits.",  color: "#E68A00" },
-    { combo: "Diesel Back-up + Electricity", desc: "One provider supplies both the distribution network and emergency backup — single O&M.",     color: "#6B6B6B" },
-    { combo: "EV + Distribution",            desc: "Power distribution designed for EV loads from day one — no future re-build.",                color: "#d97706" },
-    { combo: "Shared O&M & Monitoring",      desc: "One control room and field team monitor every utility — pooled spares, pooled response.",   color: "#009045" },
+    { combo: "Solar + Desalination",           desc: "On-site solar PV powers the RO plant — Egypt's first eco green desalination model, cutting both energy cost and CO₂.", color: "#0095C8" },
+    { combo: "Solar + EV Charging",            desc: "Community solar feeds EV chargers, lowering charging cost and maximising the green-mobility story for residents.",     color: "#7c3aed" },
+    { combo: "Distribution + Smart Metering",  desc: "One metering platform bills electricity and water together — shared infrastructure, single resident app.",             color: "#d97706" },
+    { combo: "Gas + Mobile CNG",               desc: "Mobile CNG bridges supply until the permanent gas network goes live — seamless handover, no diesel gap.",              color: "#E68A00" },
+    { combo: "Diesel + Distribution",          desc: "Back-up gensets integrate directly into the TAQA-built distribution network with automatic transfer — true redundancy.", color: "#6B6B6B" },
+    { combo: "Shared O&M & Monitoring",        desc: "One control room and field team monitor every utility — pooled spares, pooled response, lower unit O&M cost.",         color: "#009045" },
   ];
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
@@ -664,9 +804,9 @@ function BundleSlide() {
           style={{ ...d(520), background: "linear-gradient(120deg, #002060 0%, #1e1145 100%)" }}
         >
           <BlueprintGrid />
-          <p className="relative text-[16px] leading-snug text-white/85">
+          <p className="relative text-[15px] leading-snug text-white/85">
             <span className="font-bold text-[#FFC10E]">Sold as one SLA:</span>{" "}
-            lower combined energy cost · shared infrastructure · one billing platform · stronger ESG story · single accountable operator
+            lower combined cost · shared infrastructure &amp; trenches · one billing &amp; monitoring platform · stronger ESG / green-rating story · single accountable operator for the entire community utility backbone.
           </p>
         </div>
       </div>
@@ -674,14 +814,20 @@ function BundleSlide() {
   );
 }
 
-// ─── Slide 35: Success Story — Soma Bay ──────────────────────────────────────
+// ─── Slide 36: Success Story — Soma Bay ──────────────────────────────────────
 
 function SomaBaySlide() {
   const stats = [
-    { value: "+47,000 m³/day", label: "Desalination capacity" },
-    { value: "20 MW",          label: "Solar plant (Sharm El-Sheikh)" },
-    { value: "50,000+",        label: "People served" },
-    { value: "8,560 t",        label: "CO₂ avoided per year" },
+    { value: "50,000+", label: "People served (Red Sea Gov.)" },
+    { value: "8,560 t",  label: "Tonnes CO₂ avoided / year" },
+    { value: "50%",      label: "Less power than peer plants" },
+    { value: "2",        label: "Industry awards won" },
+  ];
+  const combined = [
+    { label: "Solar PV",           icon: <Sun className="h-4 w-4" /> },
+    { label: "Power Distribution", icon: <Zap className="h-4 w-4" /> },
+    { label: "Water Desalination", icon: <Droplets className="h-4 w-4" /> },
+    { label: "Smart O&M",          icon: <Wrench className="h-4 w-4" /> },
   ];
   return (
     <div
@@ -723,22 +869,33 @@ function SomaBaySlide() {
         <div className="sx-up mt-3 flex items-start gap-2.5" style={d(130)}>
           <Star className="mt-1 h-5 w-5 shrink-0 text-[#FFC10E]" style={{ fill: GOLD }} />
           <p className="text-[19px] font-medium leading-snug text-[#FFC10E]">
-            Egypt's most celebrated eco-resort — powered by the TAQA one-stop-shop
+            Egypt's first &amp; largest eco solar-powered desalination plant
           </p>
         </div>
 
-        <div className="mt-6 grid min-h-0 flex-1 grid-cols-[1fr_430px] gap-6">
+        <div className="mt-5 grid min-h-0 flex-1 grid-cols-[1fr_430px] gap-6">
           {/* Narrative glass card */}
           <div className="sx-up relative flex flex-col justify-center overflow-hidden rounded-2xl bg-white/[0.07] p-8 ring-1 ring-white/15 backdrop-blur-md" style={d(190)}>
             <Bracket color="#a78bfa" pos="tl" />
-            <p className="pl-3 text-[18px] leading-[1.7] text-white/90">
-              At Soma Bay on the Red Sea, TAQA Arabia delivers the full integrated utility stack: Egypt's first eco
-              solar-powered desalination plant, an MV/LV distribution network, and EV charging — all under one SLA.
+            <p className="pl-3 text-[18px] leading-[1.65] text-white/90">
+              At Soma Bay on the Red Sea, TAQA Arabia integrated solar generation, power distribution and
+              reverse-osmosis desalination into a single, renewable-powered utility system — using technology that
+              consumes 50% less power than its peers.
             </p>
-            <p className="mt-4 pl-3 text-[18px] leading-[1.7] text-white/90">
-              The result: a landmark resort that runs on renewable energy, serves 50,000+ people with guaranteed-quality
-              water, and sets the benchmark for sustainable touristic development in Egypt.
+            <p className="mt-4 pl-3 text-[18px] leading-[1.65] text-white/90">
+              It is the clearest proof of the bundled, one-SLA model serving a residential and touristic destination.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2 pl-3">
+              {combined.map(c => (
+                <span
+                  key={c.label}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[14px] font-semibold text-white/90 ring-1 ring-white/15"
+                >
+                  {c.icon}
+                  {c.label}
+                </span>
+              ))}
+            </div>
             <div className="mt-6 flex items-center gap-2.5 border-t border-white/10 pl-3 pt-4">
               <ArrowRight className="h-4 w-4 shrink-0 text-[#FFC10E]" />
               <p className="text-[17px] font-semibold leading-snug text-[#FFC10E]">
@@ -780,7 +937,65 @@ function SomaBaySlide() {
   );
 }
 
-// ─── SLIDES Array (36 slides, 0-indexed) ─────────────────────────────────────
+// ─── Chart data — 25-yr comparisons from the source deck ─────────────────────
+
+const CNG_VS_DIESEL = [
+  { year: "Y1", taqa: 70.0,   diesel: 100.0 },
+  { year: "Y2", taqa: 77.0,   diesel: 110.0 },
+  { year: "Y3", taqa: 84.7,   diesel: 121.0 },
+  { year: "Y4", taqa: 93.17,  diesel: 133.1 },
+  { year: "Y5", taqa: 102.49, diesel: 146.41 },
+  { year: "Y6", taqa: 112.74, diesel: 161.05 },
+  { year: "Y7", taqa: 124.01, diesel: 177.16 },
+  { year: "Y8", taqa: 136.41, diesel: 194.87 },
+  { year: "Y9", taqa: 150.05, diesel: 214.36 },
+  { year: "Y10", taqa: 165.06, diesel: 235.79 },
+  { year: "Y11", taqa: 181.56, diesel: 259.37 },
+  { year: "Y12", taqa: 199.72, diesel: 285.31 },
+  { year: "Y13", taqa: 219.69, diesel: 313.84 },
+  { year: "Y14", taqa: 241.66, diesel: 345.23 },
+  { year: "Y15", taqa: 265.82, diesel: 379.75 },
+  { year: "Y16", taqa: 292.41, diesel: 417.72 },
+  { year: "Y17", taqa: 321.65, diesel: 459.5 },
+  { year: "Y18", taqa: 353.81, diesel: 505.45 },
+  { year: "Y19", taqa: 389.19, diesel: 555.99 },
+  { year: "Y20", taqa: 428.11, diesel: 611.59 },
+  { year: "Y21", taqa: 470.92, diesel: 672.75 },
+  { year: "Y22", taqa: 518.02, diesel: 740.02 },
+  { year: "Y23", taqa: 569.82, diesel: 814.03 },
+  { year: "Y24", taqa: 626.8,  diesel: 895.43 },
+  { year: "Y25", taqa: 689.48, diesel: 984.97 },
+];
+
+const SOLAR_VS_GOV_TARIFF = [
+  { year: "Y1", taqa: 2.17,  gov: 2.55 },
+  { year: "Y2", taqa: 2.39,  gov: 2.81 },
+  { year: "Y3", taqa: 2.63,  gov: 3.09 },
+  { year: "Y4", taqa: 2.89,  gov: 3.39 },
+  { year: "Y5", taqa: 3.18,  gov: 3.73 },
+  { year: "Y6", taqa: 3.49,  gov: 4.11 },
+  { year: "Y7", taqa: 3.84,  gov: 4.52 },
+  { year: "Y8", taqa: 4.23,  gov: 4.97 },
+  { year: "Y9", taqa: 4.65,  gov: 5.47 },
+  { year: "Y10", taqa: 5.12, gov: 6.01 },
+  { year: "Y11", taqa: 5.63, gov: 6.61 },
+  { year: "Y12", taqa: 6.19, gov: 7.28 },
+  { year: "Y13", taqa: 6.81, gov: 8.0 },
+  { year: "Y14", taqa: 7.49, gov: 8.8 },
+  { year: "Y15", taqa: 8.24, gov: 9.68 },
+  { year: "Y16", taqa: 9.06, gov: 10.65 },
+  { year: "Y17", taqa: 9.97, gov: 11.72 },
+  { year: "Y18", taqa: 10.97, gov: 12.89 },
+  { year: "Y19", taqa: 12.07, gov: 14.18 },
+  { year: "Y20", taqa: 13.27, gov: 15.6 },
+  { year: "Y21", taqa: 14.6,  gov: 17.16 },
+  { year: "Y22", taqa: 16.06, gov: 18.87 },
+  { year: "Y23", taqa: 17.66, gov: 20.76 },
+  { year: "Y24", taqa: 19.43, gov: 22.83 },
+  { year: "Y25", taqa: 21.37, gov: 25.12 },
+];
+
+// ─── SLIDES Array (37 slides, 0-indexed) ─────────────────────────────────────
 
 const cngIcon    = <Truck className="w-5 h-5" />;
 const elecIcon   = <Zap className="w-5 h-5" />;
@@ -794,16 +1009,18 @@ const SLIDES = [
   // 0
   { title: "Cover", render: () => <CoverSlide /> },
   // 1
-  { title: "About TAQA Arabia", render: () => <AboutSlide /> },
+  { title: "Who We Are", render: () => <AboutSlide /> },
   // 2
   { title: "Regional Presence", render: () => <RegionalSlide /> },
   // 3
   { title: "In Numbers", render: () => <NumbersSlide /> },
   // 4
+  { title: "Trusted By", render: () => <TrustedBySlide color={VIOLET} logos={TRUSTED_BY_LOGOS} /> },
+  // 5
   { title: "Solutions Overview", render: () => <SolutionsOverviewSlide /> },
 
   // ── Mobile CNG ──────────────────────────────────────────────────────────────
-  // 5
+  // 6
   {
     title: "Mobile CNG: Scope",
     render: () => (
@@ -811,7 +1028,7 @@ const SLIDES = [
         solutionNum={1} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
         subtitle="Off-grid natural gas delivered via mobile virtual pipeline — zero infrastructure capex."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the gas you consume — little to no upfront CapEx."
-        taqaInvests={["Mother station & compression skids", "CNG/virtual-pipeline trailers", "On-site decompression & PRMS skid", "Metering, odorization & safety controls"]}
+        taqaInvests={["Mother station & compression skids", "CNG/virtual-pipeline trailers", "On-site decompression & PRMS skid", "Metering, odorization & safety controls", "BOO / BOOT asset financing"]}
         steps={[
           "Gas is compressed at a TAQA mother station to ~250 bar.",
           "CNG trailers haul it to your community as a virtual pipeline.",
@@ -823,7 +1040,7 @@ const SLIDES = [
       />
     ),
   },
-  // 6
+  // 7
   {
     title: "Mobile CNG: Value Proposition",
     render: () => (
@@ -831,20 +1048,20 @@ const SLIDES = [
         solutionNum={1} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
         whatYouGain={[
           { label: "Off-Grid Gas Supply",           desc: "Reliable natural gas to communities without pipeline access — compounds, resorts and remote developments." },
-          { label: "Cost Savings vs. Diesel & LPG", desc: "≈40% lower fuel cost than diesel; replaces LPG and electric heating." },
+          { label: "Cost Savings vs. Diesel & LPG", desc: "Lower fuel cost than diesel; replaces LPG and electric heating across the development." },
           { label: "Cleaner Emissions",             desc: "Cuts CO₂ by ~24% vs. diesel and lowers NOx & particulates — supports ESG and green-rating targets." },
-          { label: "99.5% Uptime SLA",              desc: "SCADA-monitored hot-swap replenishment guarantees uninterrupted supply to every home." },
+          { label: "Offset Diesel Quota",           desc: "Reduce reliance on diesel quotas by providing cleaner and more cost-effective fuel alternatives." },
         ]}
         taqaEdge={[
-          { label: "Flexible Delivery Approach",          desc: "BOO/BOOT or EPC via Capacity-as-a-Service — no upfront infrastructure cost." },
+          { label: "Flexible Delivery Approach",          desc: "BOO/BOOT or EPC via Capacity-as-a-Service — no upfront infrastructure cost for the community developer." },
           { label: "Nationwide Logistics Via Master Gas", desc: "A dedicated trailer fleet keeps refills on schedule across governorates." },
-          { label: "Scalable to Any Load",                desc: "Starter (500 Nm³/day) to Heavy (5,000+ Nm³/day) — scales with occupancy, bridges to grid later." },
-          { label: "Reliability & Smart O&M",             desc: "24/7 predictive maintenance and rapid-response teams." },
+          { label: "Scalable to Any Load",                desc: "Starter (550 litres/day of diesel) to Heavy (5,500+ litres/day of diesel) — scales with occupancy, bridges to grid later." },
+          { label: "Presence Across Many Governorates",   desc: "A nationwide portfolio of Mobile CNG projects extends gas access across Egypt." },
         ]}
       />
     ),
   },
-  // 7
+  // 8
   {
     title: "Mobile CNG: Timeline",
     render: () => (
@@ -867,46 +1084,54 @@ const SLIDES = [
       />
     ),
   },
-  // 8
+  // 9
   {
     title: "Mobile CNG: Track Record",
     render: () => (
-      <TrackRecordSlide
-        solutionNum={1} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
-        heading="El-Kharga — Virtual Pipeline City"
-        subheading="First Egyptian city to run entirely on natural gas"
-        body="In the New Valley Governorate — far from any fixed gas grid — TAQA Arabia became the first to run an entire city on natural gas, trucking CNG through its mobile virtual pipeline. The roll-out scales to serve up to 14,000 households at completion, proving an off-grid city can live on clean natural gas years before a physical pipeline arrives."
+      <ChartTrackRecordSlide
+        solutionNum={1} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon}
+        heading="Pioneering Mobile CNG in Egypt"
+        subheading="First company in Egypt to supply natural gas through a mobile virtual pipeline"
+        body="TAQA Arabia pioneered mobile CNG in Egypt — trucking gas via virtual pipeline to off-grid compounds."
+        data={CNG_VS_DIESEL}
+        xKey="year"
+        series={[
+          { key: "taqa", name: "TAQA CNG Price", color: "#E68A00" },
+          { key: "diesel", name: "Diesel Price", color: "#94a3b8" },
+        ]}
+        yLabel="Indicative price (EGP)"
+        valueFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${Math.round(v)}`)}
         stats={[
-          { value: "1st",          label: "First city in Egypt run on natural gas" },
-          { value: "14,000",       label: "Households served at completion" },
-          { value: "+2,350 mmscf", label: "CNG delivered per year" },
-          { value: "+10",          label: "Active mobile-CNG clients" },
+          { value: "1st",  label: "First mobile virtual pipeline gas supplier" },
+          { value: "86",   label: "CNG stations across 20 governorates" },
+          { value: "10",   label: "Existing Mobile CNG projects, incl. El-Kharga" },
+          { value: "30%",  label: "Guaranteed savings vs. current diesel price" },
         ]}
       />
     ),
   },
 
   // ── Electricity Distribution ─────────────────────────────────────────────────
-  // 9
+  // 10
   {
     title: "Electricity Distribution: Scope",
     render: () => (
       <ScopeSlide
         solutionNum={2} solutionLabel="Electricity Distribution" color="#d97706" icon={elecIcon} photo={P.electricity}
         subtitle="Turnkey distribution networks for residential developments — from power sourcing and design through licensed lifetime O&M."
-        taqaInvests={["MV/LV substations & ring-main units", "Distribution transformers", "Cabling, switchgear & protection", "Smart meters & SCADA"]}
+        taqaInvests={["MV/LV substations & ring-main units", "Distribution transformers", "Cabling, switchgear & protection", "Smart meters & SCADA", "BOO / BOOT network financing"]}
         steps={[
-          "TAQA designs the network to the community's phased load.",
-          "Substations and feeders are built and energized.",
-          "Power reaches every home and amenity at the right voltage.",
-          "Smart meters bill each unit.",
-          "24/7 monitoring and rapid response keep the community powered.",
+          "TAQA designs the network to the community's load and master plan.",
+          "Substations, transformers and cabling are built and energized.",
+          "Power is stepped down and distributed to every plot and amenity.",
+          "Smart meters record each unit consumed per household.",
+          "SCADA and a 24/7 team keep the network balanced and online.",
         ]}
-        whatYouReceive={["A licensed community power network", "Reliable supply to every unit", "Operation, metering and billing handled"]}
+        whatYouReceive={["A fully built, licensed power network", "Metered electricity to every home", "24/7 operation, faults and billing handled"]}
       />
     ),
   },
-  // 10
+  // 11
   {
     title: "Electricity Distribution: Value Proposition",
     render: () => (
@@ -915,19 +1140,19 @@ const SLIDES = [
         whatYouGain={[
           { label: "Potential New Revenue Stream", desc: "The profit-share model turns the distribution network from a cost center into recurring income for the developer." },
           { label: "Lower Resident Bills",         desc: "Demand-side management and tariff optimization reduce consumption and end-user charges." },
-          { label: "Guaranteed Power Quality",     desc: "Stable, metered, billable electricity to every unit from handover." },
+          { label: "Guaranteed Power Quality",     desc: "Stable, metered, billable electricity to every unit from handover — no reliance on stretched public utilities." },
           { label: "Future-Ready Network",         desc: "Designed for solar, storage and EV loads from day one — the community scales without re-builds." },
         ]}
         taqaEdge={[
-          { label: "Flexible Delivery Approach", desc: "EPC build, licensed O&M, or profit-share — TAQA flexes from substation to metering." },
-          { label: "Faster Time-to-Handover",    desc: "Integrated teams for power sourcing, engineering and construction." },
-          { label: "26 Residential Concessions", desc: "Deep experience in residential distribution across Egypt." },
-          { label: "24/7 Control Room",          desc: "SCADA monitoring, predictive maintenance, rapid response." },
+          { label: "Flexible Delivery Approach", desc: "Take it as EPC build, licensed O&M, or a profit-share — TAQA flexes from substation to metering." },
+          { label: "Faster Time-to-Handover",    desc: "TAQA's licensing relationships and in-house engineering compress approvals, so units energize on schedule." },
+          { label: "Single Accountable Operator", desc: "One licensed party owns sourcing, network, metering and O&M — no finger-pointing between contractors." },
+          { label: "Reliability & Smart O&M",    desc: "24/7 predictive maintenance and rapid-response teams with guaranteed SAIDI / SAIFI performance." },
         ]}
       />
     ),
   },
-  // 11
+  // 12
   {
     title: "Electricity Distribution: Timeline",
     render: () => (
@@ -949,27 +1174,27 @@ const SLIDES = [
       />
     ),
   },
-  // 12
+  // 13
   {
     title: "Electricity Distribution: Track Record",
     render: () => (
       <TrackRecordSlide
         solutionNum={2} solutionLabel="Electricity Distribution" color="#d97706" icon={elecIcon} photo={P.electricity}
-        heading="Powering residential communities across Egypt"
-        subheading="TAQA Power designs, builds and operates licensed electrical distribution networks for residential communities across Egypt, with +1,600 MVA in the distribution portfolio and 26 residential concessions"
-        body="From gated compounds to touristic resorts, TAQA brings the same turnkey discipline — grid interconnection to smart metering — to any development."
+        heading="TAQA Power: Scale, Efficiency & Yield"
+        subheading="One of Egypt's first private utilities licensed for power generation and distribution"
+        body="Anchored by major substations like 6th of October (250 MVA) and Nabq (160 MVA), TAQA Power delivers engineering, EPC, substations, grid connections and distribution networks end to end. Network operation, preventive maintenance, advanced metering and digital energy management keep supply uninterrupted, while integrated utility management and renewable-energy integration maximize asset value long-term. Trusted by tier-1 developers including LMD, Marakez, Pioneer Property and Emaar."
         stats={[
-          { value: "+1,600 MVA", label: "Distribution portfolio" },
-          { value: "26",         label: "Residential concessions" },
-          { value: "+12,000",    label: "Customers served" },
-          { value: "24/7",       label: "SCADA monitoring" },
+          { value: "+1,600 MVA", label: "Total MVA distributed across Egypt" },
+          { value: "31M m²",     label: "Area covered across different concessions" },
+          { value: "12k+",       label: "End users connected to electricity" },
+          { value: "250 MVA",    label: "6th of October substation (Nabq: 160 MVA)" },
         ]}
       />
     ),
   },
 
   // ── Water Desalination ───────────────────────────────────────────────────────
-  // 13
+  // 14
   {
     title: "Water Desalination: Scope",
     render: () => (
@@ -977,7 +1202,7 @@ const SLIDES = [
         solutionNum={3} solutionLabel="Water Desalination" color="#0095C8" icon={waterIcon} photo={P.water}
         subtitle="Reverse-osmosis plants and digitalized, solar-powered water operations."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the water you use — little to no upfront CapEx."
-        taqaInvests={["Intake & pre-treatment system", "Reverse-osmosis desalination trains", "Post-treatment & storage tanks", "Pumping, distribution & smart meters"]}
+        taqaInvests={["Intake & pre-treatment system", "Reverse-osmosis desalination trains", "Post-treatment & storage tanks", "Pumping, distribution & smart meters", "BOO / BOOT plant financing"]}
         steps={[
           "Seawater or brackish water is drawn in and pre-treated.",
           "Reverse-osmosis membranes remove salt and impurities.",
@@ -989,7 +1214,7 @@ const SLIDES = [
       />
     ),
   },
-  // 14
+  // 15
   {
     title: "Water Desalination: Value Proposition",
     render: () => (
@@ -1002,15 +1227,15 @@ const SLIDES = [
           { label: "Sustainability & ESG Impact", desc: "Solar-powered desalination, brine management and a reduced freshwater-extraction footprint." },
         ]}
         taqaEdge={[
-          { label: "Flexible Commercial Models", desc: "EPC, long-term O&M or BOO." },
-          { label: "Green-Rating Enabler",       desc: "Solar-powered RO and brine management support LEED/green-community certification." },
-          { label: "Scales With the Community",  desc: "Modular RO trains add capacity in phases, matching plant output to real occupancy growth." },
+          { label: "Flexible Commercial Models", desc: "Delivered as EPC, long-term O&M or BOO — choose the structure that fits your balance sheet." },
+          { label: "Green-Rating Enabler",       desc: "Solar-powered RO and brine management support LEED / green-community certification and ESG goals." },
+          { label: "Scales With the Community",  desc: "Minimum scale of 400 m³/day RO, with modular trains added in phases as the community grows." },
           { label: "Smart Operations & Uptime",  desc: "Real-time monitoring, leak & failure detection and predictive-maintenance dashboards." },
         ]}
       />
     ),
   },
-  // 15
+  // 16
   {
     title: "Water Desalination: Timeline",
     render: () => (
@@ -1032,34 +1257,18 @@ const SLIDES = [
       />
     ),
   },
-  // 16
-  {
-    title: "Water Desalination: Track Record",
-    render: () => (
-      <TrackRecordSlide
-        solutionNum={3} solutionLabel="Water Desalination" color="#0095C8" icon={waterIcon} photo={P.water}
-        heading="Soma Bay — Eco Solar Desalination"
-        subheading="Egypt's first & largest eco solar-powered water-desalination plant"
-        body="On the Red Sea, TAQA Water built Egypt's first green desalination facility powered entirely by renewable energy, using technology that consumes 50% less power than peers. It serves 50,000+ people in the Red Sea Governorate and cuts CO₂ by 8,560 tonnes a year."
-        stats={[
-          { value: "+47,000 m³/day", label: "Contracted desalination capacity" },
-          { value: "15",             label: "Operational water locations" },
-          { value: "50,000+",        label: "People served at Soma Bay" },
-          { value: "8,560 t",        label: "CO₂ avoided per year" },
-        ]}
-      />
-    ),
-  },
+  // 17
+  { title: "Water Desalination: Track Record", render: () => <WaterCaseStudySlide /> },
 
   // ── Gas Distribution ─────────────────────────────────────────────────────────
-  // 17
+  // 18
   {
     title: "Gas Distribution: Scope",
     render: () => (
       <ScopeSlide
         solutionNum={4} solutionLabel="Gas Distribution" color="#009045" icon={gasIcon} photo={P.pipeline}
         subtitle="End-to-end gas network EPC — design, build, commission and operate."
-        taqaInvests={["City-gate & pressure-reduction stations", "Steel & PE distribution mains", "Service lines to each home", "Domestic meters & regulators"]}
+        taqaInvests={["City-gate & pressure-reduction stations", "Steel & PE distribution mains", "Service lines to each home", "Domestic meters & regulators", "BOO / BOOT network financing"]}
         steps={[
           "TAQA secures the concession and designs the gas network.",
           "Mains and service lines are laid across the community.",
@@ -1071,7 +1280,7 @@ const SLIDES = [
       />
     ),
   },
-  // 18
+  // 19
   {
     title: "Gas Distribution: Value Proposition",
     render: () => (
@@ -1079,20 +1288,20 @@ const SLIDES = [
         solutionNum={4} solutionLabel="Gas Distribution" color="#009045" icon={gasIcon} photo={P.pipeline}
         whatYouGain={[
           { label: "Diesel & LPG Fuel-Switching",          desc: "Manage the full transition from diesel and LPG to cleaner, cheaper natural gas." },
-          { label: "Flexible Gas Sourcing — M-CNG or SNG", desc: "Where no fixed pipeline exists, gas is supplied via M-CNG or SNG — no community waits." },
-          { label: "Higher Asset Value",                   desc: "Connection to the national gas grid lifts community asset value and tenancy." },
+          { label: "Flexible Gas Sourcing — M-CNG or SNG", desc: "Where no fixed pipeline exists yet, gas is supplied via M-CNG (mobile CNG) or SNG — no community waits." },
+          { label: "Higher Asset Value",                   desc: "Connection to the national gas grid is a core industrial utility that lifts community asset value and tenancy." },
           { label: "Lower Living Costs",                   desc: "Subsidized piped natural gas is far cheaper than LPG cylinders or electric heating for residents." },
         ]}
         taqaEdge={[
-          { label: "Flexible Commercial Models",    desc: "EPC, long-term O&M or BOO." },
-          { label: "External & Internal Networks",  desc: "TAQA builds the external backbone and the internal in-compound and in-building network." },
-          { label: "One Partner Across all Phases", desc: "Single accountable party from feasibility to handover." },
-          { label: "Standards Compliance",          desc: "Aligned with IGEM, EGAS and international gas-safety standards." },
+          { label: "Flexible Commercial Models",    desc: "Delivered as EPC, long-term O&M or BOO — choose the structure that fits your balance sheet." },
+          { label: "External & Internal Networks",  desc: "TAQA builds the external distribution backbone and the internal in-compound and in-building network." },
+          { label: "One Partner Across all Phases", desc: "A single accountable party from feasibility to handover — in-house engineering arm EGUSCO builds to spec." },
+          { label: "Standards Compliance",          desc: "Aligned with IGEM, EGAS and international gas-safety standards — protects residents and de-risks approvals." },
         ]}
       />
     ),
   },
-  // 19
+  // 20
   {
     title: "Gas Distribution: Timeline",
     render: () => (
@@ -1114,27 +1323,27 @@ const SLIDES = [
       />
     ),
   },
-  // 20
+  // 21
   {
     title: "Gas Distribution: Track Record",
     render: () => (
       <TrackRecordSlide
         solutionNum={4} solutionLabel="Gas Distribution" color="#009045" icon={gasIcon} photo={P.pipeline}
-        heading="Egypt's largest private gas distribution network"
-        subheading="TAQA Gas operates one of Egypt's largest private piped-gas networks: +10,000 km of distribution mains across 8 governorates with 15-year renewable concessions"
-        body="With 66% of Egypt's private gas concessions and ~7 million customers served, TAQA is the proven gas infrastructure partner for any residential development."
+        heading="Egypt's Largest Private Gas Network"
+        subheading="Egypt's first private natural gas distributor, licensed by EGAS"
+        body="TAQA Gas delivers surveys through engineering, construction, O&M, billing and 24/7 emergency response — fully in-house, across Egypt's largest private gas pipeline network, by a wide margin. Certified to ISO 9001:2015, ISO 14001:2015 and ISO 45001:2018."
         stats={[
-          { value: "+10,000 km", label: "Network" },
-          { value: "8",          label: "Governorate concessions (15yr)" },
-          { value: "66%",        label: "Private concession share" },
-          { value: "~7M",        label: "Customers served (approx.)" },
+          { value: "+25",     label: "Exclusive governorate concessions, ensuring long-term stability" },
+          { value: "10k+ km", label: "Robust, high-pressure pipeline network" },
+          { value: "66%",     label: "Dominant market share of private gas distribution concessions in Egypt" },
+          { value: "1.9M",    label: "Powering complex residential, commercial & heavy-industry sites" },
         ]}
       />
     ),
   },
 
   // ── Diesel Rental ────────────────────────────────────────────────────────────
-  // 21
+  // 22
   {
     title: "Diesel Rental: Scope",
     render: () => (
@@ -1153,7 +1362,7 @@ const SLIDES = [
       />
     ),
   },
-  // 22
+  // 23
   {
     title: "Diesel Rental: Value Proposition",
     render: () => (
@@ -1163,18 +1372,18 @@ const SLIDES = [
           { label: "Business / Community Continuity", desc: "Instant back-up power keeps lifts, pumps, lighting and amenities running through any outage." },
           { label: "Uninterrupted Living",            desc: "Residents keep power to elevators, water pumps, security and common areas during grid failures." },
           { label: "Construction-Phase Power",        desc: "Temporary power for the build site converts seamlessly into back-up power at handover." },
-          { label: "Hands-Off Reliability",           desc: "Fully managed fuel, service, monitoring and rapid response — zero operational burden." },
+          { label: "Hands-Off Reliability",           desc: "TAQA's 24/7 O&M, remote monitoring and rapid response remove the operating burden entirely." },
         ]}
         taqaEdge={[
-          { label: "Full OPEX Model",            desc: "No genset purchase — a fixed rental per kVA, fuel and maintenance all-in." },
-          { label: "Construction to Operations", desc: "One provider from site power during build through lifetime back-up." },
-          { label: "500 kVA to 20 MVA",          desc: "Any load, any phase of development, scaled to real need." },
-          { label: "24/7 O&M & Rapid Response",  desc: "Dedicated team, remote telemetry and SLA-backed response times." },
+          { label: "Rental & OPEX Model", desc: "Rental and full-service options with guaranteed response SLAs — no capital outlay." },
+          { label: "Rapid Deployment",    desc: "Standardized gensets and skid solutions installed and commissioned fast." },
+          { label: "Flexible Capacity",   desc: "Modular sizing from 500 kVA to 20 MVA — scale up or relocate as the development grows." },
+          { label: "Bundled Transition",  desc: "Bridges to permanent gas or grid power within one partner." },
         ]}
       />
     ),
   },
-  // 23
+  // 24
   {
     title: "Diesel Rental: Timeline",
     render: () => (
@@ -1196,27 +1405,27 @@ const SLIDES = [
       />
     ),
   },
-  // 24
+  // 25
   {
     title: "Diesel Rental: Track Record",
     render: () => (
       <TrackRecordSlide
         solutionNum={5} solutionLabel="Diesel Rental" color="#6B6B6B" icon={dieselIcon} photo={P.generator}
-        heading="Captive Power — 6 Plants"
-        subheading="Owning and operating captive generation across Egypt's toughest sites"
-        body="TAQA Power owns and operates 6 captive power plants and +150 MW of contracted generation capacity through long-term agreements, including flare-to-power and combined-heat-and-power systems. The same engineering, fuel-logistics and 24/7 O&M discipline underpins TAQA's diesel back-up rental offering for residential communities."
+        heading="Distributed Diesel Generation Across Egypt"
+        subheading="Reliable diesel generator solutions for off-grid sites and business continuity during power shortages"
+        body="Gensets are rated 0.5–2 MW, right-sized to demand and scaled up simply by adding units. Fast-start units deliver dependable power for grid support, standby backup and off-grid sites, designed for heavy-duty use with guaranteed uptime and minimal maintenance. Trusted by tier-1 developers including Dina Farms."
         stats={[
-          { value: "6",              label: "Captive power plants operated" },
-          { value: "+150 MW",        label: "Contracted generation" },
-          { value: "500 kVA–20 MVA", label: "Genset sizing range" },
-          { value: "24/7",           label: "O&M and rapid response" },
+          { value: "38 MW",     label: "Diesel power installed across Egypt" },
+          { value: "0.5–2 MW",  label: "Genset size, tailored to client needs" },
+          { value: "Fast-Start", label: "Grid support, standby backup & off-grid deployment" },
+          { value: "Heavy-Duty", label: "Guaranteed uptime with minimal maintenance" },
         ]}
       />
     ),
   },
 
   // ── EV Chargers ──────────────────────────────────────────────────────────────
-  // 25
+  // 26
   {
     title: "EV Chargers: Scope",
     render: () => (
@@ -1224,7 +1433,7 @@ const SLIDES = [
         solutionNum={6} solutionLabel="EV Chargers" color="#7c3aed" icon={evIcon} photo={P.ev}
         subtitle="AC, DC and golf-car charging with full-investment green-mobility services."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the energy you charge — little to no upfront CapEx."
-        taqaInvests={["AC & DC fast-charging units", "Grid connection & upgrade works", "Energy-management & load balancing", "Payment, app & access platform"]}
+        taqaInvests={["AC & DC fast-charging units", "Grid connection & upgrade works", "Energy-management & load balancing", "Payment, app & access platform", "BOO / BOOT charger financing"]}
         steps={[
           "TAQA assesses parking, demand and available grid capacity.",
           "Chargers and any needed grid upgrades are installed.",
@@ -1236,7 +1445,7 @@ const SLIDES = [
       />
     ),
   },
-  // 26
+  // 27
   {
     title: "EV Chargers: Value Proposition",
     render: () => (
@@ -1245,19 +1454,19 @@ const SLIDES = [
         whatYouGain={[
           { label: "Full Charger Range",             desc: "AC, DC fast and golf-car chargers cover every residential and resort mobility need." },
           { label: "Future-Proof Amenity",           desc: "EV-ready parking is now a deciding factor for buyers — it differentiates and future-proofs the community." },
-          { label: "Effortless Resident Experience", desc: "App-based charging, transparent billing and a 24/7 hotline make adoption simple." },
-          { label: "Hotline & Mobile App",           desc: "24/7 TAQA hotline plus a user and operator app." },
+          { label: "Effortless Resident Experience", desc: "App-based charging, transparent billing and a 24/7 hotline make adoption simple for residents." },
+          { label: "Hotline & Mobile App",           desc: "24/7 TAQA hotline plus a user and operator app for seamless charging and management." },
         ]}
         taqaEdge={[
-          { label: "First EV License in Egypt",  desc: "TAQA holds the first private EV-charging license in the country." },
-          { label: "Lifecycle O&M & Uptime",     desc: "Ongoing operation and maintenance keep every charger available." },
-          { label: "Flexible Financing Options", desc: "TAQA invests in the chargers or profit-share model turning charging into income." },
-          { label: "Turnkey Engineering",        desc: "Site assessment, design, supply and installation delivered end-to-end." },
+          { label: "First EV License in Egypt",  desc: "TAQA holds the first private EV-charging license in the country — a genuine first-mover advantage." },
+          { label: "Lifecycle O&M & Uptime",     desc: "Ongoing operation and maintenance keep every charger available and revenue-generating." },
+          { label: "Flexible Financing Options", desc: "TAQA invests in the chargers, or a profit-share model turns charging into an income stream shared with the developer." },
+          { label: "Turnkey Engineering",        desc: "Site assessment, design, supply and installation delivered end-to-end by one partner." },
         ]}
       />
     ),
   },
-  // 27
+  // 28
   {
     title: "EV Chargers: Timeline",
     render: () => (
@@ -1279,7 +1488,7 @@ const SLIDES = [
       />
     ),
   },
-  // 28
+  // 29
   {
     title: "EV Chargers: Track Record",
     render: () => (
@@ -1299,7 +1508,7 @@ const SLIDES = [
   },
 
   // ── Solar PV ─────────────────────────────────────────────────────────────────
-  // 29
+  // 30
   {
     title: "Solar PV: Scope",
     render: () => (
@@ -1307,19 +1516,19 @@ const SLIDES = [
         solutionNum={7} solutionLabel="Solar PV" color="#16a34a" icon={solarIcon} photo={P.solar}
         subtitle="Rooftop and common-area solar PV — cutting bills, with flexible ownership."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the solar power you use — little to no upfront CapEx."
-        taqaInvests={["Rooftop & carport PV arrays", "Inverters & mounting structures", "Net-metering & connection works", "Monitoring & performance platform"]}
+        taqaInvests={["Rooftop & carport PV arrays", "Inverters & mounting structures", "Net-metering & connection works", "Monitoring & performance platform", "BOO / BOOT solar financing"]}
         steps={[
-          "TAQA studies roofs, shading and the community's energy profile.",
-          "Arrays are sized and designed for optimal yield.",
-          "Panels are installed; grid tie-in and metering completed.",
-          "Solar generation offsets common-area and resident bills.",
-          "TAQA monitors output and guarantees performance for 25+ years.",
+          "TAQA studies roofs, shading and the community's load profile.",
+          "PV arrays and inverters are installed and grid-tied.",
+          "Panels generate clean power during daylight hours.",
+          "Solar offsets common-area and household consumption.",
+          "TAQA monitors yield and maintains the system.",
         ]}
-        whatYouReceive={["Lower energy bills from day one", "Net metering and grid tie-in", "Zero-capex PPA option", "25-year performance guarantee"]}
+        whatYouReceive={["Clean on-site solar generation", "Lower common-area energy bills", "Monitored, maintained PV assets"]}
       />
     ),
   },
-  // 30
+  // 31
   {
     title: "Solar PV: Value Proposition",
     render: () => (
@@ -1340,7 +1549,7 @@ const SLIDES = [
       />
     ),
   },
-  // 31
+  // 32
   {
     title: "Solar PV: Timeline",
     render: () => (
@@ -1362,31 +1571,38 @@ const SLIDES = [
       />
     ),
   },
-  // 32
+  // 33
   {
     title: "Solar PV: Track Record",
     render: () => (
-      <TrackRecordSlide
-        solutionNum={7} solutionLabel="Solar PV" color="#16a34a" icon={solarIcon} photo={P.solar}
+      <ChartTrackRecordSlide
+        solutionNum={7} solutionLabel="Solar PV" color="#16a34a" icon={solarIcon}
         heading="Largest Solar Plant in Sharm El-Sheikh"
-        subheading="Powering a green, smart city with clean energy"
-        body="TAQA Power built the largest solar plant in Sharm El-Sheikh — 20 MW across 250,000 m² — generating over 42 GWh a year, enough clean electricity for about 6,000 hotel rooms and 30% of the Nabq region's load, delivered in a record four months. As the first national company to commercially operate a plot at the Benban solar park, TAQA brings the same utility-scale expertise to residential rooftops and community solar."
+        subheading="Powering a green, smart city with clean and cheaper energy in Sharm El-Sheikh"
+        body="TAQA Arabia built the largest solar plant in Sharm El-Sheikh, powering all of Nabq Bay — plus Soma Bay's solar PV at a 15% tariff discount."
+        data={SOLAR_VS_GOV_TARIFF}
+        xKey="year"
+        series={[
+          { key: "taqa", name: "TAQA Tariff", color: "#16a34a" },
+          { key: "gov", name: "Government (MV) Tariff", color: "#94a3b8" },
+        ]}
+        yLabel="EGP / kWh"
         stats={[
-          { value: "20 MW",    label: "Sharm El-Sheikh solar plant" },
-          { value: "42 GWh",   label: "Clean energy generated per year" },
-          { value: "≈500k t",  label: "CO₂ avoided over its lifetime" },
-          { value: "4 months", label: "Record build time" },
+          { value: "20 MW",   label: "Sharm El-Sheikh solar plant" },
+          { value: "42 GWh",  label: "Clean energy generated per year" },
+          { value: "≈500k t", label: "CO₂ avoided over its lifetime" },
+          { value: "4-6 mo",  label: "Record build time" },
         ]}
       />
     ),
   },
 
   // ── Closing ──────────────────────────────────────────────────────────────────
-  // 33
-  { title: "Why One Partner", render: () => <WhyOnePartnerSlide /> },
   // 34
-  { title: "Cross-Solution Benefits", render: () => <BundleSlide /> },
+  { title: "Why One Partner", render: () => <WhyOnePartnerSlide /> },
   // 35
+  { title: "Cross-Solution Benefits", render: () => <BundleSlide /> },
+  // 36
   { title: "Success Story: Soma Bay", render: () => <SomaBaySlide /> },
 ];
 
@@ -1396,7 +1612,7 @@ export default function ResidentialClientsNew() {
   return (
     <DeckShell
       title="Residential Clients"
-      subtitle="TAQA Arabia · Integrated Energy & Utility Solutions · Jun 2026"
+      subtitle="TAQA Arabia · Integrated Energy & Utility Solutions · Jan 2026"
       sections={SECTIONS}
       slides={SLIDES}
       pdf="residential-clients.pdf"

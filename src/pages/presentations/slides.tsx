@@ -1,5 +1,8 @@
 import type { ReactNode, SyntheticEvent } from "react";
 import { CheckCircle2, ArrowRight, Star, Factory, Truck, Gauge, HandCoins, Layers, ChevronDown } from "lucide-react";
+import {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+} from "recharts";
 import taqaLogo from "@/assets/taqa-logo.png";
 
 // ─── Shared solution-slide design system ─────────────────────────────────────
@@ -608,6 +611,183 @@ export function TrackRecordSlide({ solutionNum, solutionLabel, heading, subheadi
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ChartTrackRecordSlide — dark "moment" slide with a real cost-comparison chart ──
+
+export interface ChartSeriesDef { key: string; name: string; color: string; }
+export interface ChartTrackProps {
+  solutionNum: number;
+  solutionLabel: string;
+  heading: string;
+  subheading: string;
+  body: string;
+  color: string;
+  icon: ReactNode;
+  /** Rows keyed by xKey plus each series' key, e.g. { year: "Y1", taqa: 4.37, diesel: 10.0 }. */
+  data: Record<string, number | string>[];
+  xKey: string;
+  series: [ChartSeriesDef, ChartSeriesDef];
+  yLabel: string;
+  valueFormatter?: (v: number) => string;
+  stats: TrackStat[];
+}
+
+/** Proven-track-record slide whose evidence is a real 2-series recharts line chart
+    (e.g. TAQA tariff vs. diesel over 25 years) instead of a stat-only bento. */
+export function ChartTrackRecordSlide({
+  solutionNum, solutionLabel, heading, subheading, body, color, icon, data, xKey, series, yLabel,
+  valueFormatter = (v) => v.toLocaleString(undefined, { maximumFractionDigits: 1 }), stats,
+}: ChartTrackProps) {
+  const tickColor = "rgba(255,255,255,0.55)";
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden font-deck"
+      style={{ background: "linear-gradient(140deg, #0c0a09 0%, #1c1917 55%, #292524 100%)" }}
+    >
+      <SlideStyles />
+      <div
+        className="absolute inset-0"
+        style={{ background: `linear-gradient(115deg, rgba(12,10,9,0.95) 0%, rgba(28,25,23,0.9) 52%, ${color}40 100%)` }}
+      />
+      <BlueprintGrid />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-48 -left-40 h-[560px] w-[560px] rounded-full"
+        style={{ background: `radial-gradient(circle, ${color}30, transparent 65%)` }}
+      />
+
+      <div className="relative z-10 flex h-full flex-col p-14">
+        <div className="sx-up flex items-center gap-3" style={d(0)}>
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
+            style={{ background: `linear-gradient(135deg, ${color}, ${lighter(color)})` }}
+          >
+            {icon}
+          </div>
+          <Kicker color={color} dark>
+            Solution {String(solutionNum).padStart(2, "0")} · {solutionLabel} · Proven Track Record
+          </Kicker>
+        </div>
+
+        <h2 className="sx-up mt-5 max-w-[1120px] font-display text-[38px] font-bold leading-[1.1] tracking-tight text-white" style={d(80)}>
+          {heading}
+        </h2>
+        <div className="sx-up mt-3 flex items-start gap-2.5" style={d(140)}>
+          <Star className="mt-1 h-5 w-5 shrink-0" style={{ color: lighter(color), fill: lighter(color) }} />
+          <p className="max-w-[1020px] text-[17px] font-medium leading-snug text-white/90">{subheading}</p>
+        </div>
+
+        <div className="mt-6 grid min-h-0 flex-1 grid-cols-[1.35fr_1fr] gap-6">
+          {/* Chart card */}
+          <div className="sx-up relative flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white/[0.07] p-6 ring-1 ring-white/15 backdrop-blur-md" style={d(200)}>
+            <Bracket color={lighter(color)} pos="tl" />
+            <div className="mb-1 flex items-center gap-4 pl-1">
+              {series.map(s => (
+                <div key={s.key} className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />
+                  <span className="text-[13px] font-semibold text-white/80">{s.name}</span>
+                </div>
+              ))}
+              <span className="ml-auto text-[12px] text-white/40">{yLabel}</span>
+            </div>
+            <div className="min-h-0 flex-1 pl-1 pr-2 pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data} margin={{ top: 4, right: 8, left: -12, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                  <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: tickColor }} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} tickLine={false}
+                    interval={Math.max(0, Math.floor(data.length / 8) - 1)} />
+                  <YAxis tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} width={44}
+                    tickFormatter={(v: number) => valueFormatter(v)} />
+                  <Tooltip
+                    contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: "rgba(255,255,255,0.6)" }}
+                    formatter={(v: number, name: string) => [valueFormatter(v), name]}
+                  />
+                  {series.map(s => (
+                    <Line key={s.key} type="monotone" dataKey={s.key} name={s.name} stroke={s.color} strokeWidth={2.75} dot={false} isAnimationActive={false} />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Body + stats */}
+          <div className="flex min-h-0 flex-col gap-4">
+            <div className="sx-up relative flex-1 overflow-hidden rounded-2xl bg-white/[0.07] p-6 ring-1 ring-white/15 backdrop-blur-md" style={d(260)}>
+              <p className="text-[15px] leading-[1.6] text-white/90">{body}</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              {stats.map((s, i) => (
+                <div
+                  key={s.label}
+                  className="sx-up flex items-center justify-between rounded-2xl bg-white/10 px-5 py-3.5 ring-1 ring-white/15 backdrop-blur-md"
+                  style={d(320 + i * 70)}
+                >
+                  <div className="text-[14px] leading-snug text-white/75">{s.label}</div>
+                  <div
+                    className={`shrink-0 pl-3 font-display font-bold leading-none bg-clip-text text-transparent ${statSize(s.value)}`}
+                    style={{ backgroundImage: `linear-gradient(105deg, #ffffff 0%, ${lighter(color)} 100%)` }}
+                  >
+                    {s.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TrustedBySlide — dense client/partner logo wall ─────────────────────────
+
+export interface LogoRef { src: string; alt: string; }
+export interface TrustedByProps {
+  color: string;
+  heading?: string;
+  subheading?: string;
+  logos: LogoRef[];
+}
+
+/** Real client & partner logo wall, extracted from TAQA Arabia's own decks.
+    Uniform white cards (masks size/format inconsistency across ~60 source logos)
+    in a dense fixed grid sized for the 1280x720 canvas. */
+export function TrustedBySlide({
+  color,
+  heading = "Clients and Partners Served Across Multiple Divisions",
+  subheading = "A representative cross-section of the developers, industrials, hospitality groups and institutions TAQA Arabia serves today.",
+  logos,
+}: TrustedByProps) {
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
+      <SlideStyles />
+      <CornerWash color={color} />
+      <BlueprintGrid light />
+      <div className="relative z-10 flex h-full min-h-0 flex-col p-14">
+        <div className="sx-up" style={d(0)}><Kicker color={color}>TAQA Arabia · Trusted By</Kicker></div>
+        <h2 className="sx-up mt-4 max-w-[1080px] font-display text-[34px] font-bold leading-[1.1] tracking-tight text-[#002060]" style={d(60)}>
+          {heading}
+        </h2>
+        <p className="sx-up mt-2 max-w-[980px] text-[15px] leading-snug text-slate-500" style={d(100)}>
+          {subheading}
+        </p>
+
+        <div className="mt-5 grid min-h-0 flex-1 grid-cols-10 grid-rows-6 gap-2.5">
+          {logos.map((logo, i) => (
+            <div
+              key={logo.src}
+              className="sx-up flex items-center justify-center rounded-lg bg-white p-2.5 ring-1 ring-black/[0.06] shadow-sm"
+              style={d(140 + Math.min(i, 40) * 6)}
+            >
+              <img src={logo.src} alt={logo.alt} loading="lazy" onError={hideImg} className="max-h-full max-w-full object-contain" />
+            </div>
+          ))}
         </div>
       </div>
     </div>

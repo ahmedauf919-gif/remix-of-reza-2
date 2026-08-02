@@ -4,13 +4,18 @@ const MEDIA = import.meta.env.BASE_URL + "presentations/media/";
 import type { CSSProperties } from "react";
 import {
   Flame, Zap, Droplets, Truck, Battery, Globe, CheckCircle2, SunMedium,
-  ArrowRight, MapPin,
+  ArrowRight, MapPin, Fuel, Route,
 } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.png";
 import {
   SlideStyles, Kicker, CornerWash, Bracket, BlueprintGrid, ColHead,
-  ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide, d, hideImg, lighter,
+  ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide, TrustedBySlide, ChartTrackRecordSlide,
+  d, hideImg, lighter,
 } from "./slides";
+import { TRUSTED_BY_LOGOS } from "./trustedByLogos";
+// NOTE: TrustedBySlide, ChartTrackRecordSlide and TRUSTED_BY_LOGOS are the new shared
+// components this deck must now use for its "Trusted By" and chart-based track-record
+// slides — see the task brief. Do not remove these imports.
 
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
@@ -128,15 +133,15 @@ function PhotoCard({ src, className = "" }: { src: string; className?: string })
 // ─── Sections ─────────────────────────────────────────────────────────────────
 
 const SECTIONS = [
-  { id: "intro",     label: "Introduction",    color: GREEN,     slides: [0, 1, 2, 3] },
-  { id: "challenge", label: "The Challenge",   color: "#dc2626", slides: [4] },
-  { id: "solution",  label: "Farm Solution",   color: GREEN,     slides: [5, 6] },
-  { id: "overview",  label: "Overview",        color: GREEN,     slides: [7] },
-  { id: "water",     label: "Water Solutions", color: "#0095C8", slides: [8, 9, 10, 11] },
-  { id: "solar",     label: "Solar",           color: "#d97706", slides: [12, 13, 14, 15] },
-  { id: "battery",   label: "Battery Storage", color: "#7B35C2", slides: [16, 17, 18, 19] },
-  { id: "cng",       label: "Mobile CNG",      color: "#E68A00", slides: [20, 21, 22, 23] },
-  { id: "closing",   label: "Closing",         color: NAVY,      slides: [24, 25, 26] },
+  { id: "intro",     label: "Introduction",    color: GREEN,     slides: [0, 1, 2, 3, 4] },
+  { id: "challenge", label: "The Challenge",   color: "#dc2626", slides: [5] },
+  { id: "solution",  label: "Farm Solution",   color: GREEN,     slides: [6, 7] },
+  { id: "overview",  label: "Overview",        color: GREEN,     slides: [8] },
+  { id: "water",     label: "Water Solutions", color: "#0095C8", slides: [9, 10, 11, 12] },
+  { id: "solar",     label: "Solar",           color: "#d97706", slides: [13, 14, 15, 16] },
+  { id: "battery",   label: "Battery Storage", color: "#7B35C2", slides: [17, 18, 19, 20] },
+  { id: "cng",       label: "Mobile CNG",      color: "#E68A00", slides: [21, 22, 23, 24] },
+  { id: "closing",   label: "Closing",         color: NAVY,      slides: [25, 26, 27] },
 ];
 
 function sectionOf(slideIdx: number) {
@@ -235,7 +240,7 @@ function CoverSlide() {
 function AboutSlide() {
   const divisions = [
     { label: "Gas",       icon: <Flame className="w-5 h-5" />,    desc: "Distribution, EPC & virtual pipeline",                       color: "#E68A00" },
-    { label: "Power",     icon: <Zap className="w-5 h-5" />,      desc: "Generation & distribution, solar PV, EV",                   color: "#d97706" },
+    { label: "Power",     icon: <Zap className="w-5 h-5" />,      desc: "Generation & distribution (+1,600 MVA), solar PV, EV",      color: "#d97706" },
     { label: "Petroleum", icon: <Truck className="w-5 h-5" />,    desc: "Oil-marketing stations, lubricants",                        color: GREEN },
     { label: "Water",     icon: <Droplets className="w-5 h-5" />, desc: "Reverse-osmosis desalination, filtration, smart solar ops", color: SKY },
   ];
@@ -258,6 +263,10 @@ function AboutSlide() {
               Across four divisions — Gas, Power, Petroleum and Water — TAQA finances, builds,
               owns and operates the utility backbone of residential communities, industrial zones
               and touristic destinations.
+            </p>
+            <p className="text-[14px] text-slate-400">
+              Active member of the International Gas Union (IGU) · Accredited by the IGEM
+              (Institution of Gas Engineers &amp; Managers).
             </p>
           </div>
           <div className="sx-up mt-6 flex-1 min-h-0" style={d(200)}>
@@ -294,15 +303,10 @@ function AboutSlide() {
 
 function RegionalSlide() {
   const metrics = [
-    { value: "8",      label: "Countries",             sub: "Egypt, GCC, Africa & Greece" },
-    { value: "4",      label: "Operating divisions",   sub: "Gas · Power · Petroleum · Water" },
-    { value: "20+",    label: "Governorates in Egypt", sub: "Full customer spectrum" },
-    { value: "3,400+", label: "Employees",             sub: "Across all divisions" },
-  ];
-  const regions = [
-    { name: "GCC",    desc: "Partnered with Al Ghaneim & WETICO for Sovereign water-desalination projects." },
-    { name: "Africa", desc: "Pursuing gas and power opportunities across sub-Saharan markets." },
-    { name: "Greece", desc: "Expanding into European energy infrastructure." },
+    { value: "10",     label: "Countries of presence",  sub: "Egypt, GCC, Africa & South Asia" },
+    { value: "4",      label: "Operating divisions",    sub: "Gas · Power · Petroleum · Water" },
+    { value: "20+",    label: "Governorates in Egypt",  sub: "Industrial, residential & touristic" },
+    { value: "3,400+", label: "Employees",              sub: "Across all divisions" },
   ];
   const customers = [
     "Agricultural farms & agribusiness",
@@ -314,7 +318,7 @@ function RegionalSlide() {
     <LightSlide color={GREEN}>
       <div className="sx-up" style={d(0)}><Kicker color={GREEN}>TAQA Arabia · Regional Presence</Kicker></div>
       <h2 className="sx-up mt-4 max-w-[1020px] font-display text-[38px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
-        A growing platform across Egypt, the GCC, Africa and Greece
+        Presence Across Africa &amp; the Middle East
       </h2>
 
       {/* Metric strip */}
@@ -332,7 +336,7 @@ function RegionalSlide() {
       </div>
 
       <div className="mt-5 flex-1 min-h-0 grid grid-cols-2 gap-5">
-        {/* International expansion */}
+        {/* Beyond Egypt */}
         <div className="sx-up min-h-0" style={d(380)}>
           <div className="relative h-full rounded-2xl bg-white p-6 ring-1 ring-black/5 shadow-sm flex flex-col overflow-hidden">
             <Bracket color={GREEN} pos="tr" />
@@ -340,17 +344,21 @@ function RegionalSlide() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg text-white" style={{ background: `linear-gradient(135deg, ${GREEN}, ${LIME})` }}>
                 <Globe className="w-4 h-4" />
               </div>
-              <h3 className="font-display text-[17px] font-bold" style={{ color: NAVY }}>International Expansion</h3>
+              <h3 className="font-display text-[17px] font-bold" style={{ color: NAVY }}>Reach &amp; Scale</h3>
             </div>
-            <div className="flex-1 flex flex-col justify-between gap-2.5">
-              {regions.map(r => (
-                <div key={r.name} className="flex items-start gap-3 rounded-xl p-3" style={{ background: GREEN + "0A" }}>
-                  <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: GREEN }} />
-                  <p className="text-[16px] leading-snug text-slate-600">
-                    <span className="font-bold" style={{ color: NAVY }}>{r.name}</span> — {r.desc}
-                  </p>
-                </div>
-              ))}
+            <div className="flex-1 flex flex-col justify-center gap-4">
+              <p className="text-[17px] leading-relaxed text-slate-600">
+                Actual presence and markets under study across Africa &amp; the Middle East —
+                extending TAQA's integrated energy model well beyond Egypt.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {["Egypt", "GCC", "Africa", "South Asia"].map(r => (
+                  <span key={r} className="inline-flex items-center gap-2 rounded-full px-3.5 h-8 text-[15px] font-semibold" style={{ background: GREEN + "0F", color: "#14532d" }}>
+                    <MapPin className="w-3.5 h-3.5" style={{ color: GREEN }} />
+                    {r}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -365,7 +373,7 @@ function RegionalSlide() {
             <Bracket color={GOLD} pos="br" />
             <h3 className="relative font-display text-[17px] font-bold mb-2.5" style={gt(GOLD, "#ffe08a")}>Geographic Footprint</h3>
             <p className="relative text-[16px] text-white/85 leading-snug mb-3.5">
-              Concessions in 8 Egyptian governorates renewed for 15 years. TAQA serves the full spectrum of customer types:
+              20+ governorates in Egypt. TAQA serves the full spectrum of customer types:
             </p>
             <div className="relative flex-1 flex flex-col justify-between">
               {customers.map(c => (
@@ -385,72 +393,90 @@ function RegionalSlide() {
 // ─── Slide 3: In Numbers ──────────────────────────────────────────────────────
 
 function NumbersSlide() {
-  const heroes = [
-    { value: "EGP 13.4bn", label: "Revenue",       sub: "FY 2025" },
-    { value: "EGP 1.5bn",  label: "EBITDA",        sub: "FY 2025" },
-    { value: "~7M",        label: "Customers served", sub: "Approximate, all utilities" },
-  ];
-  const divisions = [
-    { div: "GAS",          icon: <Flame className="w-4 h-4" />,    stats: ["+10,000 km", "8 governorates, 15yr"],    color: "#E68A00" },
-    { div: "POWER",        icon: <Zap className="w-4 h-4" />,      stats: ["+1,600 MVA", "+150 MW"],                 color: "#d97706" },
-    { div: "WATER",        icon: <Droplets className="w-4 h-4" />, stats: ["+47,000 m³/day", "15 locations"],        color: SKY },
-    { div: "MOBILITY/CNG", icon: <Truck className="w-4 h-4" />,    stats: ["86 stations", "1st private EV licence"], color: "#7B35C2" },
-  ];
+  const groupA = {
+    title: "Gas + Power",
+    color: "#E68A00",
+    icons: [<Flame key="f" className="w-4 h-4" />, <Zap key="z" className="w-4 h-4" />],
+    stats: [
+      { value: "EGP 13.4bn", label: "Revenue — FY 2025" },
+      { value: "+10,000 km", label: "Gas network" },
+      { value: "8",          label: "Governorate concessions (15-yr)" },
+      { value: "+1,600 MVA", label: "Distribution" },
+      { value: "+150 MW",    label: "Generation capacity" },
+      { value: "EGP 18bn+",  label: "Assets under Management" },
+    ],
+  };
+  const groupB = {
+    title: "Water + Mobility & CNG",
+    color: SKY,
+    icons: [<Droplets key="d" className="w-4 h-4" />, <Truck key="t" className="w-4 h-4" />],
+    stats: [
+      { value: "~6.5M",           label: "Residential gas customers" },
+      { value: "+47,000 m³/day",  label: "Desalination" },
+      { value: "15",              label: "Operational locations" },
+      { value: "300",             label: "Total stations" },
+      { value: "1st",             label: "Private EV-charging licence" },
+    ],
+  };
+  const groups = [groupA, groupB];
   return (
     <LightSlide color={GREEN}>
       <div className="sx-up" style={d(0)}><Kicker color={GREEN}>TAQA Arabia · In Numbers</Kicker></div>
       <h2 className="sx-up mt-4 max-w-[1040px] font-display text-[38px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
         The scale behind a single integrated energy partner — FY 2025
       </h2>
+      <p className="sx-up mt-2 font-display text-[14px] font-bold uppercase tracking-[0.2em]" style={{ ...d(90), color: GREEN }}>
+        The Group at a Glance
+      </p>
 
-      {/* Hero financials */}
-      <div className="mt-7 grid grid-cols-3 gap-4">
-        {heroes.map((m, idx) => (
-          <div key={m.label} className="sx-up" style={d(120 + idx * 70)}>
+      {/* Group bento */}
+      <div className="mt-5 flex-1 min-h-0 grid grid-cols-2 gap-5">
+        {groups.map((g, gi) => (
+          <div key={g.title} className="sx-up min-h-0" style={d(160 + gi * 80)}>
             <div
-              className="relative overflow-hidden rounded-2xl p-6 text-white shadow-lg"
-              style={{ background: "linear-gradient(135deg, #04150c 0%, #0c2f1a 70%, #14532d 100%)" }}
+              className="relative h-full overflow-hidden rounded-2xl p-6 text-white shadow-lg flex flex-col"
+              style={{ background: "linear-gradient(140deg, #04150c 0%, #0c2f1a 65%, #14532d 100%)" }}
             >
               <BlueprintGrid />
               <div
                 aria-hidden
                 className="absolute -right-10 -top-14 h-40 w-40 rounded-full pointer-events-none"
-                style={{ background: "radial-gradient(circle, rgba(132,204,22,0.22), transparent 65%)" }}
+                style={{ background: `radial-gradient(circle, ${g.color}33, transparent 65%)` }}
               />
-              <div className="relative font-display text-[36px] font-bold leading-none" style={gt("#a3e635", "#fde047")}>{m.value}</div>
-              <div className="relative mt-2 text-[17px] font-semibold text-white/95">{m.label}</div>
-              <div className="relative text-[14px] text-white/60">{m.sub}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Division bento */}
-      <div className="mt-5 flex-1 min-h-0 grid grid-cols-4 gap-4">
-        {divisions.map((dv, idx) => (
-          <div key={dv.div} className="sx-up min-h-0" style={d(360 + idx * 60)}>
-            <div className="relative h-full overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-sm flex flex-col">
-              <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${dv.color}, ${tone(dv.color)})` }} />
-              <div className="flex items-center gap-2.5 mb-4">
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm"
-                  style={{ background: `linear-gradient(135deg, ${dv.color}, ${tone(dv.color)})` }}
-                >
-                  {dv.icon}
+              <div className="relative flex items-center gap-2.5 mb-4">
+                <div className="flex items-center -space-x-1.5">
+                  {g.icons.map((ic, i) => (
+                    <div
+                      key={i}
+                      className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm ring-2 ring-[#0c2f1a]"
+                      style={{ background: `linear-gradient(135deg, ${g.color}, ${tone(g.color)})` }}
+                    >
+                      {ic}
+                    </div>
+                  ))}
                 </div>
-                <span className="font-display text-[16px] font-bold tracking-tight" style={{ color: NAVY }}>{dv.div}</span>
+                <span className="font-display text-[19px] font-bold tracking-tight" style={gt("#ffffff", tone(g.color))}>{g.title}</span>
               </div>
-              <div className="space-y-2.5">
-                {dv.stats.map(s => (
-                  <div key={s} className="flex items-start gap-2.5">
-                    <span className="mt-[8px] h-2 w-2 rotate-45 shrink-0" style={{ background: dv.color }} />
-                    <span className="text-[17px] font-semibold text-slate-700 leading-snug">{s}</span>
+              <div className="relative grid flex-1 grid-cols-2 gap-x-4 gap-y-3 content-center">
+                {g.stats.map(s => (
+                  <div key={s.label} className="flex flex-col">
+                    <span className="font-display text-[24px] font-bold leading-none" style={gt("#a3e635", "#fde047")}>{s.value}</span>
+                    <span className="mt-1.5 text-[14px] leading-snug text-white/75">{s.label}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="sx-up mt-4" style={d(360)}>
+        <div
+          className="rounded-2xl px-5 py-3 text-center text-[15px] font-semibold"
+          style={{ background: GREEN + "0D", boxShadow: `inset 0 0 0 1px ${GREEN}26`, color: "#14532d" }}
+        >
+          Founded 2006 · Listed on EGX 2023 · 3,400+ employees across all divisions
+        </div>
       </div>
     </LightSlide>
   );
@@ -461,49 +487,58 @@ function NumbersSlide() {
 function ChallengeSlide() {
   const pains = [
     {
-      label: "Power",
-      icon: <Zap className="w-5 h-5" />,
+      label: "Expensive Diesel Dependence",
+      icon: <Fuel className="w-5 h-5" />,
       color: "#dc2626",
-      desc: "Pivots and pumps run on diesel gensets — the biggest operating cost, volatile price, CO₂ exposure.",
+      desc: "Pivots and pumps run on diesel gensets — the single largest and most volatile cost on the farm, exposed to every fuel-price spike.",
     },
     {
-      label: "Water",
+      label: "No Pipeline, No Grid",
+      icon: <Route className="w-5 h-5" />,
+      color: "#c084fc",
+      desc: "Remote reclamation land sits far from the gas pipeline and the electricity grid, with no easy connection in sight.",
+    },
+    {
+      label: "Water Insecurity",
       icon: <Droplets className="w-5 h-5" />,
       color: SKY,
-      desc: "Groundwater depletion and poor-quality feed water threaten long-term irrigation security.",
+      desc: "Over-abstracted groundwater and unreliable supply put crop yield — and the whole investment — at risk.",
     },
     {
-      label: "Fragmentation",
-      icon: <Globe className="w-5 h-5" />,
-      color: "#c084fc",
-      desc: "Water, fuel and power come from separate suppliers with no unified view or accountability.",
+      label: "Fragile, Unmanaged Power",
+      icon: <Zap className="w-5 h-5" />,
+      color: "#f59e0b",
+      desc: "Stand-alone gensets fail, waste fuel at part-load and offer no backup — an interruption can cost an entire irrigation cycle.",
     },
   ];
   return (
     <DarkSlide photo={P.farm} tint="#dc2626">
       <div className="sx-up" style={d(0)}><Kicker color="#dc2626" dark>Agriculture · The Challenge</Kicker></div>
-      <h2 className="sx-up mt-5 max-w-[980px] font-display text-[44px] font-bold leading-[1.06] tracking-tight text-white" style={d(70)}>
-        Energy and water — the two biggest costs on any farm
+      <h2 className="sx-up mt-5 max-w-[1080px] font-display text-[40px] font-bold leading-[1.08] tracking-tight text-white" style={d(70)}>
+        Remote, off-grid agriculture is held back by costly fuel, fragile power and water insecurity
       </h2>
+      <p className="sx-up mt-2 max-w-[1000px] text-[16px] text-white/70" style={d(110)}>
+        Egypt is reclaiming millions of feddans of desert farmland — almost all of it off-grid.
+      </p>
 
-      <div className="mt-8 grid grid-cols-3 gap-5">
+      <div className="mt-6 grid grid-cols-4 gap-4">
         {pains.map((c, idx) => (
           <div key={c.label} className="sx-up" style={d(150 + idx * 65)}>
-            <div className="h-full rounded-2xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-6">
+            <div className="h-full rounded-2xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-5">
               <div
-                className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-lg"
+                className="mb-3.5 flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-lg"
                 style={{ background: `linear-gradient(135deg, ${c.color}, ${tone(c.color)})` }}
               >
                 {c.icon}
               </div>
-              <h3 className="font-display text-[19px] font-bold text-white mb-2">{c.label}</h3>
-              <p className="text-[17px] leading-relaxed text-white/85">{c.desc}</p>
+              <h3 className="font-display text-[17px] font-bold text-white mb-2 leading-tight">{c.label}</h3>
+              <p className="text-[15px] leading-relaxed text-white/85">{c.desc}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="sx-up mt-auto" style={d(380)}>
+      <div className="sx-up mt-auto" style={d(420)}>
         <div className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md ring-1 ring-white/15 p-6 pl-8">
           <Bracket color={LIME} pos="br" />
           <div aria-hidden className="absolute left-0 top-0 h-full w-[4px]" style={{ background: `linear-gradient(180deg, ${GREEN}, ${LIME})` }} />
@@ -922,14 +957,18 @@ function IntegratedEconomicsSlide() {
         </div>
       </div>
 
-      <p className="sx-up mt-3.5 text-center text-[14px] text-slate-500" style={d(360)}>
+      <p className="sx-up mt-3 text-center text-[14px] leading-snug text-slate-600" style={d(340)}>
+        <span className="font-bold" style={{ color: "#14532d" }}>The result:</span> lower and more predictable
+        energy cost, secured water, round-the-clock irrigation and a stronger ESG story — from one partner, with no capex.
+      </p>
+      <p className="sx-up mt-1 text-center text-[12px] text-slate-400" style={d(380)}>
         Figures are illustrative / market-based and depend on farm size, crop, irrigation schedule and fuel prices.
       </p>
     </LightSlide>
   );
 }
 
-// ─── Slide 26: Proven on the Ground (Closing) ─────────────────────────────────
+// ─── Slide 27: Proven on the Ground (Closing) ─────────────────────────────────
 
 function ClosingSlide() {
   const pillars = [
@@ -940,7 +979,7 @@ function ClosingSlide() {
   ];
   const stats = [
     { value: "Dina Farms", label: "Live agricultural solar project" },
-    { value: "Benban",     label: "Landmark solar development" },
+    { value: "Benban",     label: "Landmark solar project" },
     { value: "~1,000 t",   label: "CO₂/MWp/yr avoided" },
     { value: "Zero Capex", label: "Under BOO/BOOT" },
   ];
@@ -1006,16 +1045,18 @@ const SLIDES = [
   // 3
   { title: "In Numbers",                      render: () => <NumbersSlide /> },
   // 4
-  { title: "The Challenge",                   render: () => <ChallengeSlide /> },
+  { title: "Trusted By",                      render: () => <TrustedBySlide color={GREEN} logos={TRUSTED_BY_LOGOS} /> },
   // 5
-  { title: "Integrated Farm Solution",        render: () => <IntegratedSolutionSlide /> },
+  { title: "The Challenge",                   render: () => <ChallengeSlide /> },
   // 6
-  { title: "Smart Energy Mix",                render: () => <SmartEnergyMixSlide /> },
+  { title: "Integrated Farm Solution",        render: () => <IntegratedSolutionSlide /> },
   // 7
+  { title: "Smart Energy Mix",                render: () => <SmartEnergyMixSlide /> },
+  // 8
   { title: "Solutions Overview",              render: () => <SolutionsOverviewSlide /> },
 
   // ── Water Solutions ─────────────────────────────────────────────────────────
-  // 8
+  // 9
   {
     title: "Water Solutions: Scope",
     render: () => (
@@ -1025,27 +1066,26 @@ const SLIDES = [
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the water you use — little to no upfront CapEx."
         taqaInvests={[
           "Brackish/seawater RO desalination units",
-          "Pre-treatment & filtration",
+          "Pre-treatment & filtration system",
           "Storage reservoirs & pumping",
           "Irrigation distribution & smart meters",
         ]}
         steps={[
-          "TAQA studies crop water demand and source-water quality.",
-          "RO plant and pumping designed and financed.",
-          "Water is treated to irrigation standard.",
-          "Smart meters distribute and bill.",
-          "TAQA monitors quality and manages operations.",
+          "TAQA studies the farm's water source, salinity and demand.",
+          "Brackish or seawater is drawn in and pre-treated.",
+          "Reverse-osmosis units desalinate water to irrigation quality.",
+          "Treated water is stored, pumped and distributed to fields.",
+          "TAQA operates the plant and guarantees volume and quality.",
         ]}
         whatYouReceive={[
-          "Reliable irrigation water independent of public utilities",
-          "Guaranteed volume and quality",
-          "Full plant operation and maintenance",
-          "Your own water source",
+          "Reliable irrigation-grade water on demand",
+          "Independence from strained groundwater",
+          "Guaranteed volume, quality and uptime",
         ]}
       />
     ),
   },
-  // 9
+  // 10
   {
     title: "Water Solutions: Value Proposition",
     render: () => (
@@ -1066,7 +1106,7 @@ const SLIDES = [
       />
     ),
   },
-  // 10
+  // 11
   {
     title: "Water Solutions: Timeline",
     render: () => (
@@ -1088,7 +1128,7 @@ const SLIDES = [
       />
     ),
   },
-  // 11
+  // 12
   {
     title: "Water Solutions: Track Record",
     render: () => (
@@ -1108,7 +1148,7 @@ const SLIDES = [
   },
 
   // ── Solar ────────────────────────────────────────────────────────────────────
-  // 12
+  // 13
   {
     title: "Solar: Scope",
     render: () => (
@@ -1123,22 +1163,21 @@ const SLIDES = [
           "Monitoring & connection works",
         ]}
         steps={[
-          "TAQA assesses land, sun hours and pivot load.",
-          "Arrays are sized and designed for the crop mix.",
-          "Panels are installed and tied to pump controllers.",
-          "Solar powers pivots and pumps at zero marginal cost.",
-          "TAQA monitors output and dispatches per the energy plan.",
+          "TAQA assesses land, sun hours and the farm's pumping load.",
+          "PV arrays and inverters are installed near pumps and facilities.",
+          "Panels generate clean power through daylight irrigation hours.",
+          "Solar drives pumps, cold rooms and farm loads directly.",
+          "TAQA monitors yield and maintains the system.",
         ]}
         whatYouReceive={[
-          "Lowest-cost day power for pivots",
-          "Integrated with batteries and gensets",
-          "Zero-capex PPA option",
-          "25-year performance guarantee",
+          "Daytime power matched to irrigation needs",
+          "Sharp cut in diesel and grid costs",
+          "Monitored, maintained PV assets",
         ]}
       />
     ),
   },
-  // 13
+  // 14
   {
     title: "Solar: Value Proposition",
     render: () => (
@@ -1152,14 +1191,14 @@ const SLIDES = [
         ]}
         taqaEdge={[
           { label: "Flexible Financing Solutions", desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
-          { label: "Single Energy Partner",        desc: "One provider for electricity and water — solar and batteries for maximum savings." },
-          { label: "Lifecycle O&M & Guarantee",   desc: "Remote monitoring, maintenance and performance guarantees for 25+ years." },
+          { label: "Single Energy Partner",        desc: "One single utility provider for electricity and water — solar and batteries for maximum savings and utilisation." },
+          { label: "Lifecycle O&M & Guarantee",   desc: "Remote monitoring, maintenance and performance guarantees keep output high for 25+ years." },
           { label: "Egypt's Solar Pioneer",        desc: "Operating multiple solar farms and water desalination projects across Egypt." },
         ]}
       />
     ),
   },
-  // 14
+  // 15
   {
     title: "Solar: Timeline",
     render: () => (
@@ -1181,27 +1220,47 @@ const SLIDES = [
       />
     ),
   },
-  // 15
+  // 16
   {
-    title: "Solar: Track Record",
+    title: "Solar: Case Study — Dina Farms",
     render: () => (
-      <TrackRecordSlide
-        solutionNum={2} solutionLabel="Solar" color="#d97706" icon={solarIcon} photo={P.dina}
-        heading="Solar: Proven Track Record"
-        subheading="Powering one of Egypt's largest farms with renewable energy"
-        body="TAQA Arabia operates renewable-energy projects at Dina Farms — one of Egypt's largest integrated agricultural operations — alongside its landmark Benban solar developments. It is direct proof that TAQA can deploy and run solar at true agricultural scale, powering irrigation and farm operations with clean energy."
+      <ChartTrackRecordSlide
+        solutionNum={2} solutionLabel="Solar" color="#d97706" icon={solarIcon}
+        heading="Solar: Case Study — Dina Farms"
+        subheading="Powering one of Egypt's largest farms with a 7 MWp solar plant"
+        body="Farms typically run diesel gensets at ~10 EGP/kWh, rising every year. TAQA's 7 MWp solar plant for Dina Farms delivers power at a 0.054 USD/kWh tariff — saving ~6 EGP/kWh and ~89 million EGP in the first year alone."
+        xKey="year" yLabel="EGP/kWh (25 yrs)"
+        series={[
+          { key: "taqa", name: "TAQA Tariff", color: "#4ade80" },
+          { key: "diesel", name: "Diesel Generator", color: "#f87171" },
+        ]}
+        data={[
+          { year: "Y1", taqa: 4.37, diesel: 10.0 }, { year: "Y2", taqa: 4.81, diesel: 11.0 },
+          { year: "Y3", taqa: 5.29, diesel: 12.1 }, { year: "Y4", taqa: 5.82, diesel: 13.31 },
+          { year: "Y5", taqa: 6.4, diesel: 14.64 }, { year: "Y6", taqa: 7.04, diesel: 16.11 },
+          { year: "Y7", taqa: 7.74, diesel: 17.72 }, { year: "Y8", taqa: 8.52, diesel: 19.49 },
+          { year: "Y9", taqa: 9.37, diesel: 21.44 }, { year: "Y10", taqa: 10.3, diesel: 23.58 },
+          { year: "Y11", taqa: 11.33, diesel: 25.94 }, { year: "Y12", taqa: 12.47, diesel: 28.53 },
+          { year: "Y13", taqa: 13.71, diesel: 31.38 }, { year: "Y14", taqa: 15.09, diesel: 34.52 },
+          { year: "Y15", taqa: 16.6, diesel: 37.97 }, { year: "Y16", taqa: 18.25, diesel: 41.77 },
+          { year: "Y17", taqa: 20.08, diesel: 45.95 }, { year: "Y18", taqa: 22.09, diesel: 50.54 },
+          { year: "Y19", taqa: 24.3, diesel: 55.6 }, { year: "Y20", taqa: 26.73, diesel: 61.16 },
+          { year: "Y21", taqa: 29.4, diesel: 67.27 }, { year: "Y22", taqa: 32.34, diesel: 74.0 },
+          { year: "Y23", taqa: 35.57, diesel: 81.4 }, { year: "Y24", taqa: 39.13, diesel: 89.54 },
+          { year: "Y25", taqa: 43.04, diesel: 98.5 },
+        ]}
         stats={[
+          { value: "9.3B EGP", label: "Total savings over 25 years" },
           { value: "Dina Farms", label: "Live agricultural solar project" },
-          { value: "Benban",     label: "Landmark solar development" },
-          { value: "BOO/BOOT",   label: "PPA models, no farm capex" },
-          { value: "~1,000 t",   label: "CO₂ avoided/MWp/yr" },
+          { value: "BOO/BOOT", label: "PPA models, no farm capex" },
+          { value: "~1,000 t", label: "CO₂ avoided / MWp / yr" },
         ]}
       />
     ),
   },
 
   // ── Battery Storage ─────────────────────────────────────────────────────────
-  // 16
+  // 17
   {
     title: "Battery Storage: Scope",
     render: () => (
@@ -1216,22 +1275,21 @@ const SLIDES = [
           "EMS & SCADA controls",
         ]}
         steps={[
-          "TAQA sizes storage to the farm's pivot profile and solar surplus.",
-          "Batteries charge during peak solar hours.",
-          "Stored energy dispatches to pivots in the evening and early morning.",
-          "EMS optimises charge/discharge against solar and genset costs.",
-          "TAQA monitors and guarantees performance.",
+          "TAQA sizes storage to the farm's load and solar profile.",
+          "Battery units and conversion systems are installed.",
+          "Storage charges from surplus daytime solar.",
+          "It discharges to run pumps and cold storage after dark.",
+          "An energy-management system optimizes every cycle.",
         ]}
         whatYouReceive={[
-          "Solar power after sunset",
-          "Reduced diesel genset hours",
-          "24/7 irrigation uptime",
-          "EMS-optimised dispatch",
+          "Round-the-clock power from daytime solar",
+          "Backup through grid and supply gaps",
+          "Stable energy for cold-chain and pumps",
         ]}
       />
     ),
   },
-  // 17
+  // 18
   {
     title: "Battery Storage: Value Proposition",
     render: () => (
@@ -1244,15 +1302,15 @@ const SLIDES = [
           { label: "A Stacked Asset",        desc: "One system delivers solar-shifting, peak support and backup — value across multiple uses." },
         ]}
         taqaEdge={[
-          { label: "Flexible Financing Solutions", desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time." },
-          { label: "Single Energy Partner",        desc: "One provider for solar, storage and water — maximum savings and utilisation." },
-          { label: "Lifecycle O&M & Guarantee",   desc: "Remote monitoring, maintenance and performance guarantees 25+ years." },
-          { label: "Smart Energy Management",     desc: "EMS automatically optimises charge/discharge against loads, solar and fuel cost." },
+          { label: "Flexible Financing Solutions", desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
+          { label: "Single Energy Partner",        desc: "One single utility provider for electricity and water — solar and batteries for maximum savings and utilisation." },
+          { label: "Lifecycle O&M & Guarantee",   desc: "Remote monitoring, maintenance and performance guarantees keep output high for 25+ years." },
+          { label: "Smart Energy Management",     desc: "TAQA Arabia's EMS optimises charge/discharge against loads, solar and fuel cost for the lowest cost per kWh." },
         ]}
       />
     ),
   },
-  // 18
+  // 19
   {
     title: "Battery Storage: Timeline",
     render: () => (
@@ -1274,27 +1332,47 @@ const SLIDES = [
       />
     ),
   },
-  // 19
+  // 20
   {
-    title: "Battery Storage: Track Record",
+    title: "Battery Storage: Case Study",
     render: () => (
-      <TrackRecordSlide
-        solutionNum={3} solutionLabel="Battery Storage" color="#7B35C2" icon={batteryIcon} photo={P.battery}
-        heading="Battery Storage: Proven Track Record"
+      <ChartTrackRecordSlide
+        solutionNum={3} solutionLabel="Battery Storage" color="#7B35C2" icon={batteryIcon}
+        heading="Battery Storage (BESS): Case Study"
         subheading="Turning intermittent solar into round-the-clock farm power"
-        body="As Egypt's largest private power player, TAQA Arabia pairs Battery Energy Storage with its solar and distribution assets. Storage lets farms shift solar into the evening, shave peaks and secure supply — the natural next step in TAQA's integrated energy model."
+        body="TAQA pairs solar with battery storage so clients maximise savings instead of relying on diesel at 10 EGP/kWh. One client runs a 1.1 MW PV + 4 MW battery system (4-hour storage) at 4 EGP/kWh, +10% a year — saving 6 EGP/kWh and 14 million EGP in year one."
+        xKey="year" yLabel="EGP/kWh (25 yrs)"
+        series={[
+          { key: "taqa", name: "TAQA Tariff", color: "#4ade80" },
+          { key: "diesel", name: "Diesel Generator", color: "#f87171" },
+        ]}
+        data={[
+          { year: "Y1", taqa: 4.0, diesel: 10.0 }, { year: "Y2", taqa: 4.4, diesel: 11.0 },
+          { year: "Y3", taqa: 4.84, diesel: 12.1 }, { year: "Y4", taqa: 5.32, diesel: 13.31 },
+          { year: "Y5", taqa: 5.86, diesel: 14.64 }, { year: "Y6", taqa: 6.44, diesel: 16.11 },
+          { year: "Y7", taqa: 7.09, diesel: 17.72 }, { year: "Y8", taqa: 7.79, diesel: 19.49 },
+          { year: "Y9", taqa: 8.57, diesel: 21.44 }, { year: "Y10", taqa: 9.43, diesel: 23.58 },
+          { year: "Y11", taqa: 10.37, diesel: 25.94 }, { year: "Y12", taqa: 11.41, diesel: 28.53 },
+          { year: "Y13", taqa: 12.55, diesel: 31.38 }, { year: "Y14", taqa: 13.81, diesel: 34.52 },
+          { year: "Y15", taqa: 15.19, diesel: 37.97 }, { year: "Y16", taqa: 16.71, diesel: 41.77 },
+          { year: "Y17", taqa: 18.38, diesel: 45.95 }, { year: "Y18", taqa: 20.22, diesel: 50.54 },
+          { year: "Y19", taqa: 22.24, diesel: 55.6 }, { year: "Y20", taqa: 24.46, diesel: 61.16 },
+          { year: "Y21", taqa: 26.91, diesel: 67.27 }, { year: "Y22", taqa: 29.6, diesel: 74.0 },
+          { year: "Y23", taqa: 32.56, diesel: 81.4 }, { year: "Y24", taqa: 35.82, diesel: 89.54 },
+          { year: "Y25", taqa: 39.4, diesel: 98.5 },
+        ]}
         stats={[
-          { value: "Peak shaving",  label: "Cuts costly demand charges" },
-          { value: "Solar firming", label: "Day-to-night energy shift" },
-          { value: "BOO/BOOT",      label: "No client capex" },
-          { value: "24/7 EMS",      label: "Monitoring & O&M" },
+          { value: "Solar shifting", label: "Day energy used at night" },
+          { value: "Peak support", label: "Firms the power stack" },
+          { value: "BOO/BOOT", label: "No farm capex" },
+          { value: "1.3B EGP", label: "Savings over 25 years" },
         ]}
       />
     ),
   },
 
   // ── Mobile CNG ──────────────────────────────────────────────────────────────
-  // 20
+  // 21
   {
     title: "Mobile CNG: Scope",
     render: () => (
@@ -1312,7 +1390,7 @@ const SLIDES = [
           "Gas is compressed at a TAQA mother station to ~250 bar.",
           "Trailers deliver it to the farm as a virtual pipeline.",
           "On-site skids decompress and regulate to process pressure.",
-          "Metered gas fuels dryers, greenhouses and processing.",
+          "Gas fuels dryers, greenhouses and processing.",
           "TAQA tracks usage and refills ahead of demand.",
         ]}
         whatYouReceive={[
@@ -1323,7 +1401,7 @@ const SLIDES = [
       />
     ),
   },
-  // 21
+  // 22
   {
     title: "Mobile CNG: Value Proposition",
     render: () => (
@@ -1331,33 +1409,33 @@ const SLIDES = [
         solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
         whatYouGain={[
           { label: "Off-Grid Gas Supply",     desc: "Reliable natural gas to remote farms with no pipeline access, by mobile virtual pipeline." },
-          { label: "Cost Savings vs. Diesel", desc: "≈40% lower fuel cost than diesel — a major cut to the farm's biggest running expense." },
+          { label: "Cost Savings vs. Diesel", desc: "Lower fuel cost than diesel — a major cut to the farm's biggest running expense." },
           { label: "Cleaner Operations",      desc: "~24% lower CO₂ than diesel helps the farm meet tightening emissions and export requirements." },
-          { label: "99.5% Uptime SLA",        desc: "SCADA-monitored hot-swap replenishment guarantees uninterrupted gas for the gensets." },
+          { label: "Offset Diesel Quota",     desc: "Reduce reliance on diesel quotas by providing cleaner and more cost-effective fuel alternatives." },
         ]}
         taqaEdge={[
-          { label: "Master Gas Scale & Network",   desc: "TAQA's Master Gas runs Egypt's leading CNG virtual pipeline with stations across Egypt." },
-          { label: "Flexible Financing Solutions", desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time." },
-          { label: "Scalable to Any Load",         desc: "Starter (500 Nm³/day) to Heavy (5,000+ Nm³/day) — scales with the farm's gas demand." },
-          { label: "Lifecycle O&M & Guarantee",   desc: "Remote monitoring, maintenance and performance guarantees." },
+          { label: "Master Gas Scale and Network", desc: "TAQA's Master Gas runs Egypt's leading CNG virtual pipeline and has CNG stations scattered across Egypt." },
+          { label: "Flexible Financing Solutions", desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
+          { label: "Scalable to Any Load",         desc: "Starter (550 litres/day of diesel) to Heavy (5,500+ litres/day of diesel) — scales with the farm's gas demand." },
+          { label: "Nationwide Presence", desc: "Operates a nationwide portfolio of Mobile CNG projects, extending gas access and reliability across Egypt's governorates." },
         ]}
       />
     ),
   },
-  // 22
+  // 23
   {
     title: "Mobile CNG: Timeline",
     render: () => (
       <TimelineSlide
         solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
         phases={[
-          { days: "Day 0",       label: "Discovery (initial farm assessment and gas demand evaluation)" },
-          { days: "Day 1–3",     label: "Initial Contact (TAQA commercial team engagement and requirements scoping)" },
-          { days: "Day 4–7",     label: "Site Audit (technical site visit and consumption profiling)" },
-          { days: "Day 8–14",    label: "Contract (commercial terms and supply agreement finalisation)" },
-          { days: "Day 15–30",   label: "Mobilization (equipment preparation and trailer scheduling)" },
-          { days: "Day 90–120",  label: "On-Site Install (PRMS skid, metering and safety systems installed)" },
-          { days: "Day 120–200", label: "Live Gas (first gas delivered; metered supply commences)" },
+          { days: "Day 0",       label: "Discovery (lead identification & qualification)" },
+          { days: "Day 1–3",     label: "Initial Contact (NDA signed, requirement scoping)" },
+          { days: "Day 4–7",     label: "Site Audit (gas load profiling & demand curve)" },
+          { days: "Day 8–14",    label: "Contract (capacity tier, CaaS pricing)" },
+          { days: "Day 15–30",   label: "Mobilization (MEGC & PRU procured and prepared)" },
+          { days: "Day 90–120",  label: "On-Site Install (PRU adapter installed, SCADA activated)" },
+          { days: "Day 120–200", label: "Live Gas (switchover from diesel to live CNG supply)" },
         ]}
         groups={[
           { label: "DISCOVERY & AUDIT",    range: "Day 0–14" },
@@ -1367,31 +1445,52 @@ const SLIDES = [
       />
     ),
   },
-  // 23
+  // 24
   {
-    title: "Mobile CNG: Track Record",
+    title: "Mobile CNG: Case Study",
     render: () => (
-      <TrackRecordSlide
-        solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
+      <ChartTrackRecordSlide
+        solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon}
         heading="Mobile CNG: Proven Track Record"
-        subheading="Virtual Pipeline — 4 Governorates. First company in Egypt to supply natural gas through a mobile virtual pipeline."
-        body="TAQA Arabia pioneered mobile CNG in Egypt, using its network of 86 CNG stations to extend a virtual pipeline into four governorates with no fixed gas infrastructure. The same model brings clean, lower-cost gas to off-grid farms and agribusiness — fueling gensets that would otherwise burn diesel."
+        subheading="First company in Egypt to supply natural gas through a mobile virtual pipeline"
+        body="TAQA pioneered mobile CNG in Egypt — 86 stations extend a virtual pipeline into four off-grid governorates, including all of El Kharga."
+        xKey="year" yLabel="TAQA CNG vs Diesel price (25 yrs)"
+        valueFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0)}
+        series={[
+          { key: "cng", name: "TAQA CNG Price", color: "#4ade80" },
+          { key: "diesel", name: "Diesel Price", color: "#f87171" },
+        ]}
+        data={[
+          { year: "Y1", cng: 70.0, diesel: 100.0 }, { year: "Y2", cng: 77.0, diesel: 110.0 },
+          { year: "Y3", cng: 84.7, diesel: 121.0 }, { year: "Y4", cng: 93.17, diesel: 133.1 },
+          { year: "Y5", cng: 102.49, diesel: 146.41 }, { year: "Y6", cng: 112.74, diesel: 161.05 },
+          { year: "Y7", cng: 124.01, diesel: 177.16 }, { year: "Y8", cng: 136.41, diesel: 194.87 },
+          { year: "Y9", cng: 150.05, diesel: 214.36 }, { year: "Y10", cng: 165.06, diesel: 235.79 },
+          { year: "Y11", cng: 181.56, diesel: 259.37 }, { year: "Y12", cng: 199.72, diesel: 285.31 },
+          { year: "Y13", cng: 219.69, diesel: 313.84 }, { year: "Y14", cng: 241.66, diesel: 345.23 },
+          { year: "Y15", cng: 265.82, diesel: 379.75 }, { year: "Y16", cng: 292.41, diesel: 417.72 },
+          { year: "Y17", cng: 321.65, diesel: 459.5 }, { year: "Y18", cng: 353.81, diesel: 505.45 },
+          { year: "Y19", cng: 389.19, diesel: 555.99 }, { year: "Y20", cng: 428.11, diesel: 611.59 },
+          { year: "Y21", cng: 470.92, diesel: 672.75 }, { year: "Y22", cng: 518.02, diesel: 740.02 },
+          { year: "Y23", cng: 569.82, diesel: 814.03 }, { year: "Y24", cng: 626.8, diesel: 895.43 },
+          { year: "Y25", cng: 689.48, diesel: 984.97 },
+        ]}
         stats={[
-          { value: "86",     label: "CNG stations feeding the virtual pipeline" },
-          { value: "4",      label: "Governorates served off-grid" },
-          { value: "+2,350", label: "mmscf CNG delivered/year" },
-          { value: "+10",    label: "Active mobile-CNG clients" },
+          { value: "86", label: "CNG stations across 20 governorates" },
+          { value: "4", label: "Off-grid governorates served" },
+          { value: "10", label: "Existing mobile-CNG projects" },
+          { value: "El Kharga", label: "Whole governorate supplied" },
         ]}
       />
     ),
   },
 
   // ── Closing ─────────────────────────────────────────────────────────────────
-  // 24
-  { title: "Why One Partner",         render: () => <WhyOnePartnerSlide /> },
   // 25
-  { title: "Integrated Economics",    render: () => <IntegratedEconomicsSlide /> },
+  { title: "Why One Partner",         render: () => <WhyOnePartnerSlide /> },
   // 26
+  { title: "Integrated Economics",    render: () => <IntegratedEconomicsSlide /> },
+  // 27
   { title: "Proven on the Ground",    render: () => <ClosingSlide /> },
 ];
 
@@ -1401,7 +1500,7 @@ export default function AgricultureClients() {
   return (
     <DeckShell
       title="Agriculture Clients"
-      subtitle="TAQA Arabia · Integrated Agri-Energy & Water Solutions · Jun 2026"
+      subtitle="TAQA Arabia · Integrated Agri-Energy & Water Solutions · Jan 2026"
       sections={SECTIONS}
       slides={SLIDES}
       pdf="agriculture-clients.pdf"
