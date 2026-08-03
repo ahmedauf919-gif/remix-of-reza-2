@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Link } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Home as HomeIcon,
-  FileDown, Maximize, Minimize, Play, Pause, Square, Volume2, VolumeX, Captions,
+  FileDown, Maximize, Minimize, Play, Pause, Square, Volume2, VolumeX,
 } from "lucide-react";
 
 export interface DeckSection {
@@ -33,16 +33,40 @@ const DESIGN_W = 1280;
 const DESIGN_H = 720;
 
 /** Presentation-mode pacing — every slide holds for at least MIN and at most MAX,
-    matching the narration length in between via the browser's speech 'end' event. */
-const MIN_SLIDE_MS = 5000;
-const MAX_SLIDE_MS = 12000;
-const NO_NARRATION_HOLD_MS = 7000;
+    matching the narration length in between via the browser's speech 'end' event.
+    Values are generous so longer, fuller narration always has room to finish. */
+const MIN_SLIDE_MS = 8000;
+const MAX_SLIDE_MS = 45000;
+const NO_NARRATION_HOLD_MS = 12000;
 
-/** Prefer a higher-quality installed voice (neural/online/natural) over robotic defaults. */
+/** How long the crossfade between slides runs while presenting. */
+const PRESENT_TRANSITION_MS = 1100;
+
+/** Known-good male, warm/soothing system voices, checked in priority order
+    across Windows, macOS/iOS and Chrome/Android before falling back to any
+    other high-quality voice, then any voice at all. */
+const MALE_VOICE_PATTERNS: RegExp[] = [
+  /microsoft\s*guy\s*online.*natural/i,
+  /microsoft\s*ryan.*natural/i,
+  /guy\s*online/i,
+  /microsoft\s*david/i,
+  /google\s*uk\s*english\s*male/i,
+  /daniel/i,
+  /arthur/i,
+  /oliver/i,
+  /fred/i,
+  /\balex\b/i,
+  /\bmale\b/i,
+];
+
 function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
   if (!voices.length) return undefined;
   const en = voices.filter(v => v.lang?.toLowerCase().startsWith("en"));
   const pool = en.length ? en : voices;
+  for (const pattern of MALE_VOICE_PATTERNS) {
+    const match = pool.find(v => pattern.test(v.name));
+    if (match) return match;
+  }
   return (
     pool.find(v => /natural|neural|online|premium/i.test(v.name)) ??
     pool.find(v => /google/i.test(v.name)) ??
@@ -55,12 +79,12 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
   const [current, setCurrent] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const [direction, setDirection] = useState<"fwd" | "bwd">("fwd");
+  const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const [scale, setScale] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [presenting, setPresenting] = useState(false);
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [captionsOn, setCaptionsOn] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
   const fitRef = useRef<HTMLDivElement>(null);
 
@@ -135,6 +159,7 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
     }
     setDirection("fwd");
     setAnimKey(k => k + 1);
+    setPrevIndex(null);
     setCurrent(0);
     setPaused(false);
     setPresenting(true);
@@ -144,6 +169,7 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
     window.speechSynthesis?.cancel();
     setPresenting(false);
     setPaused(false);
+    setPrevIndex(null);
   }, []);
 
   // Scale the fixed 1280×720 canvas to fill the available stage area.
@@ -194,6 +220,7 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
       if (advanced || cancelled) return;
       advanced = true;
       if (current < total - 1) {
+        setPrevIndex(current);
         setDirection("fwd");
         setAnimKey(k => k + 1);
         setCurrent(c => c + 1);
@@ -206,8 +233,8 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
 
     if (!muted && text && "speechSynthesis" in window) {
       const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 0.98;
-      utter.pitch = 1;
+      utter.rate = 0.93;
+      utter.pitch = 0.85;
       const v = pickVoice(window.speechSynthesis.getVoices());
       if (v) utter.voice = v;
       utter.onend = () => {
@@ -236,6 +263,13 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
     else window.speechSynthesis?.resume();
   }, [paused, presenting]);
 
+  // Drop the outgoing slide layer once the crossfade has had time to finish.
+  useEffect(() => {
+    if (prevIndex === null) return;
+    const t = setTimeout(() => setPrevIndex(null), PRESENT_TRANSITION_MS + 80);
+    return () => clearTimeout(t);
+  }, [prevIndex, animKey]);
+
   // Stop narration cleanly if the viewer navigates away from the deck entirely.
   useEffect(() => () => { window.speechSynthesis?.cancel(); }, []);
 
@@ -256,12 +290,12 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
         @keyframes deck-bwd { from { opacity:0; transform:translateX(-28px) scale(0.985); } to { opacity:1; transform:translateX(0) scale(1); } }
         .deck-fwd { animation: deck-fwd 0.38s cubic-bezier(0.16,1,0.3,1) both; }
         .deck-bwd { animation: deck-bwd 0.38s cubic-bezier(0.16,1,0.3,1) both; }
+        @keyframes deck-present-in { from { opacity:0; transform:scale(1.045); } to { opacity:1; transform:scale(1); } }
+        .deck-present-in { animation: deck-present-in ${PRESENT_TRANSITION_MS}ms cubic-bezier(0.22,1,0.36,1) both; }
         .deck-edge-nav { opacity: 0; transition: opacity 0.25s; }
         .deck-stage:hover .deck-edge-nav:not(:disabled) { opacity: 1; }
-        @keyframes caption-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-        .deck-caption { animation: caption-in 0.3s ease both; }
         @media (prefers-reduced-motion: reduce) {
-          .deck-fwd, .deck-bwd, .deck-caption { animation: none; }
+          .deck-fwd, .deck-bwd, .deck-present-in { animation: none; }
           .deck-stage * { animation: none !important; }
         }
       `}</style>
@@ -309,14 +343,6 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
             <button onClick={() => setMuted(m => !m)} className={`${chromeBtn} shrink-0`} title={muted ? "Unmute narration" : "Mute narration"}>
               {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </button>
-            <button
-              onClick={() => setCaptionsOn(c => !c)}
-              className={`${chromeBtn} shrink-0`}
-              title={captionsOn ? "Hide captions" : "Show captions"}
-              style={captionsOn ? { color: section.color } : undefined}
-            >
-              <Captions className="h-4 w-4" />
-            </button>
             <button onClick={stopPresentation} className={`${chromeBtn} border border-white/15 shrink-0`} title="Stop (Esc)">
               <Square className="h-3.5 w-3.5" />
               <span className="hidden lg:inline">Stop</span>
@@ -361,20 +387,19 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
           style={{ width: DESIGN_W * scale, height: DESIGN_H * scale }}
           onClick={handleStageClick}
         >
-          <div style={{ width: DESIGN_W, height: DESIGN_H, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-            <div key={animKey} className={`h-full ${direction === "fwd" ? "deck-fwd" : "deck-bwd"}`}>
+          <div style={{ width: DESIGN_W, height: DESIGN_H, transform: `scale(${scale})`, transformOrigin: "top left", position: "relative" }}>
+            {presenting && prevIndex !== null && (
+              <div className="absolute inset-0 h-full w-full" aria-hidden>
+                {slides[prevIndex].render()}
+              </div>
+            )}
+            <div
+              key={animKey}
+              className={`absolute inset-0 h-full w-full ${presenting ? "deck-present-in" : direction === "fwd" ? "deck-fwd" : "deck-bwd"}`}
+            >
               {slides[current].render()}
             </div>
           </div>
-
-          {/* Captions overlay — presentation mode only */}
-          {presenting && captionsOn && hasNarration && narration![current] && (
-            <div key={`cap-${current}`} className="deck-caption pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-4">
-              <p className="max-w-[85%] rounded-xl bg-black/70 px-5 py-2.5 text-center text-[15px] leading-snug text-white shadow-lg backdrop-blur-sm">
-                {narration![current]}
-              </p>
-            </div>
-          )}
 
           {/* Edge navigation — appears on hover, disabled during narrated playback */}
           {!presenting && (
