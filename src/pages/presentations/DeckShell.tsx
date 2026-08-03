@@ -44,27 +44,34 @@ const NO_NARRATION_HOLD_MS = 12000;
 /** How long the crossfade between slides runs while presenting. */
 const PRESENT_TRANSITION_MS = 1100;
 
-/** Known-good male, warm/soothing system voices, checked in priority order
-    across Windows, macOS/iOS and Chrome/Android before falling back to any
-    other high-quality voice, then any voice at all. */
+/** Known-good male system voices, checked in priority order across Windows,
+    macOS/iOS and Chrome/Android. Ordered by how natural/smooth they actually
+    sound — cloud-backed "Online"/"Natural" voices first, then the better
+    on-device voices, with older, more robotic-sounding ones (Fred, generic
+    SAPI David/Mark) pushed to the bottom since depth only reads as "better"
+    on a voice that's smooth to begin with. */
 const MALE_VOICE_PATTERNS: RegExp[] = [
   /microsoft\s*guy\s*online.*natural/i,
   /microsoft\s*ryan.*natural/i,
   /guy\s*online/i,
-  /microsoft\s*david/i,
-  /microsoft\s*mark/i,
-  /microsoft\s*george/i,
-  /microsoft\s*james/i,
   /google\s*uk\s*english\s*male/i,
   /daniel/i,
   /arthur/i,
   /oliver/i,
-  /thomas/i,
   /aaron/i,
-  /fred/i,
   /\balex\b/i,
+  /thomas/i,
+  /microsoft\s*david/i,
+  /microsoft\s*mark/i,
+  /microsoft\s*george/i,
+  /microsoft\s*james/i,
   /\bmale\b/i,
+  /fred/i,
 ];
+
+/** Marks a voice as one of the better-sounding cloud/neural engines rather
+    than a dated, robotic on-device fallback. */
+const QUALITY_VOICE_PATTERN = /natural|neural|online|premium|enhanced/i;
 
 /** Common default *female* system voices — explicitly avoided even when no
     male pattern matches, so we never silently fall back to a woman's voice. */
@@ -79,14 +86,25 @@ function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undef
   if (!voices.length) return undefined;
   const en = voices.filter(v => v.lang?.toLowerCase().startsWith("en"));
   const pool = en.length ? en : voices;
+
+  // Best case: a known-good male voice that's also one of the smoother
+  // cloud/neural engines — this is what makes the narration sound "better",
+  // not just deeper.
+  for (const pattern of MALE_VOICE_PATTERNS) {
+    const match = pool.find(v => pattern.test(v.name) && QUALITY_VOICE_PATTERN.test(v.name));
+    if (match) return match;
+  }
+  // Next: any known-good male voice by name, even without an explicit
+  // quality flag in its name.
   for (const pattern of MALE_VOICE_PATTERNS) {
     const match = pool.find(v => pattern.test(v.name));
     if (match) return match;
   }
+  // Fallback: the smoothest voice available that isn't a known female one.
   const notFemale = pool.filter(v => !FEMALE_VOICE_PATTERNS.some(p => p.test(v.name)));
   const safePool = notFemale.length ? notFemale : pool;
   return (
-    safePool.find(v => /natural|neural|online|premium/i.test(v.name)) ??
+    safePool.find(v => QUALITY_VOICE_PATTERN.test(v.name)) ??
     safePool.find(v => /google/i.test(v.name)) ??
     safePool.find(v => v.lang?.toLowerCase() === "en-us") ??
     safePool[0]
@@ -251,10 +269,12 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
 
     if (!muted && text && "speechSynthesis" in window) {
       const utter = new SpeechSynthesisUtterance(text);
-      // Slower, lower-pitched delivery for a deep, measured, documentary-style
-      // narrator tone rather than a brisk default TTS read.
-      utter.rate = 0.88;
-      utter.pitch = 0.8;
+      // Deep, measured, documentary-style narrator tone. Rate stays close to
+      // natural pace — dragging it too slow makes even a good voice sound
+      // choppy — while pitch is lowered for warmth and depth without
+      // dropping so far it starts to distort on lower-quality engines.
+      utter.rate = 0.92;
+      utter.pitch = 0.76;
       const v = pickVoice(window.speechSynthesis.getVoices());
       if (v) utter.voice = v;
       // Chrome silently stops speaking ~15s into a long utterance unless it's
