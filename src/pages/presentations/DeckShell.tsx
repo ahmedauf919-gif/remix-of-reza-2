@@ -101,15 +101,38 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
   }, [total, presenting]);
 
   const toggleFullscreen = useCallback(() => {
-    if (document.fullscreenElement) {
-      void document.exitFullscreen();
-    } else {
-      void rootRef.current?.requestFullscreen();
+    try {
+      if (document.fullscreenElement) {
+        void document.exitFullscreen?.()?.catch?.(() => {});
+      } else {
+        void rootRef.current?.requestFullscreen?.()?.catch?.(() => {});
+      }
+    } catch {
+      // Fullscreen API missing/blocked (common on mobile Safari) — not fatal.
     }
   }, []);
 
   const startPresentation = useCallback(() => {
-    void rootRef.current?.requestFullscreen().catch(() => {});
+    // Mobile browsers (esp. iOS Safari) only allow speechSynthesis to be
+    // unlocked for the rest of the session if the *first* speak() call
+    // happens synchronously inside the tap/click gesture itself — a
+    // useEffect firing on the next render is one tick too late. Priming
+    // with a silent utterance here unlocks audio for every later slide.
+    try {
+      window.speechSynthesis?.cancel();
+      window.speechSynthesis?.speak(new SpeechSynthesisUtterance(" "));
+    } catch {
+      // speechSynthesis unavailable — presentation still runs on the timer fallback.
+    }
+    // Fullscreen is best-effort only and must never block presentation mode
+    // from starting — iOS Safari in particular often has no usable
+    // requestFullscreen on arbitrary elements, where calling it throws
+    // synchronously rather than rejecting a promise.
+    try {
+      rootRef.current?.requestFullscreen?.()?.catch?.(() => {});
+    } catch {
+      // Ignored — presenting still proceeds without fullscreen.
+    }
     setDirection("fwd");
     setAnimKey(k => k + 1);
     setCurrent(0);
@@ -255,9 +278,10 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
         <div className="h-full transition-all duration-500" style={{ width: `${progressPct}%`, background: section.color }} />
       </div>
 
-      {/* Top bar */}
-      <header className="relative z-10 flex items-center gap-2 px-3 h-12 shrink-0">
-        <Link to="/" className={chromeBtn}>
+      {/* Top bar — overflow-x-auto is a safety net so on very narrow phones the
+          controls scroll into reach instead of silently clipping off-screen. */}
+      <header className="relative z-10 flex items-center gap-2 px-3 h-12 shrink-0 overflow-x-auto">
+        <Link to="/" className={`${chromeBtn} shrink-0`}>
           <HomeIcon className="h-4 w-4" />
           <span className="hidden sm:inline">Home</span>
         </Link>
@@ -266,10 +290,10 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
           <p className="text-white/35 text-[10px] leading-tight truncate hidden sm:block">{subtitle}</p>
         </div>
 
-        <div className="flex-1" />
+        <div className="flex-1 min-w-2" />
 
         {!presenting && (
-          <span className="text-white/40 text-xs tabular-nums hidden md:inline whitespace-nowrap">
+          <span className="text-white/40 text-xs tabular-nums hidden md:inline whitespace-nowrap shrink-0">
             <span className="font-semibold" style={{ color: section.color }}>{section.label}</span>
             <span className="mx-1.5 text-white/20">·</span>
             {current + 1} / {total}
@@ -277,23 +301,23 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
         )}
 
         {presenting ? (
-          <div className="flex items-center gap-1.5">
-            <button onClick={() => setPaused(p => !p)} className={`${chromeBtn} border border-white/15`} title={paused ? "Resume" : "Pause"}>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={() => setPaused(p => !p)} className={`${chromeBtn} border border-white/15 shrink-0`} title={paused ? "Resume" : "Pause"}>
               {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
               <span className="hidden lg:inline">{paused ? "Resume" : "Pause"}</span>
             </button>
-            <button onClick={() => setMuted(m => !m)} className={chromeBtn} title={muted ? "Unmute narration" : "Mute narration"}>
+            <button onClick={() => setMuted(m => !m)} className={`${chromeBtn} shrink-0`} title={muted ? "Unmute narration" : "Mute narration"}>
               {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </button>
             <button
               onClick={() => setCaptionsOn(c => !c)}
-              className={chromeBtn}
+              className={`${chromeBtn} shrink-0`}
               title={captionsOn ? "Hide captions" : "Show captions"}
               style={captionsOn ? { color: section.color } : undefined}
             >
               <Captions className="h-4 w-4" />
             </button>
-            <button onClick={stopPresentation} className={`${chromeBtn} border border-white/15`} title="Stop (Esc)">
+            <button onClick={stopPresentation} className={`${chromeBtn} border border-white/15 shrink-0`} title="Stop (Esc)">
               <Square className="h-3.5 w-3.5" />
               <span className="hidden lg:inline">Stop</span>
             </button>
@@ -303,26 +327,26 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
             {hasNarration && (
               <button
                 onClick={startPresentation}
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 h-8 text-xs font-semibold text-white transition-colors whitespace-nowrap shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 sm:px-3 h-8 text-xs font-semibold text-white transition-colors whitespace-nowrap shadow-sm shrink-0"
                 style={{ background: section.color }}
                 title="Play the full deck as a narrated video"
               >
-                <Play className="h-3.5 w-3.5 fill-current" />
-                Play as Video
+                <Play className="h-3.5 w-3.5 fill-current shrink-0" />
+                <span className="hidden sm:inline">Play as Video</span>
               </button>
             )}
             {pdf && (
               <a
                 href={`${import.meta.env.BASE_URL}presentations/${pdf}`}
                 download
-                className={`${chromeBtn} border border-white/15`}
+                className={`${chromeBtn} border border-white/15 shrink-0`}
                 title="Download the original presentation as PDF"
               >
                 <FileDown className="h-4 w-4" />
-                PDF
+                <span className="hidden sm:inline">PDF</span>
               </a>
             )}
-            <button onClick={toggleFullscreen} className={chromeBtn} title="Toggle fullscreen (F)">
+            <button onClick={toggleFullscreen} className={`${chromeBtn} shrink-0`} title="Toggle fullscreen (F)">
               {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
               <span className="hidden lg:inline">{isFullscreen ? "Exit" : "Present"}</span>
             </button>
