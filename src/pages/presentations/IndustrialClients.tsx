@@ -1591,6 +1591,78 @@ const SLIDES = [
   { title: "Success Story: Integrated Industrial Energy", render: () => <SuccessStorySlide /> },
 ];
 
+// ─── Narration (Play as Video) ─────────────────────────────────────────────────
+// One entry per SLIDES index, same order, same length (33).
+
+const NARRATION: readonly string[] = [
+  // 0 — Cover
+  "TAQA Arabia presents an integrated energy roadmap for industrial clients — six solutions, from mobile gas to battery storage, unified under one accountable partner.",
+  // 1 — About TAQA Arabia
+  "Founded in 2006 and listed on the EGX since 2023, TAQA Arabia spans four divisions — Gas, Power, Petroleum and Water — as Egypt's largest private energy developer.",
+  // 2 — Regional Presence
+  "This is TAQA Arabia's actual footprint today — ten countries, four divisions, over twenty Egyptian governorates, and more than 3,400 employees delivering live projects, not aspirations.",
+  // 3 — In Numbers
+  "FY 2025 scale: EGP 13.4 billion in revenue, over EGP 18 billion in assets under management, 6.5 million gas customers, and over 10,000 kilometers of pipeline nationwide.",
+  // 4 — Trusted By
+  "From leading developers to hospitality groups and industrial majors, this is a cross-section of the clients and partners already relying on TAQA Arabia across every division.",
+  // 5 — Solutions Overview
+  "Six integrated solutions — Mobile CNG, Electricity, Gas, CHP, Solar and Energy Storage — each detailed next, and each stronger for an industrial site when combined under one roof.",
+  // 6 — Mobile CNG: Scope
+  "TAQA funds, builds, owns and operates the mother station, compression and delivery trailers, decompressing gas on-site so factories pay only for what they consume — no pipeline required.",
+  // 7 — Mobile CNG: Value Proposition
+  "Mobile CNG cuts fuel costs versus diesel and LPG, slashes CO2 by roughly 24 percent, and reaches any site nationwide through TAQA's dedicated trailer fleet — with zero upfront capital.",
+  // 8 — Mobile CNG: Timeline
+  "From first site audit to live gas typically runs 120 to 200 days — discovery, contracting and mobilization move in parallel to get factories running fast.",
+  // 9 — Mobile CNG: Track Record
+  "Across a 25-year outlook, TAQA's CNG price consistently undercuts diesel, widening the gap every year — proven today across 86 stations and four off-grid governorates, including all of El Kharga.",
+  // 10 — Electricity Distribution: Scope
+  "TAQA designs, builds and energizes substations, transformers and cabling across the zone, then meters, bills and operates the network around the clock through its own control room.",
+  // 11 — Electricity Distribution: Value Proposition
+  "A profit-share model turns the network into recurring revenue, while smart metering and demand management lower factory bills and guarantee stable, future-ready power from day one.",
+  // 12 — Electricity Distribution: Timeline
+  "Power sourcing through engineering and MEP approvals lead into network build and smart metering, with sites energized and under full O&M within roughly 300 days.",
+  // 13 — Electricity Distribution: Track Record
+  "TAQA Power distributes over 1,600 MVA across 31 million square meters, serving 12,000-plus end users — trusted by tier-one developers like LMD, Marakez, Pioneer Property and Emaar.",
+  // 14 — Gas Distribution: Scope
+  "TAQA secures the concession, lays the mains and service lines, then meters, tests and commissions every connection — delivering process-grade gas at 6.4 billion cubic meters a year.",
+  // 15 — Gas Distribution: Value Proposition
+  "Fuel-switching from diesel and LPG to piped natural gas cuts bills sharply, while flexible sourcing through mobile CNG or SNG means no factory ever waits for the pipeline.",
+  // 16 — Gas Distribution: Timeline
+  "Feasibility and engineering give way to procurement, construction and commissioning, bringing a new industrial gas network into full operation in roughly 280 days.",
+  // 17 — Gas Distribution: Track Record
+  "As Egypt's first private, EGAS-licensed gas distributor, TAQA runs the country's largest private network — 1.9 million customers, over 25 governorate concessions, and more than 10,000 kilometers of pipeline.",
+  // 18 — CHP: Scope
+  "A single gas-fed genset generates electricity while recovered exhaust and jacket heat convert into steam, hot water and chilled water — one fuel input, three energy outputs.",
+  // 19 — CHP: Value Proposition
+  "Combined heat and power reaches up to 85 percent fuel efficiency, cutting energy cost and carbon footprint at once — with TAQA supplying both the gas and the plant.",
+  // 20 — CHP: Timeline
+  "Energy audits and system design lead into procurement, installation and commissioning, bringing a captive CHP plant fully online and under performance-guaranteed O&M around day 270.",
+  // 21 — CHP: Case Study "MAFI"
+  "At client MAFI, a 9 megawatt captive CHP station running above 65 percent efficiency has already delivered EGP 6 billion in savings over the project's 20-year life.",
+  // 22 — Solar: Scope
+  "TAQA assesses roof or land and the site's load curve, then installs and grid-ties PV arrays and inverters — generating clean power to offset daytime process loads.",
+  // 23 — Solar: Value Proposition
+  "Solar power costs well below grid tariffs and locks in that rate for decades, hedging against price hikes while lifting property value and ESG credentials.",
+  // 24 — Solar: Timeline
+  "From site and energy study through PPA structuring, procurement and installation, a solar system reaches full commissioning and 25-plus years of guaranteed O&M around day 210.",
+  // 25 — Solar: Case Study "ASCOM"
+  "TAQA's 7 megawatt ASCOM solar plant holds its tariff consistently below the government rate across the full 25-year horizon, cutting costs 15 percent and saving EGP 340 million.",
+  // 26 — Energy Storage (BESS): Scope
+  "TAQA sizes and installs battery storage and conversion systems on-site, charging when power is cheap or solar is surplus, then discharging to shave peaks and bridge outages.",
+  // 27 — Energy Storage (BESS): Value Proposition
+  "Storage slashes peak-demand charges, delivers instant backup during outages, and can unlock grid-services revenue — all managed automatically by TAQA's energy-management system.",
+  // 28 — Energy Storage (BESS): Timeline
+  "Load and tariff studies lead into system design, procurement and installation, with battery storage live and under smart O&M by roughly day 220.",
+  // 29 — BESS: Backup Power & Grid Relief
+  "Deploying BESS in place of diesel backup has already cut peak transformer loading by 35 percent, shifting stored solar into peak-demand hours and deferring costly grid upgrades.",
+  // 30 — Why One Partner
+  "One SLA, one communication point, one commercial relationship and one accountable operator — consolidating every utility under TAQA removes interface risk and cuts complexity for the client.",
+  // 31 — Cross-Solution Benefits
+  "Combined, TAQA's solutions compound in value — solar paired with storage, gas fueling CHP, storage easing distribution loads — all sold as one SLA with shared infrastructure and billing.",
+  // 32 — Success Story: Integrated Industrial Energy
+  "TAQA Power runs 450 MVA across nine industrial parks, serving over 500 factories and distributing 6.4 billion cubic meters of gas a year — the one-stop-shop model, proven. Get in touch.",
+];
+
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export default function IndustrialClients() {
@@ -1600,6 +1672,7 @@ export default function IndustrialClients() {
       subtitle="TAQA Arabia · Integrated Energy & Utility Solutions · Jan 2026"
       sections={SECTIONS}
       slides={SLIDES}
+      narration={NARRATION}
       pdf="industrial-clients.pdf"
     />
   );

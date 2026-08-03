@@ -1257,6 +1257,65 @@ const SLIDES = [
   { title: "From Pump to Plug",    render: () => <ClosingSlide /> },
 ];
 
+// ─── Narration (27 entries, matches SLIDES order) ────────────────────────────
+
+const NARRATION: string[] = [
+  // 0 — Cover
+  "TAQA Arabia presents an integrated energy roadmap for fleet and mobility clients — covering fuel stations, natural gas, EV charging, and the Waqood smart system, all under one partner.",
+  // 1 — About TAQA Arabia
+  "Founded in 2006 and listed on the EGX since 2023, TAQA Arabia is Egypt's largest private-sector energy developer, spanning gas, power, petroleum and water divisions.",
+  // 2 — Regional Presence
+  "This is TAQA Arabia's actual, live footprint — operations across eight countries spanning Egypt, the GCC, Africa and South Asia, with four divisions and 3,400-plus employees.",
+  // 3 — In Numbers
+  "Fiscal year 2025: EGP 13.4 billion in revenue, EGP 1.5 billion in EBITDA, roughly 6.5 million residential gas customers, and 230-plus fuel stations nationwide.",
+  // 4 — Trusted By
+  "These are real clients and partners across developers, industrials, hospitality groups and institutions that already rely on TAQA Arabia's energy and utility services today.",
+  // 5 — The Fleet Challenge
+  "Fuel typically eats 30 to 50 percent of fleet operating cost, prices swing with global oil markets, emissions pressure is tightening, and fragmented suppliers blur the total spend.",
+  // 6 — The Mobility Energy Pathway
+  "TAQA charts a phased path: optimise today's diesel fleet, bridge to natural gas for up to 40 percent lower fuel cost, then electrify for the lowest cost per kilometre.",
+  // 7 — Solutions Overview
+  "Four integrated solutions follow: fuel stations, natural gas conversion and fuelling, EV charging, and the Waqood smart system that ties spend and control together.",
+  // 8 — Fuel Stations: Scope
+  "TAQA builds and finances the forecourt, tanks, dispensers and fuel-management systems, then supplies fuel nationwide — including 172 newly added Wataniya stations — through cashless fleet cards.",
+  // 9 — Fuel Stations: Value Proposition
+  "Depot and on-site fuelling, quality-assured supply from two owned terminals, predictable consolidated billing, and a single point of contact turn fuel from a blind cost into a managed one.",
+  // 10 — Fuel Stations: Timeline
+  "Onboarding moves fast: account setup within a week, network access inside two weeks, depot fuelling live within thirty days, then monthly reporting and ongoing optimisation.",
+  // 11 — Fuel Stations: Track Record
+  "TAQA Petroleum, the first privately owned company licensed to supply fuel in Egypt, now runs 230-plus stations and two owned terminals, after adding 172 Wataniya sites in 2026.",
+  // 12 — Natural Gas (CNG): Scope
+  "TAQA converts fleet vehicles to compressed natural gas, then fuels them at CNG stations or via the Master Gas mobile virtual pipeline — with every fill logged on a card.",
+  // 13 — Natural Gas (CNG): Value Proposition
+  "Natural gas runs up to 40 percent cheaper than petrol or diesel, conversions are bi-fuel and fully certified, payback typically arrives within months, and engines run cleaner and quieter.",
+  // 14 — Natural Gas (CNG): Timeline
+  "From assessment to certified conversion or a new NGV station takes about 45 days, with CNG fuelling live by day 65, then ongoing re-testing and operations support.",
+  // 15 — Natural Gas (CNG): Track Record
+  "TAQA operates 86 CNG stations and 18-plus licensed conversion centres, and pioneered Egypt's mobile virtual pipeline under Master Gas — unlocking roughly 40 percent lower fuel cost.",
+  // 16 — EV Charging: Scope
+  "TAQA sizes, installs and grid-connects depot and en-route AC and DC chargers, then schedules overnight charging at the lowest cost while logging every kilowatt-hour per vehicle.",
+  // 17 — EV Charging: Value Proposition
+  "Electricity is the cheapest energy per kilometre, future-proofing the fleet against regulation and fuel bans with zero tailpipe emissions, backed by managed uptime and 24/7 support.",
+  // 18 — EV Charging: Timeline
+  "From site assessment to live charging takes about 110 days — grid survey, commercial structuring, procurement, installation and app activation — followed by continuous 24/7 monitoring.",
+  // 19 — EV Charging: Track Record
+  "TAQA Power holds Egypt's first private EV-charging licence and already runs 130-plus live charge points across AC and DC, backed by the country's largest private power distributor.",
+  // 20 — Waqood Smart System: Scope
+  "Vehicles get RFID tags and drivers get PINs configured on the Waqood platform, so every pump verifies vehicle, driver and limit before fuelling — and streams the transaction live.",
+  // 21 — Waqood Smart System: Value Proposition
+  "One dashboard tracks litres, cubic metres of gas and kilowatt-hours together, per-driver PINs and limits design out fraud, and live analytics turn fuel data into real decisions.",
+  // 22 — Waqood Smart System: Timeline
+  "Discovery and onboarding take about two weeks, fuel, CNG and EV data integrate within three, and the single-pane dashboard goes fully live inside thirty days.",
+  // 23 — Waqood Smart System: Track Record
+  "Waqood, TAQA Arabia's own EnerTech company, verifies every fill by sticker, pump reading and driver PIN, giving managers one live dashboard across every fuel type the fleet uses.",
+  // 24 — Why One Partner
+  "One SLA, one point of contact, one commercial relationship and one accountable owner turn fragmented, multi-vendor fleet suppliers into a single operator for fuel, gas, EV and Waqood.",
+  // 25 — Integrated Economics
+  "Diesel-only fleets face volatile bills, fragmented suppliers and rising carbon risk; TAQA's integrated mix cuts fuel cost by up to 40 percent, designs out leakage, and lowers carbon every year.",
+  // 26 — From Pump to Plug (Closing)
+  "From pump to plug, TAQA Arabia is the one partner spanning 230-plus fuel stations, 86 CNG stations and Egypt's first EV-charging licence — ready to map your fleet's transition.",
+];
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function FleetMobilityClients() {
@@ -1266,6 +1325,7 @@ export default function FleetMobilityClients() {
       subtitle="TAQA Arabia · Integrated Energy & Mobility Solutions · Jun 2026"
       sections={SECTIONS}
       slides={SLIDES}
+      narration={NARRATION}
       pdf="fleet-mobility-clients.pdf"
     />
   );

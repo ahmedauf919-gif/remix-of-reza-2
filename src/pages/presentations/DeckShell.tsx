@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Link } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Home as HomeIcon,
-  FileDown, Maximize, Minimize,
+  FileDown, Maximize, Minimize, Play, Pause, Square, Volume2, VolumeX, Captions,
 } from "lucide-react";
 
 export interface DeckSection {
@@ -24,25 +24,56 @@ interface DeckShellProps {
   slides: readonly DeckSlide[];
   /** File name inside public/presentations/, e.g. "industrial-clients.pdf" */
   pdf?: string;
+  /** One narration script per slide, same order/length as `slides`. Enables "Play as Video". */
+  narration?: readonly string[];
 }
 
 /** Fixed design canvas — every slide is laid out at this size, then scaled to fill the viewport. */
 const DESIGN_W = 1280;
 const DESIGN_H = 720;
 
-export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellProps) {
+/** Presentation-mode pacing — every slide holds for at least MIN and at most MAX,
+    matching the narration length in between via the browser's speech 'end' event. */
+const MIN_SLIDE_MS = 5000;
+const MAX_SLIDE_MS = 12000;
+const NO_NARRATION_HOLD_MS = 7000;
+
+/** Prefer a higher-quality installed voice (neural/online/natural) over robotic defaults. */
+function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
+  if (!voices.length) return undefined;
+  const en = voices.filter(v => v.lang?.toLowerCase().startsWith("en"));
+  const pool = en.length ? en : voices;
+  return (
+    pool.find(v => /natural|neural|online|premium/i.test(v.name)) ??
+    pool.find(v => /google/i.test(v.name)) ??
+    pool.find(v => v.lang?.toLowerCase() === "en-us") ??
+    pool[0]
+  );
+}
+
+export function DeckShell({ title, subtitle, sections, slides, pdf, narration }: DeckShellProps) {
   const [current, setCurrent] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const [direction, setDirection] = useState<"fwd" | "bwd">("fwd");
   const [scale, setScale] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [presenting, setPresenting] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [captionsOn, setCaptionsOn] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
   const fitRef = useRef<HTMLDivElement>(null);
 
   const total = slides.length;
   const section = sections.find(s => s.slides.includes(current)) ?? sections[0];
+  const hasNarration = !!narration && narration.length === total;
 
   const step = useCallback((delta: number) => {
+    if (presenting) {
+      window.speechSynthesis?.cancel();
+      setPresenting(false);
+      setPaused(false);
+    }
     setCurrent(c => {
       const t = Math.max(0, Math.min(total - 1, c + delta));
       if (t !== c) {
@@ -51,9 +82,14 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
       }
       return t;
     });
-  }, [total]);
+  }, [total, presenting]);
 
   const go = useCallback((target: number) => {
+    if (presenting) {
+      window.speechSynthesis?.cancel();
+      setPresenting(false);
+      setPaused(false);
+    }
     setCurrent(c => {
       const t = Math.max(0, Math.min(total - 1, target));
       if (t !== c) {
@@ -62,7 +98,7 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
       }
       return t;
     });
-  }, [total]);
+  }, [total, presenting]);
 
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -70,6 +106,21 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
     } else {
       void rootRef.current?.requestFullscreen();
     }
+  }, []);
+
+  const startPresentation = useCallback(() => {
+    void rootRef.current?.requestFullscreen().catch(() => {});
+    setDirection("fwd");
+    setAnimKey(k => k + 1);
+    setCurrent(0);
+    setPaused(false);
+    setPresenting(true);
+  }, []);
+
+  const stopPresentation = useCallback(() => {
+    window.speechSynthesis?.cancel();
+    setPresenting(false);
+    setPaused(false);
   }, []);
 
   // Scale the fixed 1280×720 canvas to fill the available stage area.
@@ -94,6 +145,8 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && presenting) { e.preventDefault(); stopPresentation(); return; }
+      if (presenting) return; // arrow/space/etc. are disabled while a narrated presentation is playing
       if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); step(1); }
       else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); step(-1); }
       else if (e.key === "Home") { e.preventDefault(); go(0); }
@@ -102,11 +155,71 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [step, go, total, toggleFullscreen]);
+  }, [step, go, total, toggleFullscreen, presenting, stopPresentation]);
+
+  // Presentation-mode playback: narrate the current slide, then auto-advance.
+  // Deliberately excludes `paused`/voices from deps — pause is handled natively
+  // below so it doesn't restart the utterance from the beginning.
+  useEffect(() => {
+    if (!presenting) return;
+    let cancelled = false;
+    let advanced = false;
+    const startTs = Date.now();
+    const text = hasNarration ? narration![current] : "";
+
+    const advance = () => {
+      if (advanced || cancelled) return;
+      advanced = true;
+      if (current < total - 1) {
+        setDirection("fwd");
+        setAnimKey(k => k + 1);
+        setCurrent(c => c + 1);
+      } else {
+        setPresenting(false);
+      }
+    };
+
+    const maxTimer = setTimeout(advance, MAX_SLIDE_MS);
+
+    if (!muted && text && "speechSynthesis" in window) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 0.98;
+      utter.pitch = 1;
+      const v = pickVoice(window.speechSynthesis.getVoices());
+      if (v) utter.voice = v;
+      utter.onend = () => {
+        const elapsed = Date.now() - startTs;
+        setTimeout(advance, Math.max(0, MIN_SLIDE_MS - elapsed));
+      };
+      utter.onerror = () => setTimeout(advance, NO_NARRATION_HOLD_MS);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    } else {
+      setTimeout(advance, NO_NARRATION_HOLD_MS);
+    }
+
+    return () => {
+      cancelled = true;
+      clearTimeout(maxTimer);
+      window.speechSynthesis?.cancel();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presenting, current, muted]);
+
+  // Pause/resume the native speech engine in place, without restarting narration.
+  useEffect(() => {
+    if (!presenting) return;
+    if (paused) window.speechSynthesis?.pause();
+    else window.speechSynthesis?.resume();
+  }, [paused, presenting]);
+
+  // Stop narration cleanly if the viewer navigates away from the deck entirely.
+  useEffect(() => () => { window.speechSynthesis?.cancel(); }, []);
 
   const handleStageClick = (e: React.MouseEvent) => {
     const t = e.target as HTMLElement;
     if (t.closest("button") || t.closest("a") || t.closest("select") || t.closest("input")) return;
+    if (presenting) return;
     step(1);
   };
 
@@ -122,8 +235,10 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
         .deck-bwd { animation: deck-bwd 0.38s cubic-bezier(0.16,1,0.3,1) both; }
         .deck-edge-nav { opacity: 0; transition: opacity 0.25s; }
         .deck-stage:hover .deck-edge-nav:not(:disabled) { opacity: 1; }
+        @keyframes caption-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .deck-caption { animation: caption-in 0.3s ease both; }
         @media (prefers-reduced-motion: reduce) {
-          .deck-fwd, .deck-bwd { animation: none; }
+          .deck-fwd, .deck-bwd, .deck-caption { animation: none; }
           .deck-stage * { animation: none !important; }
         }
       `}</style>
@@ -153,27 +268,66 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
 
         <div className="flex-1" />
 
-        <span className="text-white/40 text-xs tabular-nums hidden md:inline whitespace-nowrap">
-          <span className="font-semibold" style={{ color: section.color }}>{section.label}</span>
-          <span className="mx-1.5 text-white/20">·</span>
-          {current + 1} / {total}
-        </span>
-
-        {pdf && (
-          <a
-            href={`${import.meta.env.BASE_URL}presentations/${pdf}`}
-            download
-            className={`${chromeBtn} border border-white/15`}
-            title="Download the original presentation as PDF"
-          >
-            <FileDown className="h-4 w-4" />
-            PDF
-          </a>
+        {!presenting && (
+          <span className="text-white/40 text-xs tabular-nums hidden md:inline whitespace-nowrap">
+            <span className="font-semibold" style={{ color: section.color }}>{section.label}</span>
+            <span className="mx-1.5 text-white/20">·</span>
+            {current + 1} / {total}
+          </span>
         )}
-        <button onClick={toggleFullscreen} className={chromeBtn} title="Toggle fullscreen (F)">
-          {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-          <span className="hidden lg:inline">{isFullscreen ? "Exit" : "Present"}</span>
-        </button>
+
+        {presenting ? (
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setPaused(p => !p)} className={`${chromeBtn} border border-white/15`} title={paused ? "Resume" : "Pause"}>
+              {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+              <span className="hidden lg:inline">{paused ? "Resume" : "Pause"}</span>
+            </button>
+            <button onClick={() => setMuted(m => !m)} className={chromeBtn} title={muted ? "Unmute narration" : "Mute narration"}>
+              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={() => setCaptionsOn(c => !c)}
+              className={chromeBtn}
+              title={captionsOn ? "Hide captions" : "Show captions"}
+              style={captionsOn ? { color: section.color } : undefined}
+            >
+              <Captions className="h-4 w-4" />
+            </button>
+            <button onClick={stopPresentation} className={`${chromeBtn} border border-white/15`} title="Stop (Esc)">
+              <Square className="h-3.5 w-3.5" />
+              <span className="hidden lg:inline">Stop</span>
+            </button>
+          </div>
+        ) : (
+          <>
+            {hasNarration && (
+              <button
+                onClick={startPresentation}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 h-8 text-xs font-semibold text-white transition-colors whitespace-nowrap shadow-sm"
+                style={{ background: section.color }}
+                title="Play the full deck as a narrated video"
+              >
+                <Play className="h-3.5 w-3.5 fill-current" />
+                Play as Video
+              </button>
+            )}
+            {pdf && (
+              <a
+                href={`${import.meta.env.BASE_URL}presentations/${pdf}`}
+                download
+                className={`${chromeBtn} border border-white/15`}
+                title="Download the original presentation as PDF"
+              >
+                <FileDown className="h-4 w-4" />
+                PDF
+              </a>
+            )}
+            <button onClick={toggleFullscreen} className={chromeBtn} title="Toggle fullscreen (F)">
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+              <span className="hidden lg:inline">{isFullscreen ? "Exit" : "Present"}</span>
+            </button>
+          </>
+        )}
       </header>
 
       {/* Stage — slide scaled to fill remaining space */}
@@ -189,23 +343,36 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
             </div>
           </div>
 
-          {/* Edge navigation — appears on hover */}
-          <button
-            onClick={() => step(-1)}
-            disabled={current === 0}
-            className="deck-edge-nav absolute left-0 top-1/2 -translate-y-1/2 h-24 w-12 flex items-center justify-center rounded-r-2xl bg-black/35 text-white/90 hover:bg-black/55 backdrop-blur-sm disabled:hidden"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft className="h-7 w-7" />
-          </button>
-          <button
-            onClick={() => step(1)}
-            disabled={current === total - 1}
-            className="deck-edge-nav absolute right-0 top-1/2 -translate-y-1/2 h-24 w-12 flex items-center justify-center rounded-l-2xl bg-black/35 text-white/90 hover:bg-black/55 backdrop-blur-sm disabled:hidden"
-            aria-label="Next slide"
-          >
-            <ChevronRight className="h-7 w-7" />
-          </button>
+          {/* Captions overlay — presentation mode only */}
+          {presenting && captionsOn && hasNarration && narration![current] && (
+            <div key={`cap-${current}`} className="deck-caption pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-4">
+              <p className="max-w-[85%] rounded-xl bg-black/70 px-5 py-2.5 text-center text-[15px] leading-snug text-white shadow-lg backdrop-blur-sm">
+                {narration![current]}
+              </p>
+            </div>
+          )}
+
+          {/* Edge navigation — appears on hover, disabled during narrated playback */}
+          {!presenting && (
+            <>
+              <button
+                onClick={() => step(-1)}
+                disabled={current === 0}
+                className="deck-edge-nav absolute left-0 top-1/2 -translate-y-1/2 h-24 w-12 flex items-center justify-center rounded-r-2xl bg-black/35 text-white/90 hover:bg-black/55 backdrop-blur-sm disabled:hidden"
+                aria-label="Previous slide"
+              >
+                <ChevronLeft className="h-7 w-7" />
+              </button>
+              <button
+                onClick={() => step(1)}
+                disabled={current === total - 1}
+                className="deck-edge-nav absolute right-0 top-1/2 -translate-y-1/2 h-24 w-12 flex items-center justify-center rounded-l-2xl bg-black/35 text-white/90 hover:bg-black/55 backdrop-blur-sm disabled:hidden"
+                aria-label="Next slide"
+              >
+                <ChevronRight className="h-7 w-7" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -230,7 +397,7 @@ export function DeckShell({ title, subtitle, sections, slides, pdf }: DeckShellP
           </div>
         </div>
         <span className="text-white/35 text-[11px] tabular-nums w-40 text-right hidden lg:block">
-          {current + 1} / {total} · ←→ Space · F
+          {presenting ? (paused ? "Paused" : "Playing…") : `${current + 1} / ${total} · ←→ Space · F`}
         </span>
       </footer>
     </div>

@@ -991,6 +991,67 @@ function ClosingSlide() {
   );
 }
 
+// ─── Narration (28 slides, 0-indexed, same order as SLIDES) ──────────────────
+
+const NARRATION: readonly string[] = [
+  // 0 Cover
+  "TAQA Arabia presents an integrated energy and water roadmap for Egypt's agriculture sector — water solutions, solar, battery storage and mobile CNG, all under one partner.",
+  // 1 About TAQA Arabia
+  "Founded in 2006 and listed on the EGX since 2023, TAQA Arabia is Egypt's largest private-sector energy developer, spanning gas, power, petroleum and water.",
+  // 2 Regional Presence
+  "TAQA Arabia's footprint spans ten countries across Africa, the Middle East and South Asia — a real, live presence today, not an aspiration, tailored to each market.",
+  // 3 In Numbers
+  "In fiscal year 2025, TAQA Arabia generated 13.4 billion Egyptian pounds in revenue, distributes over 1,600 megavolt-amps of power, desalinates 47,000 cubic meters daily, and runs 300 stations nationwide.",
+  // 4 Trusted By
+  "From industrial leaders to major developers, these are among the clients who already trust TAQA Arabia to run their critical water and energy infrastructure.",
+  // 5 The Challenge
+  "Remote desert farms across Egypt battle costly diesel dependence, no access to gas pipelines or the grid, water insecurity, and fragile power that can cost an entire irrigation cycle.",
+  // 6 Integrated Farm Solution
+  "One partner connects the farm's water supply to a smart, multi-source power stack — solar, battery, mobile CNG and diesel backup — keeping every pivot turning around the clock.",
+  // 7 Smart Energy Mix
+  "Solar runs the pivots by day, batteries carry power after sunset, gas gensets fill the gaps at roughly 40 percent less than diesel, and diesel serves only as backup.",
+  // 8 Solutions Overview
+  "Four solutions make up the integrated stack — water, solar, battery storage and mobile CNG — each explored through its scope, value, rollout timeline and proven track record.",
+  // 9 Water Solutions: Scope
+  "TAQA builds and owns the desalination plant — RO units, storage, pumping and smart metering — treating brackish or seawater into irrigation-grade water delivered straight to the fields.",
+  // 10 Water Solutions: Value Proposition
+  "Guaranteed water security, lower energy costs, and reduced pressure on groundwater — delivered through flexible BOO or BOOT models with contractual guarantees on volume and quality.",
+  // 11 Water Solutions: Timeline
+  "From an initial water-demand study through plant design, construction and commissioning, a farm's desalination system goes from first survey to live smart operation in about 260 days.",
+  // 12 Water Solutions: Track Record
+  "At Soma Bay, TAQA built Egypt's first green desalination plant, using 50 percent less power and avoiding 8,560 tons of CO2 yearly — the same proven model now serves farms.",
+  // 13 Solar: Scope
+  "TAQA installs and owns solar arrays, inverters and pump controllers sized to the farm's sun hours and pumping load, driving pivots directly with clean power through daylight hours.",
+  // 14 Solar: Value Proposition
+  "Solar cuts energy bills below diesel power, each megawatt avoiding roughly 1,000 tons of CO2 yearly, financed through flexible PPA or BOOT terms with 25-plus years of guaranteed performance.",
+  // 15 Solar: Timeline
+  "A solar system moves from site and energy study through design, PPA structuring, procurement and installation, reaching commissioning and go-live within about 210 days.",
+  // 16 Solar: Case Study — Dina Farms
+  "At Dina Farms, TAQA's 7-megawatt solar plant beats diesel on cost, saving 89 million pounds in year one alone and 9.3 billion pounds over 25 years.",
+  // 17 Battery Storage: Scope
+  "TAQA installs battery storage, power-conversion systems and smart controls sized to the farm's solar profile — charging from daytime surplus and discharging after dark to keep pumps running.",
+  // 18 Battery Storage: Value Proposition
+  "Battery storage extends solar power into the evening, displacing costly diesel hours while TAQA's smart energy-management system optimizes every charge and discharge cycle for the lowest cost per kilowatt-hour.",
+  // 19 Battery Storage: Timeline
+  "From load and solar profiling through system design, procurement and installation, a battery storage system reaches full commissioning and smart operation within about 220 days.",
+  // 20 Battery Storage: Case Study
+  "One client's 1.1-megawatt solar and 4-megawatt battery system undercuts diesel on cost, saving 14 million pounds in year one and 1.3 billion pounds over 25 years.",
+  // 21 Mobile CNG: Scope
+  "TAQA compresses gas to 250 bar at a mother station and trucks it to the farm as a virtual pipeline, decompressing it on-site to fuel dryers and processing equipment.",
+  // 22 Mobile CNG: Value Proposition
+  "Mobile CNG brings reliable gas to farms with no pipeline, cutting fuel costs below diesel and CO2 emissions by roughly 24 percent, scaling from starter to heavy loads nationwide.",
+  // 23 Mobile CNG: Timeline
+  "From first contact and site audit through contracting and mobilization, a farm switches from diesel to live CNG supply in about 120 to 200 days.",
+  // 24 Mobile CNG: Case Study
+  "TAQA pioneered mobile CNG in Egypt, now running 86 stations across 20 governorates — including the whole of El Kharga — extending gas access to four entirely off-grid regions.",
+  // 25 Why One Partner
+  "One SLA, one point of contact, one accountable operator — TAQA Arabia replaces fragmented water and power vendors with a single partner running the farm's entire energy and water system.",
+  // 26 Integrated Economics
+  "Moving from diesel-only power to TAQA's integrated stack cuts energy costs up to 40 percent, secures 24/7 irrigation uptime, and sharply lowers carbon emissions under one accountable partner.",
+  // 27 Proven on the Ground (Closing)
+  "From Dina Farms to the landmark Benban solar complex, TAQA Arabia already delivers clean energy at scale — the fully integrated farm, at zero capex, starts today.",
+];
+
 // ─── SLIDES Array (27 slides, 0-indexed) ─────────────────────────────────────
 
 const waterIcon   = <Droplets className="w-5 h-5" />;
@@ -1467,6 +1528,7 @@ export default function AgricultureClients() {
       sections={SECTIONS}
       slides={SLIDES}
       pdf="agriculture-clients.pdf"
+      narration={NARRATION}
     />
   );
 }

@@ -952,6 +952,85 @@ const SOLAR_VS_GOV_TARIFF = [
   { year: "Y25", taqa: 21.37, gov: 25.12 },
 ];
 
+// ─── Narration (37 entries, matches SLIDES order exactly) ────────────────────
+
+const NARRATION: readonly string[] = [
+  // 0 — Cover
+  "TAQA Arabia presents an integrated utility roadmap for residential developers and communities — seven solutions, one partner, one service-level agreement, starting now.",
+  // 1 — Who We Are
+  "Founded in 2006 and listed on the EGX since 2023, TAQA Arabia stands as Egypt's largest private energy and utility developer, spanning gas, power, petroleum and water.",
+  // 2 — Regional Presence
+  "This map traces TAQA Arabia's actual live footprint — ten countries across Egypt, the GCC, Africa and South Asia, twenty-plus governorates, over 3,400 employees on the ground.",
+  // 3 — In Numbers
+  "Behind that footprint sits real scale: EGP 13.4 billion in FY2025 revenue, over EGP 18 billion in assets, and 6.5 million residential gas customers already served.",
+  // 4 — Trusted By
+  "Developers of this caliber — SODIC, Emaar, Palm Hills, Marassi, Hyde Park and Mountain View among them — already trust TAQA Arabia to run their community utilities.",
+  // 5 — Solutions Overview
+  "Seven integrated solutions — Mobile CNG, electricity, water, gas, diesel back-up, EV charging and solar — delivered under one partner and one SLA, detailed next.",
+  // 6 — Mobile CNG: Scope
+  "TAQA funds, builds and operates the mobile CNG chain — gas compressed to 250 bar, trucked in as a virtual pipeline, then decompressed and metered straight to homes.",
+  // 7 — Mobile CNG: Value Proposition
+  "Communities gain reliable off-grid gas at lower cost than diesel or LPG, cutting CO2 by roughly 24 percent — backed by TAQA's nationwide trailer fleet and zero-capex delivery model.",
+  // 8 — Mobile CNG: Timeline
+  "From first site audit to live gas takes as little as 120 to 200 days — discovery, contract and mobilization all managed by TAQA's dedicated CNG team.",
+  // 9 — Mobile CNG: Track Record
+  "Egypt's first mobile virtual-pipeline gas supplier now runs 86 stations across 20 governorates — the chart shows TAQA gas holding a guaranteed 30 percent price edge over diesel.",
+  // 10 — Electricity Distribution: Scope
+  "TAQA designs, builds and energizes the full MV/LV network — substations, transformers and cabling — then meters every home and keeps it balanced through 24/7 SCADA monitoring.",
+  // 11 — Electricity Distribution: Value Proposition
+  "A profit-share model turns the distribution network into new revenue for developers, while residents gain stable, metered power built future-ready for solar, storage and EV loads.",
+  // 12 — Electricity Distribution: Timeline
+  "Power sourcing begins on day one, engineering and MEP approvals follow within 120 days, and the network is built, metered and energized inside 300 days.",
+  // 13 — Electricity Distribution: Track Record
+  "Anchored by the 250 MVA 6th of October substation, TAQA Power distributes over 1,600 MVA across 31 million square meters, serving 12,000-plus connections for LMD, Marakez and Emaar.",
+  // 14 — Water Desalination: Scope
+  "TAQA builds and owns the full desalination chain — intake, reverse-osmosis membranes, remineralization and storage — drawing in seawater and delivering guaranteed potable water straight to the community.",
+  // 15 — Water Desalination: Value Proposition
+  "Energy-efficient RO plus solar cuts power use in half, while dynamic app billing and brine management deliver a scalable, ESG-friendly water supply for coastal or inland communities alike.",
+  // 16 — Water Desalination: Timeline
+  "A water demand study and RO plant design run in the first 60 days, construction follows through day 210, and the plant is commissioned and live by day 260.",
+  // 17 — Water Desalination: Track Record (Soma Bay case study)
+  "At Soma Bay, TAQA invested nine million dollars under a build-own-operate model, halving power consumption versus conventional RO — saving EGP 33.6 million and 10,000 tons of CO2 yearly.",
+  // 18 — Gas Distribution: Scope
+  "TAQA secures the concession, lays steel and PE mains to every plot, regulates pressure down to safe household levels, then meters, commissions and operates each connection for life.",
+  // 19 — Gas Distribution: Value Proposition
+  "Switching from diesel and LPG to piped natural gas lowers residents' living costs and lifts community asset value — with mobile CNG bridging supply wherever the fixed grid hasn't arrived yet.",
+  // 20 — Gas Distribution: Timeline
+  "Feasibility and engineering wrap within 70 days, construction runs to day 240, and commissioning brings gas fully online by day 280.",
+  // 21 — Gas Distribution: Track Record
+  "As Egypt's first private gas distributor, TAQA holds 25-plus exclusive governorate concessions, over 10,000 kilometers of pipeline, and 66 percent of the private gas-distribution market, serving 1.9 million connections.",
+  // 22 — Diesel Rental: Scope
+  "TAQA sizes, delivers and synchronizes rental gensets on site, with automatic transfer switches starting power the instant the grid fails, while TAQA manages fuel, service and remote monitoring.",
+  // 23 — Diesel Rental: Value Proposition
+  "From 500 kVA to 20 MVA, gensets keep lifts, pumps and lighting running through any outage — on a pure rental model with no capital outlay and guaranteed response SLAs.",
+  // 24 — Diesel Rental: Timeline
+  "Load assessment and genset sizing take just two weeks, units are delivered and integrated within 35 days, and full 24/7 operation is live by day 45.",
+  // 25 — Diesel Rental: Track Record
+  "TAQA has installed 38 megawatts of diesel power across Egypt in fast-start, heavy-duty gensets from 0.5 to 2 megawatts — trusted by operators like Dina Farms for guaranteed uptime.",
+  // 26 — EV Chargers: Scope
+  "TAQA assesses parking and grid capacity, installs AC and DC chargers with smart load-balancing, then lets residents authenticate and charge through an app while TAQA operates and settles payments.",
+  // 27 — EV Chargers: Value Proposition
+  "Holding Egypt's first private EV-charging license, TAQA turns EV-ready parking into a deciding amenity for buyers, backed by app-based billing, a 24/7 hotline and flexible profit-share financing.",
+  // 28 — EV Chargers: Timeline
+  "Site assessment and commercial structuring take 30 days, chargers are supplied and installed by day 90, and the network activates and goes live by day 105.",
+  // 29 — EV Chargers: Track Record
+  "As holder of Egypt's first private EV-charging license, TAQA is rolling out AC, DC and golf-car charging across residential, commercial and highway sites, paired with on-site solar and app support.",
+  // 30 — Solar PV: Scope
+  "TAQA studies roof shading and load, installs grid-tied rooftop and carport solar arrays, then monitors and maintains the system as it offsets household and common-area power consumption daily.",
+  // 31 — Solar PV: Value Proposition
+  "TAQA, first to commercially operate at Benban solar park, offers CAPEX, BOOT or zero-capex PPA solar — locking in savings and avoiding about 1,000 tons of CO2 per megawatt-peak yearly.",
+  // 32 — Solar PV: Timeline
+  "Site and yield studies wrap in two weeks, design and procurement follow to day 60, and installation is commissioned and generating power by day 125.",
+  // 33 — Solar PV: Track Record
+  "TAQA's 20 megawatt Sharm El-Sheikh plant, built in four months, powers all of Nabq Bay at 42 gigawatt-hours yearly — its tariff runs steadily below the government rate.",
+  // 34 — Why One Partner
+  "Seven utilities, one accountable operator: a single SLA, one communication point, and one commercial relationship replace six separate vendors, six contracts and six points of failure.",
+  // 35 — Cross-Solution Benefits
+  "Combining solutions compounds the value — solar powering desalination and EV charging, shared metering and trenches, mobile CNG bridging to permanent gas — all sold as one SLA at lower combined cost.",
+  // 36 — Success Story: Soma Bay
+  "At Soma Bay, TAQA integrated solar, power and desalination into one system serving over 50,000 people and avoiding 8,560 tons of CO2 yearly — explore the model for your community.",
+];
+
 // ─── SLIDES Array (37 slides, 0-indexed) ─────────────────────────────────────
 
 const cngIcon    = <Truck className="w-5 h-5" />;
@@ -1572,6 +1651,7 @@ export default function ResidentialClientsNew() {
       subtitle="TAQA Arabia · Integrated Energy & Utility Solutions · Jan 2026"
       sections={SECTIONS}
       slides={SLIDES}
+      narration={NARRATION}
       pdf="residential-clients.pdf"
     />
   );
