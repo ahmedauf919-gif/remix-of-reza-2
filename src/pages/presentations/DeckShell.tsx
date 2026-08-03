@@ -32,11 +32,13 @@ interface DeckShellProps {
 const DESIGN_W = 1280;
 const DESIGN_H = 720;
 
-/** Presentation-mode pacing — every slide holds for at least MIN and at most MAX,
-    matching the narration length in between via the browser's speech 'end' event.
-    Values are generous so longer, fuller narration always has room to finish. */
-const MIN_SLIDE_MS = 8000;
-const MAX_SLIDE_MS = 45000;
+/** Presentation-mode pacing. Narration always plays to completion — the slide
+    never advances mid-sentence. After the narration finishes speaking, the
+    slide holds in silence for POST_NARRATION_GAP_MS before the next one
+    begins, so slides don't run into each other. MAX_SLIDE_MS is a generous
+    failsafe only, in case speech synthesis never fires its 'end' event. */
+const POST_NARRATION_GAP_MS = 2000;
+const MAX_SLIDE_MS = 90000;
 const NO_NARRATION_HOLD_MS = 12000;
 
 /** How long the crossfade between slides runs while presenting. */
@@ -50,13 +52,27 @@ const MALE_VOICE_PATTERNS: RegExp[] = [
   /microsoft\s*ryan.*natural/i,
   /guy\s*online/i,
   /microsoft\s*david/i,
+  /microsoft\s*mark/i,
+  /microsoft\s*george/i,
+  /microsoft\s*james/i,
   /google\s*uk\s*english\s*male/i,
   /daniel/i,
   /arthur/i,
   /oliver/i,
+  /thomas/i,
+  /aaron/i,
   /fred/i,
   /\balex\b/i,
   /\bmale\b/i,
+];
+
+/** Common default *female* system voices — explicitly avoided even when no
+    male pattern matches, so we never silently fall back to a woman's voice. */
+const FEMALE_VOICE_PATTERNS: RegExp[] = [
+  /zira/i, /samantha/i, /victoria/i, /karen/i, /moira/i, /tessa/i, /fiona/i,
+  /susan/i, /allison/i, /\bava\b/i, /serena/i, /\bfemale\b/i, /\bwoman\b/i,
+  /aria/i, /jenny/i, /libby/i, /sonia/i, /catherine/i, /amelia/i, /zoe/i,
+  /salli/i, /joanna/i, /kendra/i, /kimberly/i, /ivy/i, /hazel/i, /eva/i,
 ];
 
 function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
@@ -67,11 +83,13 @@ function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undef
     const match = pool.find(v => pattern.test(v.name));
     if (match) return match;
   }
+  const notFemale = pool.filter(v => !FEMALE_VOICE_PATTERNS.some(p => p.test(v.name)));
+  const safePool = notFemale.length ? notFemale : pool;
   return (
-    pool.find(v => /natural|neural|online|premium/i.test(v.name)) ??
-    pool.find(v => /google/i.test(v.name)) ??
-    pool.find(v => v.lang?.toLowerCase() === "en-us") ??
-    pool[0]
+    safePool.find(v => /natural|neural|online|premium/i.test(v.name)) ??
+    safePool.find(v => /google/i.test(v.name)) ??
+    safePool.find(v => v.lang?.toLowerCase() === "en-us") ??
+    safePool[0]
   );
 }
 
@@ -213,7 +231,6 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
     if (!presenting) return;
     let cancelled = false;
     let advanced = false;
-    const startTs = Date.now();
     const text = hasNarration ? narration![current] : "";
 
     const advance = () => {
@@ -230,6 +247,7 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
     };
 
     const maxTimer = setTimeout(advance, MAX_SLIDE_MS);
+    let keepAlive: ReturnType<typeof setInterval> | undefined;
 
     if (!muted && text && "speechSynthesis" in window) {
       const utter = new SpeechSynthesisUtterance(text);
@@ -237,11 +255,21 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
       utter.pitch = 0.85;
       const v = pickVoice(window.speechSynthesis.getVoices());
       if (v) utter.voice = v;
-      utter.onend = () => {
-        const elapsed = Date.now() - startTs;
-        setTimeout(advance, Math.max(0, MIN_SLIDE_MS - elapsed));
+      // Chrome silently stops speaking ~15s into a long utterance unless it's
+      // nudged with a pause/resume — this keeps longer narration from being
+      // cut off partway through. Skips the nudge while the user has it paused.
+      utter.onstart = () => {
+        keepAlive = setInterval(() => {
+          const s = window.speechSynthesis;
+          if (!s.speaking || s.paused) return;
+          s.pause();
+          s.resume();
+        }, 10000);
       };
-      utter.onerror = () => setTimeout(advance, NO_NARRATION_HOLD_MS);
+      // Narration always finishes speaking, then the slide holds in silence
+      // for a beat before the next one begins — never cut mid-sentence.
+      utter.onend = () => { clearInterval(keepAlive); setTimeout(advance, POST_NARRATION_GAP_MS); };
+      utter.onerror = () => { clearInterval(keepAlive); setTimeout(advance, NO_NARRATION_HOLD_MS); };
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utter);
     } else {
@@ -251,6 +279,7 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
     return () => {
       cancelled = true;
       clearTimeout(maxTimer);
+      clearInterval(keepAlive);
       window.speechSynthesis?.cancel();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
