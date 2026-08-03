@@ -251,8 +251,10 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
 
     if (!muted && text && "speechSynthesis" in window) {
       const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 0.93;
-      utter.pitch = 0.85;
+      // Slower, lower-pitched delivery for a deep, measured, documentary-style
+      // narrator tone rather than a brisk default TTS read.
+      utter.rate = 0.88;
+      utter.pitch = 0.8;
       const v = pickVoice(window.speechSynthesis.getVoices());
       if (v) utter.voice = v;
       // Chrome silently stops speaking ~15s into a long utterance unless it's
