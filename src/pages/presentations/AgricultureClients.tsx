@@ -9,7 +9,7 @@ import {
 import taqaLogo from "@/assets/taqa-logo.png";
 import {
   SlideStyles, Kicker, CornerWash, Bracket, BlueprintGrid, ColHead,
-  ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide, TrustedBySlide, ChartTrackRecordSlide,
+  ScopeSlide, ValuePropSlide, TrackRecordSlide, TrustedBySlide, ChartTrackRecordSlide,
   d, hideImg, lighter,
 } from "./slides";
 import { TRUSTED_BY_LOGOS } from "./trustedByLogos";
@@ -137,11 +137,11 @@ const SECTIONS = [
   { id: "challenge", label: "The Challenge",   color: "#dc2626", slides: [5] },
   { id: "solution",  label: "Farm Solution",   color: GREEN,     slides: [6, 7] },
   { id: "overview",  label: "Overview",        color: GREEN,     slides: [8] },
-  { id: "water",     label: "Water Solutions", color: "#0095C8", slides: [9, 10, 11, 12] },
-  { id: "solar",     label: "Solar",           color: "#d97706", slides: [13, 14, 15, 16] },
-  { id: "battery",   label: "Battery Storage", color: "#7B35C2", slides: [17, 18, 19, 20] },
-  { id: "cng",       label: "Mobile CNG",      color: "#E68A00", slides: [21, 22, 23, 24] },
-  { id: "closing",   label: "Closing",         color: NAVY,      slides: [25, 26, 27] },
+  { id: "solar",     label: "Solar",           color: "#d97706", slides: [9, 10, 11] },
+  { id: "cng",       label: "Mobile CNG",      color: "#E68A00", slides: [12, 13, 14] },
+  { id: "water",     label: "Water Solutions", color: "#0095C8", slides: [15, 16, 17] },
+  { id: "battery",   label: "Battery Storage", color: "#7B35C2", slides: [18, 19, 20] },
+  { id: "closing",   label: "Closing",         color: NAVY,      slides: [21, 22, 23] },
 ];
 
 function sectionOf(slideIdx: number) {
@@ -356,92 +356,95 @@ function RegionalSlide() {
 // ─── Slide 3: In Numbers ──────────────────────────────────────────────────────
 
 function NumbersSlide() {
-  const groupA = {
-    title: "Gas + Power",
-    color: "#E68A00",
-    icons: [<Flame key="f" className="w-4 h-4" />, <Zap key="z" className="w-4 h-4" />],
-    stats: [
-      { value: "EGP 13.4bn", label: "Revenue — FY 2025" },
-      { value: "+10,000 km", label: "Gas network" },
-      { value: "8",          label: "Governorate concessions (15-yr)" },
-      { value: "+1,600 MVA", label: "Distribution" },
-      { value: "+150 MW",    label: "Generation capacity" },
-      { value: "EGP 18bn+",  label: "Assets under Management" },
-    ],
-  };
-  const groupB = {
-    title: "Water + Mobility & CNG",
-    color: SKY,
-    icons: [<Droplets key="d" className="w-4 h-4" />, <Truck key="t" className="w-4 h-4" />],
-    stats: [
-      { value: "~6.5M",           label: "Residential gas customers" },
-      { value: "+47,000 m³/day",  label: "Desalination" },
-      { value: "15",              label: "Operational locations" },
-      { value: "300",             label: "Total stations" },
-      { value: "1st",             label: "Private EV-charging licence" },
-    ],
-  };
-  const groups = [groupA, groupB];
+  const heroStats = [
+    { value: "EGP 13.4bn", label: "Revenue",                    sub: "FY 2025", hero: true },
+    { value: "EGP 18bn+",  label: "Assets under Management",    sub: "Group-wide, FY 2025" },
+    { value: "~7M",        label: "Customers across Egypt",     sub: "FY 2025" },
+  ];
+  const divCards = [
+    { div: "GAS",            icon: <Flame className="h-4 w-4" />,    color: "#E68A00", stat: "+10,000 km network, 8 governorate concessions (15-yr)" },
+    { div: "POWER",          icon: <Zap className="h-4 w-4" />,      color: "#d97706", stat: "+1,600 MVA distribution, +150 MW generation" },
+    { div: "WATER",          icon: <Droplets className="h-4 w-4" />, color: "#0095C8", stat: "+47,000 m³/day desalination, 15 operational locations" },
+    { div: "MOBILITY & CNG", icon: <Truck className="h-4 w-4" />,    color: "#7B35C2", stat: "300 total stations, 1st private EV-charging license" },
+  ];
   return (
-    <LightSlide color={GREEN}>
-      <div className="sx-up" style={d(0)}><Kicker color={GREEN}>TAQA Arabia · In Numbers</Kicker></div>
-      <h2 className="sx-up mt-4 max-w-[1040px] font-display text-[38px] font-bold leading-[1.08] tracking-tight" style={{ ...d(60), color: NAVY }}>
-        The scale behind a single integrated energy partner — FY 2025
-      </h2>
-      <p className="sx-up mt-2 font-display text-[14px] font-bold uppercase tracking-[0.2em]" style={{ ...d(90), color: GREEN }}>
-        The Group at a Glance
-      </p>
+    <div className="relative h-full w-full overflow-hidden bg-[#fafaf9] font-deck">
+      <SlideStyles />
+      <CornerWash color={GREEN} />
+      <BlueprintGrid light />
 
-      {/* Group bento */}
-      <div className="mt-5 flex-1 min-h-0 grid grid-cols-2 gap-5">
-        {groups.map((g, gi) => (
-          <div key={g.title} className="sx-up min-h-0" style={d(160 + gi * 80)}>
+      <div className="relative z-10 flex h-full flex-col p-14">
+        <div className="sx-up" style={d(0)}>
+          <Kicker color={GREEN}>TAQA Arabia · In Numbers</Kicker>
+        </div>
+        <h2 className="sx-up mt-4 font-display text-[34px] font-bold leading-tight tracking-tight text-[#002060]" style={d(60)}>
+          The scale behind a single integrated energy partner — FY 2025
+        </h2>
+
+        <div className="mt-6 grid grid-cols-4 gap-4">
+          {heroStats.map((m, i) => (
             <div
-              className="relative h-full overflow-hidden rounded-2xl p-6 text-white shadow-lg flex flex-col"
-              style={{ background: "linear-gradient(140deg, #04150c 0%, #0c2f1a 65%, #14532d 100%)" }}
+              key={m.label}
+              className={`sx-up relative overflow-hidden rounded-2xl p-6 ${
+                m.hero ? "col-span-2 text-white shadow-xl" : "bg-white ring-1 ring-black/5 shadow-sm"
+              }`}
+              style={{
+                ...d(120 + i * 70),
+                ...(m.hero ? { background: "linear-gradient(130deg, #04150c 0%, #0c2f1a 55%, #14532d 100%)" } : {}),
+              }}
             >
-              <BlueprintGrid />
+              {m.hero && <BlueprintGrid />}
+              {m.hero && <Bracket color="#a3e635" pos="br" />}
               <div
-                aria-hidden
-                className="absolute -right-10 -top-14 h-40 w-40 rounded-full pointer-events-none"
-                style={{ background: `radial-gradient(circle, ${g.color}33, transparent 65%)` }}
-              />
-              <div className="relative flex items-center gap-2.5 mb-4">
-                <div className="flex items-center -space-x-1.5">
-                  {g.icons.map((ic, i) => (
-                    <div
-                      key={i}
-                      className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm ring-2 ring-[#0c2f1a]"
-                      style={{ background: `linear-gradient(135deg, ${g.color}, ${tone(g.color)})` }}
-                    >
-                      {ic}
-                    </div>
-                  ))}
-                </div>
-                <span className="font-display text-[19px] font-bold tracking-tight" style={gt("#ffffff", tone(g.color))}>{g.title}</span>
+                className={`relative font-display font-bold leading-none tracking-tight bg-clip-text text-transparent ${m.hero ? "text-[52px]" : "text-[36px]"}`}
+                style={{
+                  backgroundImage: m.hero
+                    ? "linear-gradient(100deg, #a3e635, #fde047)"
+                    : `linear-gradient(100deg, ${GREEN}, #4ade80)`,
+                }}
+              >
+                {m.value}
               </div>
-              <div className="relative grid flex-1 grid-cols-2 gap-x-4 gap-y-3 content-center">
-                {g.stats.map(s => (
-                  <div key={s.label} className="flex flex-col">
-                    <span className="font-display text-[24px] font-bold leading-none" style={gt("#a3e635", "#fde047")}>{s.value}</span>
-                    <span className="mt-1.5 text-[14px] leading-snug text-white/75">{s.label}</span>
+              <div className={`relative mt-2.5 text-[17px] font-semibold ${m.hero ? "text-white" : "text-[#002060]"}`}>{m.label}</div>
+              <div className={`relative mt-0.5 text-[14px] ${m.hero ? "text-white/70" : "text-slate-500"}`}>{m.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 grid min-h-0 flex-1 grid-cols-4 gap-4">
+          {divCards.map((c, i) => (
+            <div
+              key={c.div}
+              className="sx-up relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-sm"
+              style={d(360 + i * 70)}
+            >
+              <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${c.color}, ${lighter(c.color)})` }} />
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white shadow"
+                  style={{ background: `linear-gradient(135deg, ${c.color}, ${lighter(c.color)})` }}
+                >
+                  {c.icon}
+                </div>
+                <span className="font-display text-[15px] font-bold uppercase tracking-[0.14em] text-[#002060]">{c.div}</span>
+              </div>
+              <div className="mt-3 space-y-2.5">
+                {c.stat.split(", ").map(pt => (
+                  <div key={pt} className="flex items-start gap-2.5">
+                    <span aria-hidden className="mt-[8px] h-2 w-2 shrink-0 rotate-45" style={{ background: c.color }} />
+                    <span className="text-[17px] font-semibold leading-snug text-slate-700">{pt}</span>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="sx-up mt-4" style={d(360)}>
-        <div
-          className="rounded-2xl px-5 py-3 text-center text-[15px] font-semibold"
-          style={{ background: GREEN + "0D", boxShadow: `inset 0 0 0 1px ${GREEN}26`, color: "#14532d" }}
-        >
-          Founded 2006 · Listed on EGX 2023 · 3,400+ employees across all divisions
+          ))}
         </div>
+
+        <p className="sx-up mt-3 text-center text-[13px] font-medium text-slate-400" style={d(660)}>
+          Founded 2006 · Listed on EGX 2023 · 3,400+ employees across all divisions
+        </p>
       </div>
-    </LightSlide>
+    </div>
   );
 }
 
@@ -689,12 +692,12 @@ function SmartEnergyMixSlide() {
 
 function SolutionsOverviewSlide() {
   const solutions = [
-    { num: "01", label: "Water Solutions", desc: "Desalination, groundwater treatment and smart, solar-powered irrigation pumping.", icon: <Droplets className="w-5 h-5" />,  color: SKY },
-    { num: "02", label: "Solar",           desc: "Tailored solar PV via PPA to power pivots and pumps by day — no farm capex.",      icon: <SunMedium className="w-5 h-5" />, color: "#d97706" },
-    { num: "03", label: "Battery Storage", desc: "Shifts solar into the night and firms the stack so pivots never stop.",            icon: <Battery className="w-5 h-5" />,   color: "#7B35C2" },
-    { num: "04", label: "Mobile CNG",      desc: "Portable natural gas to fuel farm gensets — ~40% cheaper than diesel.",            icon: <Truck className="w-5 h-5" />,     color: "#E68A00" },
+    { num: "01", label: "Solar",           desc: "Tailored solar PV via PPA to power pivots and pumps by day — no farm capex.",      icon: <SunMedium className="w-5 h-5" />, color: "#d97706" },
+    { num: "02", label: "Mobile CNG",      desc: "Portable natural gas to fuel farm gensets — ~40% cheaper than diesel.",            icon: <Truck className="w-5 h-5" />,     color: "#E68A00" },
+    { num: "03", label: "Water Solutions", desc: "Desalination, groundwater treatment and smart, solar-powered irrigation pumping.", icon: <Droplets className="w-5 h-5" />,  color: SKY },
+    { num: "04", label: "Battery Storage", desc: "Shifts solar into the night and firms the stack so pivots never stop.",            icon: <Battery className="w-5 h-5" />,   color: "#7B35C2" },
   ];
-  const journey = ["Scope & How It Works", "Value Proposition", "Implementation Timeline", "Proven Track Record"];
+  const journey = ["Scope & How It Works", "Value Proposition", "Proven Track Record"];
   return (
     <LightSlide color={GREEN}>
       <div className="sx-up" style={d(0)}><Kicker color={GREEN}>Agriculture Clients · Solutions Overview</Kicker></div>
@@ -991,7 +994,7 @@ function ClosingSlide() {
   );
 }
 
-// ─── Narration (28 slides, 0-indexed, same order as SLIDES) ──────────────────
+// ─── Narration (24 slides, 0-indexed, same order as SLIDES) ──────────────────
 
 const NARRATION: readonly string[] = [
   // 0 Cover
@@ -1001,7 +1004,7 @@ const NARRATION: readonly string[] = [
   // 2 Regional Presence
   "TAQA Arabia's footprint spans ten countries across Egypt, the GCC, wider Africa and South Asia — a real, live operating presence today, not an aspiration, with each market's mix tailored to local needs. Within Egypt alone the group operates across more than 20 governorates, covering industrial, residential and touristic developments, run by four operating divisions and a workforce of over 3,400 employees. That combination of regional reach and deep local depth is exactly what lets TAQA extend the same energy and water model into agriculture.",
   // 3 In Numbers
-  "In fiscal year 2025, TAQA Arabia's gas and power businesses generated 13.4 billion Egyptian pounds in revenue, running over 10,000 kilometers of gas network under 8 governorate concessions, more than 1,600 megavolt-amps of distribution, over 150 megawatts of generation, and more than 18 billion pounds in assets under management. On the water and mobility side, the group serves around 6.5 million residential gas customers, desalinates over 47,000 cubic meters a day across 15 locations, runs 300 stations nationwide, and holds Egypt's first private EV-charging licence.",
+  "In fiscal year 2025, TAQA Arabia's gas and power businesses generated 13.4 billion Egyptian pounds in revenue, running over 10,000 kilometers of gas network under 8 governorate concessions, more than 1,600 megavolt-amps of distribution, over 150 megawatts of generation, and more than 18 billion pounds in assets under management. On the water and mobility side, the group serves around 7 million customers across Egypt, desalinates over 47,000 cubic meters a day across 15 locations, runs 300 stations nationwide, and holds Egypt's first private EV-charging licence.",
   // 4 Trusted By
   "TAQA Arabia's client roster spans industrial leaders, major real-estate developers, resort and hospitality operators, and heavy-industry producers alike — names like Emaar, SODIC, Palm Hills, Orascom Development, Ezz Steel and Lafarge Holcim, alongside Soma Bay, Rixos Hotels, Steigenberger and Travco Group. These are organizations that already depend on TAQA to run their critical water and energy infrastructure every day, across sectors as different as cement, ceramics, pharmaceuticals and tourism — the same reliability and scale TAQA now brings to agriculture.",
   // 5 The Challenge
@@ -1011,48 +1014,40 @@ const NARRATION: readonly string[] = [
   // 7 Smart Energy Mix
   "The dispatch order is deliberate. Solar runs first, the cheapest and cleanest power available, driving the pivots all day. Stored solar in the batteries then carries irrigation into the evening and early morning. When more is needed, gas gensets fill the remaining gaps at roughly 40 percent less cost than diesel. Diesel comes last, reserved only for peaks and true backup rather than everyday reliance. One TAQA energy-management system optimizes this exact mix every minute, holding down cost and carbon while keeping the farm powered continuously.",
   // 8 Solutions Overview
-  "Four solutions make up TAQA's integrated agriculture stack: water solutions covering desalination, groundwater treatment and smart solar-powered irrigation pumping; solar delivered through a PPA to power pivots and pumps by day with no farm capex; battery storage that shifts solar into the night and firms the stack so pivots never stop; and mobile CNG, portable natural gas that fuels farm gensets at roughly 40 percent less than diesel. Each of these four is explored in turn across its scope, its value proposition, its implementation timeline and its proven track record.",
-  // 9 Water Solutions: Scope
-  "Now, let's talk about our Water Solutions. TAQA funds, builds, owns and operates the water plant, so the farm pays only for the water it uses, with little to no upfront capital cost — covering brackish or seawater reverse-osmosis desalination units, pre-treatment and filtration, storage reservoirs and pumping, plus irrigation distribution and smart meters. TAQA first studies the farm's water source, salinity and demand, then treats brackish or seawater through reverse osmosis to irrigation quality before storing, pumping and distributing it to the fields — operating the plant continuously and guaranteeing both volume and quality.",
-  // 10 Water Solutions: Value Proposition
-  "Water solutions deliver guaranteed water security independent of grid-utility and groundwater constraints, lower energy and water cost through variable-speed drives, peak-demand control and solar-powered pumping, reduced pressure on the aquifer as desalination frees up groundwater, and a stronger sustainability and ESG story through solar-powered desalination and brine management. TAQA backs this with flexible delivery — BOO, BOOT or Capacity-as-a-Service with no upfront infrastructure cost — smart leak and failure monitoring, a design tailored to the farm's crop type and irrigation schedule, and contractual guarantees on volume and quality.",
-  // 11 Water Solutions: Timeline
-  "The water solutions rollout runs in overlapping stages. Days zero to twenty cover the water-demand study, assessing crop water need and the source water. Through day sixty, TAQA completes plant design — sizing the RO units, pumping and solar integration — while the BOO or BOOT commercial model and water-purchase agreement are finalized by day seventy-five. Construction of the plant, wells, networks and smart metering runs to around day two hundred ten, followed by commissioning and handover by day two hundred sixty, when smart IoT-monitored operation begins.",
-  // 12 Water Solutions: Track Record
-  "On Egypt's Red Sea coast, TAQA built the country's first green desalination facility at Soma Bay, powered entirely by renewable energy and using technology that consumes 50 percent less power than comparable plants. Across its water business, TAQA now delivers more than 47,000 cubic meters of contracted desalination a day from 15 operational locations, avoiding 8,560 tons of CO2 every year. That same solar-powered, smart-operated model — already proven at scale on the coast — is what now secures irrigation supply for large farms and agribusiness.",
-  // 13 Solar: Scope
+  "Four solutions make up TAQA's integrated agriculture stack: solar delivered through a PPA to power pivots and pumps by day with no farm capex; mobile CNG, portable natural gas that fuels farm gensets at roughly 40 percent less than diesel; water solutions covering desalination, groundwater treatment and smart solar-powered irrigation pumping; and battery storage that shifts solar into the night and firms the stack so pivots never stop. Each of these four is explored in turn across its scope, its value proposition and its proven track record.",
+  // 9 Solar: Scope
   "Now, let's talk about our Solar solution. TAQA funds, builds, owns and operates the solar system, so the farm pays only for the solar power it uses, with little to no upfront capital cost — covering ground-mount and pump-side PV arrays, inverters and mounting, pump controllers and soft starters, plus monitoring and connection works. TAQA first assesses the land, sun hours and the farm's pumping load, then installs arrays near the pumps so panels generate clean power through daylight irrigation hours, driving pumps and cold rooms directly while TAQA monitors yield and maintains the system.",
-  // 14 Solar: Value Proposition
+  // 10 Solar: Value Proposition
   "Solar delivers lower energy bills than diesel-only pivot power through long-term PPAs, greater energy security against fuel-price spikes, and a real sustainability gain — each megawatt-peak avoids roughly 1,000 tons of CO2 a year, strengthening ESG and export credentials — while turning idle farmland into a productive asset. TAQA backs this with flexible CAPEX, BOOT, BOO or zero-capex PPA financing, remote monitoring and guarantees for 25-plus years, and its track record as Egypt's solar pioneer operating multiple solar farms and desalination projects nationwide.",
-  // 15 Solar: Timeline
-  "A solar rollout moves through a clear sequence. The first 21 days cover the site and energy study, assessing irradiation, pivot load and the land. System design — sizing the array and battery tie-in — follows through day 55, while PPA structuring under a BOO or BOOT model is agreed by around day 75. Procurement of panels and inverters then runs to about day 130, followed by installation, tie-in, testing and commissioning through roughly day 210 — after which monitoring and maintenance keep the system running at its best.",
-  // 16 Solar: Case Study — Dina Farms
+  // 11 Solar: Case Study — Dina Farms
   "Farms typically run diesel gensets at around 10 Egyptian pounds per kilowatt-hour, rising every year. At Dina Farms, one of Egypt's largest agricultural operations, TAQA's 7-megawatt-peak solar plant instead delivers power at just 0.054 US dollars per kilowatt-hour — saving roughly 6 pounds per kilowatt-hour and about 89 million pounds in the first year alone. Over the full 25-year contract, under BOO or BOOT terms with no farm capex, savings compound to 9.3 billion Egyptian pounds, alongside roughly 1,000 tons of CO2 avoided per megawatt-peak every year.",
-  // 17 Battery Storage: Scope
+  // 12 Mobile CNG: Scope
+  "Now, let's talk about our Mobile CNG solution. TAQA funds, builds, owns and operates the gas supply chain, so the farm pays only for the gas it uses, with little to no upfront capital cost — covering a mother station and compression, CNG virtual-pipeline trailers, on-site decompression and a PRMS skid, plus metering and safety controls. Gas is compressed at the mother station to around 250 bar, trailered to the farm as a virtual pipeline, then decompressed on-site to process pressure before it fuels dryers, greenhouses and processing, with TAQA tracking usage and refilling ahead of demand.",
+  // 13 Mobile CNG: Value Proposition
+  "Mobile CNG brings reliable natural gas to remote farms with no pipeline access, delivered by mobile virtual pipeline. It costs less than diesel, cutting the farm's biggest running expense, while emitting roughly 24 percent less CO2 and helping offset diesel-quota reliance. TAQA's edge comes from Master Gas, running Egypt's leading CNG virtual pipeline with stations scattered nationwide, flexible CAPEX, BOOT, BOO or PPA financing, and a scale running from a starter tier of 550 litres of diesel-equivalent a day up to heavy loads of 5,500-plus litres nationwide.",
+  // 14 Mobile CNG: Case Study
+  "TAQA pioneered mobile CNG in Egypt — the first company in the country to supply natural gas through a mobile virtual pipeline. Today that network has grown to 86 stations spread across 20 governorates, extending gas access into four entirely off-grid regions, including the whole of El Kharga governorate, which TAQA supplies in full. On top of that footprint, TAQA already runs 10 existing mobile-CNG projects, proof that this virtual-pipeline model scales reliably from a single farm to an entire governorate with no fixed pipeline in the ground.",
+  // 15 Water Solutions: Scope
+  "Now, let's talk about our Water Solutions. TAQA funds, builds, owns and operates the water plant, so the farm pays only for the water it uses, with little to no upfront capital cost — covering brackish or seawater reverse-osmosis desalination units, pre-treatment and filtration, storage reservoirs and pumping, plus irrigation distribution and smart meters. TAQA first studies the farm's water source, salinity and demand, then treats brackish or seawater through reverse osmosis to irrigation quality before storing, pumping and distributing it to the fields — operating the plant continuously and guaranteeing both volume and quality.",
+  // 16 Water Solutions: Value Proposition
+  "Water solutions deliver guaranteed water security independent of grid-utility and groundwater constraints, lower energy and water cost through variable-speed drives, peak-demand control and solar-powered pumping, reduced pressure on the aquifer as desalination frees up groundwater, and a stronger sustainability and ESG story through solar-powered desalination and brine management. TAQA backs this with flexible delivery — BOO, BOOT or Capacity-as-a-Service with no upfront infrastructure cost — smart leak and failure monitoring, a design tailored to the farm's crop type and irrigation schedule, and contractual guarantees on volume and quality.",
+  // 17 Water Solutions: Track Record
+  "On Egypt's Red Sea coast, TAQA built the country's first green desalination facility at Soma Bay, powered entirely by renewable energy and using technology that consumes 50 percent less power than comparable plants. Across its water business, TAQA now delivers more than 47,000 cubic meters of contracted desalination a day from 15 operational locations, avoiding 8,560 tons of CO2 every year. That same solar-powered, smart-operated model — already proven at scale on the coast — is what now secures irrigation supply for large farms and agribusiness.",
+  // 18 Battery Storage: Scope
   "Now, let's talk about our Battery Storage solution. TAQA funds, builds, owns and operates the battery system, so the farm pays only for the service it receives, with little to no upfront capital cost — covering battery energy-storage units, a power-conversion system and inverters, switchgear and the grid or solar interface, plus energy-management and SCADA controls. TAQA sizes the storage to the farm's load and solar profile, then installs it so the system charges from surplus daytime solar and discharges to run pumps and cold storage after dark — the energy-management system optimizing every charge and discharge cycle.",
-  // 18 Battery Storage: Value Proposition
+  // 19 Battery Storage: Value Proposition
   "Battery storage stores the day's solar surplus and dispatches it to keep pivots running into the evening and early morning, displacing costly diesel-genset hours and cutting fuel spend and engine wear. More stored solar dispatched means less diesel burned, so the farm's carbon footprint shrinks year over year, while the same asset stacks solar-shifting, peak support and backup value at once. TAQA backs this with flexible CAPEX, BOOT, BOO or PPA financing, 25-plus years of O&M guarantees, and a smart EMS optimizing every cycle for lowest cost.",
-  // 19 Battery Storage: Timeline
-  "A battery storage rollout begins with a load and solar study through day 21, profiling the farm's load and daytime solar surplus. System design — sizing the BESS and hybrid configuration — runs to about day 55, with the BOO or BOOT savings agreement finalized around day 75. Procurement of batteries and the energy-management platform then takes the project to roughly day 140, followed by installation, testing and go-live through about day 220 — after which smart operation, monitored through the EMS, keeps performance on track.",
   // 20 Battery Storage: Case Study
   "Rather than relying on diesel at 10 Egyptian pounds per kilowatt-hour, TAQA pairs solar with battery storage to maximize savings. One client's 1.1-megawatt solar array paired with a 4-megawatt battery, giving four hours of storage, delivers power at just 4 pounds per kilowatt-hour, rising only 10 percent a year — saving 6 pounds per kilowatt-hour and roughly 14 million pounds in year one. Over the full 25-year term, under a no-capex BOO or BOOT structure, savings reach 1.3 billion pounds, while batteries shift day energy into the night.",
-  // 21 Mobile CNG: Scope
-  "Now, let's talk about our Mobile CNG solution. TAQA funds, builds, owns and operates the gas supply chain, so the farm pays only for the gas it uses, with little to no upfront capital cost — covering a mother station and compression, CNG virtual-pipeline trailers, on-site decompression and a PRMS skid, plus metering and safety controls. Gas is compressed at the mother station to around 250 bar, trailered to the farm as a virtual pipeline, then decompressed on-site to process pressure before it fuels dryers, greenhouses and processing, with TAQA tracking usage and refilling ahead of demand.",
-  // 22 Mobile CNG: Value Proposition
-  "Mobile CNG brings reliable natural gas to remote farms with no pipeline access, delivered by mobile virtual pipeline. It costs less than diesel, cutting the farm's biggest running expense, while emitting roughly 24 percent less CO2 and helping offset diesel-quota reliance. TAQA's edge comes from Master Gas, running Egypt's leading CNG virtual pipeline with stations scattered nationwide, flexible CAPEX, BOOT, BOO or PPA financing, and a scale running from a starter tier of 550 litres of diesel-equivalent a day up to heavy loads of 5,500-plus litres nationwide.",
-  // 23 Mobile CNG: Timeline
-  "The process starts at day zero with discovery — identifying and qualifying the lead — followed within three days by initial contact, an NDA and requirement scoping. A site audit profiling the farm's gas load runs through day seven, and the contract, setting capacity tier and Capacity-as-a-Service pricing, is signed by around day fourteen. Mobilization of the mobile gas equipment follows through day thirty, on-site installation and SCADA activation happen between days ninety and one hundred twenty, and the farm switches to live CNG supply by around day two hundred.",
-  // 24 Mobile CNG: Case Study
-  "TAQA pioneered mobile CNG in Egypt — the first company in the country to supply natural gas through a mobile virtual pipeline. Today that network has grown to 86 stations spread across 20 governorates, extending gas access into four entirely off-grid regions, including the whole of El Kharga governorate, which TAQA supplies in full. On top of that footprint, TAQA already runs 10 existing mobile-CNG projects, proof that this virtual-pipeline model scales reliably from a single farm to an entire governorate with no fixed pipeline in the ground.",
-  // 25 Why One Partner
+  // 21 Why One Partner
   "TAQA Arabia replaces a patchwork of fragmented vendors — covering water, solar, storage, mobile CNG, diesel and smart energy management — with one integrated operator. That means one SLA covering the whole farm, one communication point through a dedicated account team and 24/7 hotline instead of chasing separate contractors, one commercial relationship with consolidated billing and aligned BOO or BOOT terms, one smart system running water and power on a single TAQA platform, and one accountable owner who takes end-to-end responsibility, removing interface risk and owning the farm's uptime completely.",
-  // 26 Integrated Economics
+  // 22 Integrated Economics
   "Today, a diesel-only farm carries a high, volatile fuel bill, stops pivots when gensets fail, runs high carbon emissions on 100 percent diesel, and juggles multiple vendors with no accountability. TAQA's integrated stack cuts costs up to roughly 40 percent as solar, storage and CNG displace diesel hours under predictable PPA tariffs, keeps irrigation running 24/7, and sharply lowers carbon — solar avoids about 1,000 tons of CO2 per megawatt-peak yearly, CNG cuts a further 24 percent versus diesel — while the farm gains one accountable partner at zero capex.",
-  // 27 Proven on the Ground (Closing)
+  // 23 Proven on the Ground (Closing)
   "TAQA Arabia already operates renewable-energy projects at Dina Farms — one of Egypt's largest integrated agricultural operations — alongside its landmark Benban solar developments, proving it can deploy clean energy at agricultural scale. The next step is the fully integrated stack: pairing that same solar with battery storage, mobile CNG and water solutions under one operator, at zero capex through a BOO or BOOT structure, avoiding roughly 1,000 tons of CO2 per megawatt-peak every year. The four solutions are ready today — the question is when your farm gets started.",
 ];
 
-// ─── SLIDES Array (27 slides, 0-indexed) ─────────────────────────────────────
+// ─── SLIDES Array (24 slides, 0-indexed) ──────────────────────────────────────
 
 const waterIcon   = <Droplets className="w-5 h-5" />;
 const solarIcon   = <SunMedium className="w-5 h-5" />;
@@ -1079,105 +1074,13 @@ const SLIDES = [
   // 8
   { title: "Solutions Overview",              render: () => <SolutionsOverviewSlide /> },
 
-  // ── Water Solutions ─────────────────────────────────────────────────────────
-  // 9
-  {
-    title: "Water Solutions: Scope",
-    render: () => (
-      <ScopeSlide
-        solutionNum={1} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
-        subtitle="Reliable, cost-effective water for the farm. Desalination, groundwater treatment and smart irrigation pumping."
-        tagline="TAQA funds, builds, owns & operates the asset. You pay only for the water you use — little to no upfront CapEx."
-        taqaInvests={[
-          "Brackish/seawater RO desalination units",
-          "Pre-treatment & filtration system",
-          "Storage reservoirs & pumping",
-          "Irrigation distribution & smart meters",
-        ]}
-        steps={[
-          "TAQA studies the farm's water source, salinity and demand.",
-          "Brackish or seawater is drawn in and pre-treated.",
-          "Reverse-osmosis units desalinate water to irrigation quality.",
-          "Treated water is stored, pumped and distributed to fields.",
-          "TAQA operates the plant and guarantees volume and quality.",
-        ]}
-        whatYouReceive={[
-          "Reliable irrigation-grade water on demand",
-          "Independence from strained groundwater",
-          "Guaranteed volume, quality and uptime",
-        ]}
-      />
-    ),
-  },
-  // 10
-  {
-    title: "Water Solutions: Value Proposition",
-    render: () => (
-      <ValuePropSlide
-        solutionNum={1} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
-        whatYouGain={[
-          { label: "Guaranteed Water Security",   desc: "Reliable freshwater for irrigation, independent of grid-utility and groundwater constraints." },
-          { label: "Lower Energy & Water Cost",   desc: "VSDs, peak-demand control and solar-powered pumping cut energy use and non-revenue water losses." },
-          { label: "Frees Up Groundwater",        desc: "Desalination and treatment reduce over-abstraction, protecting the aquifer for the long term." },
-          { label: "Sustainability & ESG Impact", desc: "Solar-powered desalination, brine management and a reduced freshwater-extraction footprint." },
-        ]}
-        taqaEdge={[
-          { label: "Flexible Delivery Approach", desc: "BOO/BOOT or EPC via Capacity-as-a-Service — no upfront infrastructure cost." },
-          { label: "Smart Operations & Uptime",  desc: "Real-time monitoring, leak & failure detection and predictive-maintenance dashboards." },
-          { label: "Tailored to the Farm",       desc: "Solutions sized to crop type, hectares and irrigation schedule — not one-size-fits-all." },
-          { label: "Performance Guarantees",     desc: "Volume and quality backed by contractual SLAs." },
-        ]}
-      />
-    ),
-  },
-  // 11
-  {
-    title: "Water Solutions: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={1} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
-        phases={[
-          { days: "Day 0–20",    label: "Water Demand Study (crop water need & source-water survey)" },
-          { days: "Day 20–60",   label: "Plant Design (RO sizing, pumping & solar integration)" },
-          { days: "Day 45–75",   label: "Commercial Model (BOO/BOOT & water-purchase agreement)" },
-          { days: "Day 75–210",  label: "Construction (plant, wells, networks & smart metering)" },
-          { days: "Day 210–260", label: "Commissioning (testing, water-quality validation & handover)" },
-          { days: "Day 260+",    label: "Smart O&M (IoT monitoring & predictive maintenance)" },
-        ]}
-        groups={[
-          { label: "STUDY & DESIGN",  range: "Day 0–60" },
-          { label: "FINANCE & BUILD", range: "Day 45–260" },
-          { label: "SMART OPERATE",   range: "Day 260+" },
-        ]}
-      />
-    ),
-  },
-  // 12
-  {
-    title: "Water Solutions: Track Record",
-    render: () => (
-      <TrackRecordSlide
-        solutionNum={1} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
-        heading="Water Solutions: Proven Track Record"
-        subheading="Eco Solar Desalination — Soma Bay"
-        body="On the Red Sea, TAQA Water built Egypt's first green desalination facility powered entirely by renewable energy, using technology that consumes 50% less power than peers. The same solar-powered, smart-operated water model — proven at scale — secures irrigation supply for large farms and agribusiness."
-        stats={[
-          { value: "+47,000 m³/day", label: "Contracted desalination" },
-          { value: "15",             label: "Operational water locations" },
-          { value: "50% less power", label: "Than peer plants" },
-          { value: "8,560 t CO₂",   label: "Avoided per year" },
-        ]}
-      />
-    ),
-  },
-
   // ── Solar ────────────────────────────────────────────────────────────────────
-  // 13
+  // 9
   {
     title: "Solar: Scope",
     render: () => (
       <ScopeSlide
-        solutionNum={2} solutionLabel="Solar" color="#d97706" icon={solarIcon} photo={P.solar}
+        solutionNum={1} solutionLabel="Solar" color="#d97706" icon={solarIcon} photo={P.solar}
         subtitle="Tailored solar PV to power pivots and pumps by day. Integrated with storage and diesel for round-the-clock supply."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the solar power you use — little to no upfront CapEx."
         taqaInvests={[
@@ -1201,12 +1104,12 @@ const SLIDES = [
       />
     ),
   },
-  // 14
+  // 10
   {
     title: "Solar: Value Proposition",
     render: () => (
       <ValuePropSlide
-        solutionNum={2} solutionLabel="Solar" color="#d97706" icon={solarIcon} photo={P.solar}
+        solutionNum={1} solutionLabel="Solar" color="#d97706" icon={solarIcon} photo={P.solar}
         whatYouGain={[
           { label: "Lower Energy Bills",          desc: "Clean solar energy at lower cost than diesel-only pivot power, through long-term PPAs." },
           { label: "Energy Security",             desc: "On-site generation reduces exposure to fuel-price spikes and supply disruption." },
@@ -1222,34 +1125,12 @@ const SLIDES = [
       />
     ),
   },
-  // 15
-  {
-    title: "Solar: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={2} solutionLabel="Solar" color="#d97706" icon={solarIcon} photo={P.solar}
-        phases={[
-          { days: "Day 0–21",    label: "Site & Energy Study (irradiation, pivot load & land survey)" },
-          { days: "Day 21–55",   label: "System Design (array sizing & genset/battery-tie design)" },
-          { days: "Day 40–75",   label: "PPA Structuring (BOO/BOOT & tariff agreement)" },
-          { days: "Day 75–130",  label: "Procurement (panels, inverters & mounting sourcing)" },
-          { days: "Day 130–210", label: "Install & Commission (build, tie-in, testing & go-live)" },
-          { days: "Day 210+",    label: "O&M (monitoring & performance maintenance)" },
-        ]}
-        groups={[
-          { label: "STUDY & DESIGN",  range: "Day 0–55" },
-          { label: "FINANCE & BUILD", range: "Day 40–210" },
-          { label: "OPERATE",         range: "Day 210+" },
-        ]}
-      />
-    ),
-  },
-  // 16
+  // 11
   {
     title: "Solar: Case Study — Dina Farms",
     render: () => (
       <ChartTrackRecordSlide
-        solutionNum={2} solutionLabel="Solar" color="#d97706" icon={solarIcon}
+        solutionNum={1} solutionLabel="Solar" color="#d97706" icon={solarIcon}
         heading="Solar: Case Study — Dina Farms"
         subheading="Powering one of Egypt's largest farms with a 7 MWp solar plant"
         body="Farms typically run diesel gensets at ~10 EGP/kWh, rising every year. TAQA's 7 MWp solar plant for Dina Farms delivers power at a 0.054 USD/kWh tariff — saving ~6 EGP/kWh and ~89 million EGP in the first year alone."
@@ -1283,125 +1164,13 @@ const SLIDES = [
     ),
   },
 
-  // ── Battery Storage ─────────────────────────────────────────────────────────
-  // 17
-  {
-    title: "Battery Storage: Scope",
-    render: () => (
-      <ScopeSlide
-        solutionNum={3} solutionLabel="Battery Storage (BESS)" color="#7B35C2" icon={batteryIcon} photo={P.battery}
-        subtitle="Battery storage that shifts solar into the night. Firms the power stack — so irrigation never stops."
-        tagline="TAQA funds, builds, owns & operates the asset. You pay only for the service — little to no upfront CapEx."
-        taqaInvests={[
-          "Battery energy-storage units",
-          "Power-conversion system & inverters",
-          "Switchgear & grid/solar interface",
-          "EMS & SCADA controls",
-        ]}
-        steps={[
-          "TAQA sizes storage to the farm's load and solar profile.",
-          "Battery units and conversion systems are installed.",
-          "Storage charges from surplus daytime solar.",
-          "It discharges to run pumps and cold storage after dark.",
-          "An energy-management system optimizes every cycle.",
-        ]}
-        whatYouReceive={[
-          "Round-the-clock power from daytime solar",
-          "Backup through grid and supply gaps",
-          "Stable energy for cold-chain and pumps",
-        ]}
-      />
-    ),
-  },
-  // 18
-  {
-    title: "Battery Storage: Value Proposition",
-    render: () => (
-      <ValuePropSlide
-        solutionNum={3} solutionLabel="Battery Storage" color="#7B35C2" icon={batteryIcon} photo={P.battery}
-        whatYouGain={[
-          { label: "Solar After Sunset",     desc: "Stores daytime solar surplus and dispatches it to run pivots into the evening and early morning." },
-          { label: "Less Diesel, Lower Cost", desc: "Battery dispatch displaces costly diesel-genset hours, cutting fuel spend and engine wear." },
-          { label: "Greener Every Year",     desc: "More stored solar dispatched means less diesel and a steadily smaller carbon footprint." },
-          { label: "A Stacked Asset",        desc: "One system delivers solar-shifting, peak support and backup — value across multiple uses." },
-        ]}
-        taqaEdge={[
-          { label: "Flexible Financing Solutions", desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
-          { label: "Single Energy Partner",        desc: "One single utility provider for electricity and water — solar and batteries for maximum savings and utilisation." },
-          { label: "Lifecycle O&M & Guarantee",   desc: "Remote monitoring, maintenance and performance guarantees keep output high for 25+ years." },
-          { label: "Smart Energy Management",     desc: "TAQA Arabia's EMS optimises charge/discharge against loads, solar and fuel cost for the lowest cost per kWh." },
-        ]}
-      />
-    ),
-  },
-  // 19
-  {
-    title: "Battery Storage: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={3} solutionLabel="Battery Storage" color="#7B35C2" icon={batteryIcon} photo={P.battery}
-        phases={[
-          { days: "Day 0–21",    label: "Load & Solar Study (farm load profile and solar surplus assessment)" },
-          { days: "Day 21–55",   label: "System Design (BESS sizing & hybrid configuration)" },
-          { days: "Day 40–75",   label: "Commercial Model (BOO/BOOT & savings agreement)" },
-          { days: "Day 75–140",  label: "Procurement (batteries, PCS & EMS sourcing)" },
-          { days: "Day 140–220", label: "Install & Commission (build, integration, testing & go-live)" },
-          { days: "Day 220+",    label: "Smart O&M (EMS monitoring & performance maintenance)" },
-        ]}
-        groups={[
-          { label: "STUDY & DESIGN",  range: "Day 0–55" },
-          { label: "FINANCE & BUILD", range: "Day 40–220" },
-          { label: "SMART OPERATE",   range: "Day 220+" },
-        ]}
-      />
-    ),
-  },
-  // 20
-  {
-    title: "Battery Storage: Case Study",
-    render: () => (
-      <ChartTrackRecordSlide
-        solutionNum={3} solutionLabel="Battery Storage" color="#7B35C2" icon={batteryIcon}
-        heading="Battery Storage (BESS): Case Study"
-        subheading="Turning intermittent solar into round-the-clock farm power"
-        body="TAQA pairs solar with battery storage so clients maximise savings instead of relying on diesel at 10 EGP/kWh. One client runs a 1.1 MW PV + 4 MW battery system (4-hour storage) at 4 EGP/kWh, +10% a year — saving 6 EGP/kWh and 14 million EGP in year one."
-        xKey="year" yLabel="EGP/kWh (25 yrs)"
-        series={[
-          { key: "taqa", name: "TAQA Tariff", color: "#4ade80" },
-          { key: "diesel", name: "Diesel Generator", color: "#f87171" },
-        ]}
-        data={[
-          { year: "Y1", taqa: 4.0, diesel: 10.0 }, { year: "Y2", taqa: 4.4, diesel: 11.0 },
-          { year: "Y3", taqa: 4.84, diesel: 12.1 }, { year: "Y4", taqa: 5.32, diesel: 13.31 },
-          { year: "Y5", taqa: 5.86, diesel: 14.64 }, { year: "Y6", taqa: 6.44, diesel: 16.11 },
-          { year: "Y7", taqa: 7.09, diesel: 17.72 }, { year: "Y8", taqa: 7.79, diesel: 19.49 },
-          { year: "Y9", taqa: 8.57, diesel: 21.44 }, { year: "Y10", taqa: 9.43, diesel: 23.58 },
-          { year: "Y11", taqa: 10.37, diesel: 25.94 }, { year: "Y12", taqa: 11.41, diesel: 28.53 },
-          { year: "Y13", taqa: 12.55, diesel: 31.38 }, { year: "Y14", taqa: 13.81, diesel: 34.52 },
-          { year: "Y15", taqa: 15.19, diesel: 37.97 }, { year: "Y16", taqa: 16.71, diesel: 41.77 },
-          { year: "Y17", taqa: 18.38, diesel: 45.95 }, { year: "Y18", taqa: 20.22, diesel: 50.54 },
-          { year: "Y19", taqa: 22.24, diesel: 55.6 }, { year: "Y20", taqa: 24.46, diesel: 61.16 },
-          { year: "Y21", taqa: 26.91, diesel: 67.27 }, { year: "Y22", taqa: 29.6, diesel: 74.0 },
-          { year: "Y23", taqa: 32.56, diesel: 81.4 }, { year: "Y24", taqa: 35.82, diesel: 89.54 },
-          { year: "Y25", taqa: 39.4, diesel: 98.5 },
-        ]}
-        stats={[
-          { value: "Solar shifting", label: "Day energy used at night" },
-          { value: "Peak support", label: "Firms the power stack" },
-          { value: "BOO/BOOT", label: "No farm capex" },
-          { value: "1.3B EGP", label: "Savings over 25 years" },
-        ]}
-      />
-    ),
-  },
-
   // ── Mobile CNG ──────────────────────────────────────────────────────────────
-  // 21
+  // 12
   {
     title: "Mobile CNG: Scope",
     render: () => (
       <ScopeSlide
-        solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
+        solutionNum={2} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
         subtitle="Portable natural gas to fuel farm gas-gensets. A cleaner, cheaper alternative to diesel where there is no pipeline."
         tagline="TAQA funds, builds, owns & operates the asset. You pay only for the gas you use — little to no upfront CapEx."
         taqaInvests={[
@@ -1425,12 +1194,12 @@ const SLIDES = [
       />
     ),
   },
-  // 22
+  // 13
   {
     title: "Mobile CNG: Value Proposition",
     render: () => (
       <ValuePropSlide
-        solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
+        solutionNum={2} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
         whatYouGain={[
           { label: "Off-Grid Gas Supply",     desc: "Reliable natural gas to remote farms with no pipeline access, by mobile virtual pipeline." },
           { label: "Cost Savings vs. Diesel", desc: "Lower fuel cost than diesel — a major cut to the farm's biggest running expense." },
@@ -1446,35 +1215,12 @@ const SLIDES = [
       />
     ),
   },
-  // 23
-  {
-    title: "Mobile CNG: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon} photo={P.cng}
-        phases={[
-          { days: "Day 0",       label: "Discovery (lead identification & qualification)" },
-          { days: "Day 1–3",     label: "Initial Contact (NDA signed, requirement scoping)" },
-          { days: "Day 4–7",     label: "Site Audit (gas load profiling & demand curve)" },
-          { days: "Day 8–14",    label: "Contract (capacity tier, CaaS pricing)" },
-          { days: "Day 15–30",   label: "Mobilization (MEGC & PRU procured and prepared)" },
-          { days: "Day 90–120",  label: "On-Site Install (PRU adapter installed, SCADA activated)" },
-          { days: "Day 120–200", label: "Live Gas (switchover from diesel to live CNG supply)" },
-        ]}
-        groups={[
-          { label: "DISCOVERY & AUDIT",    range: "Day 0–14" },
-          { label: "CONTRACTING",          range: "Day 8–14" },
-          { label: "DEPLOYMENT & GO-LIVE", range: "Day 90–200" },
-        ]}
-      />
-    ),
-  },
-  // 24
+  // 14
   {
     title: "Mobile CNG: Case Study",
     render: () => (
       <ChartTrackRecordSlide
-        solutionNum={4} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon}
+        solutionNum={2} solutionLabel="Mobile CNG" color="#E68A00" icon={cngIcon}
         heading="Mobile CNG: Proven Track Record"
         subheading="First company in Egypt to supply natural gas through a mobile virtual pipeline"
         body="TAQA pioneered mobile CNG in Egypt — 86 stations extend a virtual pipeline into four off-grid governorates, including all of El Kharga."
@@ -1509,12 +1255,172 @@ const SLIDES = [
     ),
   },
 
+  // ── Water Solutions ─────────────────────────────────────────────────────────
+  // 15
+  {
+    title: "Water Solutions: Scope",
+    render: () => (
+      <ScopeSlide
+        solutionNum={3} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
+        subtitle="Reliable, cost-effective water for the farm. Desalination, groundwater treatment and smart irrigation pumping."
+        tagline="TAQA funds, builds, owns & operates the asset. You pay only for the water you use — little to no upfront CapEx."
+        taqaInvests={[
+          "Brackish/seawater RO desalination units",
+          "Pre-treatment & filtration system",
+          "Storage reservoirs & pumping",
+          "Irrigation distribution & smart meters",
+        ]}
+        steps={[
+          "TAQA studies the farm's water source, salinity and demand.",
+          "Brackish or seawater is drawn in and pre-treated.",
+          "Reverse-osmosis units desalinate water to irrigation quality.",
+          "Treated water is stored, pumped and distributed to fields.",
+          "TAQA operates the plant and guarantees volume and quality.",
+        ]}
+        whatYouReceive={[
+          "Reliable irrigation-grade water on demand",
+          "Independence from strained groundwater",
+          "Guaranteed volume, quality and uptime",
+        ]}
+      />
+    ),
+  },
+  // 16
+  {
+    title: "Water Solutions: Value Proposition",
+    render: () => (
+      <ValuePropSlide
+        solutionNum={3} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
+        whatYouGain={[
+          { label: "Guaranteed Water Security",   desc: "Reliable freshwater for irrigation, independent of grid-utility and groundwater constraints." },
+          { label: "Lower Energy & Water Cost",   desc: "VSDs, peak-demand control and solar-powered pumping cut energy use and non-revenue water losses." },
+          { label: "Frees Up Groundwater",        desc: "Desalination and treatment reduce over-abstraction, protecting the aquifer for the long term." },
+          { label: "Sustainability & ESG Impact", desc: "Solar-powered desalination, brine management and a reduced freshwater-extraction footprint." },
+        ]}
+        taqaEdge={[
+          { label: "Flexible Delivery Approach", desc: "BOO/BOOT or EPC via Capacity-as-a-Service — no upfront infrastructure cost." },
+          { label: "Smart Operations & Uptime",  desc: "Real-time monitoring, leak & failure detection and predictive-maintenance dashboards." },
+          { label: "Tailored to the Farm",       desc: "Solutions sized to crop type, hectares and irrigation schedule — not one-size-fits-all." },
+          { label: "Performance Guarantees",     desc: "Volume and quality backed by contractual SLAs." },
+        ]}
+      />
+    ),
+  },
+  // 17
+  {
+    title: "Water Solutions: Track Record",
+    render: () => (
+      <TrackRecordSlide
+        solutionNum={3} solutionLabel="Water Solutions" color="#0095C8" icon={waterIcon} photo={P.water}
+        heading="Water Solutions: Proven Track Record"
+        subheading="Eco Solar Desalination — Soma Bay"
+        body="On the Red Sea, TAQA Water built Egypt's first green desalination facility powered entirely by renewable energy, using technology that consumes 50% less power than peers. The same solar-powered, smart-operated water model — proven at scale — secures irrigation supply for large farms and agribusiness."
+        stats={[
+          { value: "+47,000 m³/day", label: "Contracted desalination" },
+          { value: "15",             label: "Operational water locations" },
+          { value: "50% less power", label: "Than peer plants" },
+          { value: "8,560 t CO₂",   label: "Avoided per year" },
+        ]}
+      />
+    ),
+  },
+
+  // ── Battery Storage ─────────────────────────────────────────────────────────
+  // 18
+  {
+    title: "Battery Storage: Scope",
+    render: () => (
+      <ScopeSlide
+        solutionNum={4} solutionLabel="Battery Storage (BESS)" color="#7B35C2" icon={batteryIcon} photo={P.battery}
+        subtitle="Battery storage that shifts solar into the night. Firms the power stack — so irrigation never stops."
+        tagline="TAQA funds, builds, owns & operates the asset. You pay only for the service — little to no upfront CapEx."
+        taqaInvests={[
+          "Battery energy-storage units",
+          "Power-conversion system & inverters",
+          "Switchgear & grid/solar interface",
+          "EMS & SCADA controls",
+        ]}
+        steps={[
+          "TAQA sizes storage to the farm's load and solar profile.",
+          "Battery units and conversion systems are installed.",
+          "Storage charges from surplus daytime solar.",
+          "It discharges to run pumps and cold storage after dark.",
+          "An energy-management system optimizes every cycle.",
+        ]}
+        whatYouReceive={[
+          "Round-the-clock power from daytime solar",
+          "Backup through grid and supply gaps",
+          "Stable energy for cold-chain and pumps",
+        ]}
+      />
+    ),
+  },
+  // 19
+  {
+    title: "Battery Storage: Value Proposition",
+    render: () => (
+      <ValuePropSlide
+        solutionNum={4} solutionLabel="Battery Storage" color="#7B35C2" icon={batteryIcon} photo={P.battery}
+        whatYouGain={[
+          { label: "Solar After Sunset",     desc: "Stores daytime solar surplus and dispatches it to run pivots into the evening and early morning." },
+          { label: "Less Diesel, Lower Cost", desc: "Battery dispatch displaces costly diesel-genset hours, cutting fuel spend and engine wear." },
+          { label: "Greener Every Year",     desc: "More stored solar dispatched means less diesel and a steadily smaller carbon footprint." },
+          { label: "A Stacked Asset",        desc: "One system delivers solar-shifting, peak support and backup — value across multiple uses." },
+        ]}
+        taqaEdge={[
+          { label: "Flexible Financing Solutions", desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
+          { label: "Single Energy Partner",        desc: "One single utility provider for electricity and water — solar and batteries for maximum savings and utilisation." },
+          { label: "Lifecycle O&M & Guarantee",   desc: "Remote monitoring, maintenance and performance guarantees keep output high for 25+ years." },
+          { label: "Smart Energy Management",     desc: "TAQA Arabia's EMS optimises charge/discharge against loads, solar and fuel cost for the lowest cost per kWh." },
+        ]}
+      />
+    ),
+  },
+  // 20
+  {
+    title: "Battery Storage: Case Study",
+    render: () => (
+      <ChartTrackRecordSlide
+        solutionNum={4} solutionLabel="Battery Storage" color="#7B35C2" icon={batteryIcon}
+        heading="Battery Storage (BESS): Case Study"
+        subheading="Turning intermittent solar into round-the-clock farm power"
+        body="TAQA pairs solar with battery storage so clients maximise savings instead of relying on diesel at 10 EGP/kWh. One client runs a 1.1 MW PV + 4 MW battery system (4-hour storage) at 4 EGP/kWh, +10% a year — saving 6 EGP/kWh and 14 million EGP in year one."
+        xKey="year" yLabel="EGP/kWh (25 yrs)"
+        series={[
+          { key: "taqa", name: "TAQA Tariff", color: "#4ade80" },
+          { key: "diesel", name: "Diesel Generator", color: "#f87171" },
+        ]}
+        data={[
+          { year: "Y1", taqa: 4.0, diesel: 10.0 }, { year: "Y2", taqa: 4.4, diesel: 11.0 },
+          { year: "Y3", taqa: 4.84, diesel: 12.1 }, { year: "Y4", taqa: 5.32, diesel: 13.31 },
+          { year: "Y5", taqa: 5.86, diesel: 14.64 }, { year: "Y6", taqa: 6.44, diesel: 16.11 },
+          { year: "Y7", taqa: 7.09, diesel: 17.72 }, { year: "Y8", taqa: 7.79, diesel: 19.49 },
+          { year: "Y9", taqa: 8.57, diesel: 21.44 }, { year: "Y10", taqa: 9.43, diesel: 23.58 },
+          { year: "Y11", taqa: 10.37, diesel: 25.94 }, { year: "Y12", taqa: 11.41, diesel: 28.53 },
+          { year: "Y13", taqa: 12.55, diesel: 31.38 }, { year: "Y14", taqa: 13.81, diesel: 34.52 },
+          { year: "Y15", taqa: 15.19, diesel: 37.97 }, { year: "Y16", taqa: 16.71, diesel: 41.77 },
+          { year: "Y17", taqa: 18.38, diesel: 45.95 }, { year: "Y18", taqa: 20.22, diesel: 50.54 },
+          { year: "Y19", taqa: 22.24, diesel: 55.6 }, { year: "Y20", taqa: 24.46, diesel: 61.16 },
+          { year: "Y21", taqa: 26.91, diesel: 67.27 }, { year: "Y22", taqa: 29.6, diesel: 74.0 },
+          { year: "Y23", taqa: 32.56, diesel: 81.4 }, { year: "Y24", taqa: 35.82, diesel: 89.54 },
+          { year: "Y25", taqa: 39.4, diesel: 98.5 },
+        ]}
+        stats={[
+          { value: "Solar shifting", label: "Day energy used at night" },
+          { value: "Peak support", label: "Firms the power stack" },
+          { value: "BOO/BOOT", label: "No farm capex" },
+          { value: "1.3B EGP", label: "Savings over 25 years" },
+        ]}
+      />
+    ),
+  },
+
   // ── Closing ─────────────────────────────────────────────────────────────────
-  // 25
+  // 21
   { title: "Why One Partner",         render: () => <WhyOnePartnerSlide /> },
-  // 26
+  // 22
   { title: "Integrated Economics",    render: () => <IntegratedEconomicsSlide /> },
-  // 27
+  // 23
   { title: "Proven on the Ground",    render: () => <ClosingSlide /> },
 ];
 

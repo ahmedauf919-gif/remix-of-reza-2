@@ -12,7 +12,7 @@ import {
 import taqaLogo from "@/assets/taqa-logo.png";
 import {
   SlideStyles, Kicker, CornerWash, GhostNum, Bracket, BlueprintGrid, ColHead, ScopeSlide, ValuePropSlide,
-  TimelineSlide, TrackRecordSlide, ChartTrackRecordSlide, TrustedBySlide, statSize, d, hideImg, lighter,
+  TrackRecordSlide, ChartTrackRecordSlide, TrustedBySlide, statSize, d, hideImg, lighter,
   type TrackStat,
 } from "./slides";
 import { TRUSTED_BY_LOGOS } from "./trustedByLogos";
@@ -36,13 +36,13 @@ const SECTIONS = [
   { id: "intro",       label: "Introduction",   color: "#c2410c", slides: [0, 1, 2, 3] },
   { id: "trusted",     label: "Trusted By",      color: "#c2410c", slides: [4] },
   { id: "overview",    label: "Solutions",       color: "#c2410c", slides: [5] },
-  { id: "cng",         label: "Mobile CNG",      color: "#c2410c", slides: [6, 7, 8, 9] },
-  { id: "electricity", label: "Electricity",     color: "#1d4ed8", slides: [10, 11, 12, 13] },
-  { id: "gas",         label: "Gas",             color: "#059669", slides: [14, 15, 16, 17] },
-  { id: "chp",         label: "CHP",             color: "#b45309", slides: [18, 19, 20, 21] },
-  { id: "solar",       label: "Solar",           color: "#ca8a04", slides: [22, 23, 24, 25] },
-  { id: "bess",        label: "Energy Storage",  color: "#7c3aed", slides: [26, 27, 28, 29] },
-  { id: "closing",     label: "Closing",         color: "#002060", slides: [30, 31, 32] },
+  { id: "solar",       label: "Solar",           color: "#ca8a04", slides: [6, 7, 8] },
+  { id: "cng",         label: "Mobile CNG",      color: "#c2410c", slides: [9, 10, 11] },
+  { id: "gas",         label: "Gas",             color: "#059669", slides: [12, 13, 14] },
+  { id: "electricity", label: "Electricity",     color: "#1d4ed8", slides: [15, 16, 17] },
+  { id: "chp",         label: "CHP",             color: "#b45309", slides: [18, 19, 20] },
+  { id: "bess",        label: "Energy Storage",  color: "#7c3aed", slides: [21, 22, 23] },
+  { id: "closing",     label: "Closing",         color: "#002060", slides: [24, 25, 26] },
 ];
 
 function sectionOf(idx: number) {
@@ -308,7 +308,7 @@ function NumbersSlide() {
   const heroStats = [
     { value: "EGP 13.4bn", label: "Revenue",                    sub: "FY 2025", hero: true },
     { value: "EGP 18bn+",  label: "Assets under Management",    sub: "Group-wide, FY 2025" },
-    { value: "~6.5M",      label: "Gas customers nationwide",   sub: "FY 2025" },
+    { value: "~7M",        label: "Customers across Egypt",     sub: "FY 2025" },
   ];
   const divCards = [
     { div: "GAS",            icon: <Flame className="h-4 w-4" />,    color: "#c2410c", stat: "+10,000 km network, 8 governorate concessions (15-yr)" },
@@ -406,11 +406,11 @@ function NumbersSlide() {
 
 function SolutionsOverviewSlide() {
   const solutions = [
-    { num: "01", label: "Mobile CNG",               desc: "Off-grid natural gas via mobile virtual pipeline — zero infrastructure capex.", icon: <Truck className="h-5 w-5" />,   color: "#c2410c" },
-    { num: "02", label: "Electricity Distribution", desc: "Turnkey MV/LV networks, smart metering and licensed lifetime O&M.",             icon: <Zap className="h-5 w-5" />,     color: "#1d4ed8" },
+    { num: "01", label: "Solar",                    desc: "Tailored solar PV via PPA — clean power below grid tariffs, no capex.",         icon: <Sun className="h-5 w-5" />,     color: "#ca8a04" },
+    { num: "02", label: "Mobile CNG",               desc: "Off-grid natural gas via mobile virtual pipeline — zero infrastructure capex.", icon: <Truck className="h-5 w-5" />,   color: "#c2410c" },
     { num: "03", label: "Gas Distribution",         desc: "End-to-end gas network EPC — design, build, commission and operate.",           icon: <Flame className="h-5 w-5" />,   color: "#059669" },
-    { num: "04", label: "CHP",                      desc: "Combined Heat & Power — up to ~85% efficiency from a single fuel input.",       icon: <Layers className="h-5 w-5" />,  color: "#b45309" },
-    { num: "05", label: "Solar",                    desc: "Tailored solar PV via PPA — clean power below grid tariffs, no capex.",         icon: <Sun className="h-5 w-5" />,     color: "#ca8a04" },
+    { num: "04", label: "Electricity Distribution", desc: "Turnkey MV/LV networks, smart metering and licensed lifetime O&M.",             icon: <Zap className="h-5 w-5" />,     color: "#1d4ed8" },
+    { num: "05", label: "CHP",                      desc: "Combined Heat & Power — up to ~85% efficiency from a single fuel input.",       icon: <Layers className="h-5 w-5" />,  color: "#b45309" },
     { num: "06", label: "Energy Storage (BESS)",    desc: "Battery storage for peak shaving, solar firming and backup power.",             icon: <Battery className="h-5 w-5" />, color: "#7c3aed" },
   ];
   return (
@@ -1031,7 +1031,7 @@ const BESS_CHART = [
   { label: "After BESS",  value: 65 },
 ];
 
-// ─── SLIDES Array (33 slides, 0-indexed) ─────────────────────────────────────
+// ─── SLIDES Array (27 slides, 0-indexed) ─────────────────────────────────────
 
 const cngIcon   = <Truck className="w-5 h-5" />;
 const elecIcon  = <Zap className="w-5 h-5" />;
@@ -1064,8 +1064,75 @@ const SLIDES = [
   // 5
   { title: "Solutions Overview", render: () => <SolutionsOverviewSlide /> },
 
-  // ── Mobile CNG ──────────────────────────────────────────────────────────────
+  // ── Solar ─────────────────────────────────────────────────────────────────────
   // 6
+  {
+    title: "Solar: Scope",
+    render: () => (
+      <ScopeSlide
+        solutionNum={5} solutionLabel="Solar" color="#ca8a04" icon={solarIcon} photo={P.solar}
+        subtitle="Tailored solar PV solutions delivering measurable value across financing, sustainability and operations."
+        taqaInvests={["Rooftop & ground-mount PV", "Inverters & transformers", "Connection & net-metering works", "Monitoring & SCADA"]}
+        steps={[
+          "TAQA assesses roof, land and the plant's load curve.",
+          "PV arrays and inverters are installed and grid-tied.",
+          "Panels generate clean power across the working day.",
+          "Solar offsets daytime process and facility loads.",
+          "TAQA monitors yield and maintains the system.",
+        ]}
+        whatYouReceive={["On-site solar cutting daytime grid draw", "Lower, hedged energy cost from day one", "Monitored, maintained PV assets"]}
+      />
+    ),
+  },
+  // 7
+  {
+    title: "Solar: Value Proposition",
+    render: () => (
+      <ValuePropSlide
+        solutionNum={5} solutionLabel="Solar PV" color="#ca8a04" icon={solarIcon} photo={P.solar}
+        whatYouGain={[
+          { label: "Lower Energy Bills",       desc: "Solar's cost per kWh sits well below the grid tariff — factories save from day one." },
+          { label: "Tariff-Hike Hedge",        desc: "Lock in clean-energy cost for decades and insulate the factory from grid-price escalation." },
+          { label: "Higher Property Value",    desc: "Solar-equipped, lower-running-cost sites command a premium." },
+          { label: "Green Living Credentials", desc: "Visible clean energy strengthens the site's ESG and sustainability story." },
+        ]}
+        taqaEdge={[
+          { label: "Egypt's Solar Pioneer",      desc: "TAQA was the first national company to commercially operate a plot at the Benban solar park." },
+          { label: "Flexible Models",            desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
+          { label: "Turnkey Engineering",        desc: "Survey, design, supply, installation and grid tie-in delivered end-to-end by one partner." },
+          { label: "Lifecycle O&M & Guarantee", desc: "Remote monitoring, maintenance and performance guarantees keep output high for 25+ years." },
+        ]}
+      />
+    ),
+  },
+  // 8
+  {
+    title: "Solar: Case Study “ASCOM”",
+    render: () => (
+      <ChartTrackRecordSlide
+        solutionNum={5} solutionLabel="Solar" color="#ca8a04" icon={solarIcon}
+        heading="Developing and Investing in Tailored Solar Across Egypt"
+        subheading="A show of muscle — what TAQA Arabia has already delivered · 7 MW ASCOM solar plant"
+        body="TAQA's 7 MW ASCOM solar plant cuts tariffs 15% and saved the client EGP 340M over 25 years."
+        data={SOLAR_CHART}
+        xKey="year"
+        series={[
+          { key: "taqa", name: "TAQA Tariff", color: "#facc15" },
+          { key: "gov", name: "Government (MV) Tariff", color: "#94a3b8" },
+        ]}
+        yLabel="EGP / kWh"
+        stats={[
+          { value: "BOO/BOOT",     label: "PPA models, no client capex" },
+          { value: "~1,000",       label: "t CO₂ avoided / MWp / yr" },
+          { value: "340 Million",  label: "EGP total savings over 25 years" },
+          { value: "24/7",         label: "Monitoring & O&M" },
+        ]}
+      />
+    ),
+  },
+
+  // ── Mobile CNG ──────────────────────────────────────────────────────────────
+  // 9
   {
     title: "Mobile CNG: Scope",
     render: () => (
@@ -1085,7 +1152,7 @@ const SLIDES = [
       />
     ),
   },
-  // 7
+  // 10
   {
     title: "Mobile CNG: Value Proposition",
     render: () => (
@@ -1106,30 +1173,7 @@ const SLIDES = [
       />
     ),
   },
-  // 8
-  {
-    title: "Mobile CNG: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={1} solutionLabel="Mobile CNG" color="#c2410c" icon={cngIcon} photo={P.cng}
-        phases={[
-          { days: "Day 0",       label: "Discovery" },
-          { days: "Day 1–3",     label: "Initial Contact" },
-          { days: "Day 4–7",     label: "Site Audit" },
-          { days: "Day 8–14",    label: "Contract" },
-          { days: "Day 15–30",   label: "Mobilization" },
-          { days: "Day 90–120",  label: "On-Site Install" },
-          { days: "Day 120–200", label: "Live Gas" },
-        ]}
-        groups={[
-          { label: "DISCOVERY & AUDIT",    range: "Day 0–14" },
-          { label: "CONTRACTING",          range: "Day 8–14" },
-          { label: "DEPLOYMENT & GO-LIVE", range: "Day 90–200" },
-        ]}
-      />
-    ),
-  },
-  // 9
+  // 11
   {
     title: "Mobile CNG: Track Record",
     render: () => (
@@ -1156,90 +1200,8 @@ const SLIDES = [
     ),
   },
 
-  // ── Electricity Distribution ─────────────────────────────────────────────────
-  // 10
-  {
-    title: "Electricity Distribution: Scope",
-    render: () => (
-      <ScopeSlide
-        solutionNum={2} solutionLabel="Electricity Distribution" color="#1d4ed8" icon={elecIcon} photo={P.electric}
-        subtitle="Turnkey distribution networks for industrial sites and parks — from power sourcing and design through licensed lifetime O&M."
-        taqaInvests={["HV/MV substations & switchgear", "Distribution transformers", "Cabling, protection & metering", "SCADA & control room"]}
-        steps={[
-          "TAQA designs the zone network to factory load demands.",
-          "Substations, transformers and feeders are built and energized.",
-          "Power is distributed to every plot at the right voltage.",
-          "Smart meters bill each factory for its consumption.",
-          "A 24/7 control room keeps the zone powered and balanced.",
-        ]}
-        whatYouReceive={["A licensed industrial power network", "Reliable supply to every factory", "Operation, metering and billing handled", "450 MVA in zones"]}
-      />
-    ),
-  },
-  // 11
-  {
-    title: "Electricity Distribution: Value Proposition",
-    render: () => (
-      <ValuePropSlide
-        solutionNum={2} solutionLabel="Electricity Distribution" color="#1d4ed8" icon={elecIcon} photo={P.electric}
-        whatYouGain={[
-          { label: "Potential New Revenue Stream", desc: "The profit-share model turns the distribution network from a cost center into recurring income." },
-          { label: "Lower Factory Bills",          desc: "Demand-side management and tariff optimization reduce consumption and end-user charges." },
-          { label: "Guaranteed Power Quality",     desc: "Stable, metered, billable electricity to every unit from handover — no reliance on stretched public utilities." },
-          { label: "Future-Ready Network",         desc: "Designed for solar, storage and EV loads from day one — the factory scales without re-builds." },
-        ]}
-        taqaEdge={[
-          { label: "Flexible Delivery Approach", desc: "Take it as EPC build, licensed O&M, or a profit-share — TAQA flexes from substation to metering." },
-          { label: "Faster Time-to-Handover",    desc: "TAQA's licensing relationships and in-house engineering compress approvals, so units energize on schedule." },
-          { label: "Single Accountable Operator", desc: "One licensed party owns sourcing, network, metering and O&M — no finger-pointing between contractors." },
-          { label: "Reliability & Smart O&M",    desc: "24/7 predictive maintenance and rapid-response teams with guaranteed SAIDI / SAIFI performance." },
-        ]}
-      />
-    ),
-  },
-  // 12
-  {
-    title: "Electricity Distribution: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={2} solutionLabel="Electricity Distribution" color="#1d4ed8" icon={elecIcon} photo={P.electric}
-        phases={[
-          { days: "Day 0–30",   label: "Power Sourcing" },
-          { days: "Day 30–75",  label: "Engineering Approval" },
-          { days: "Day 75–120", label: "MEP Approval" },
-          { days: "Day 120–240", label: "Network Build" },
-          { days: "Day 240–300", label: "Smart Metering" },
-          { days: "Day 300+",   label: "Energise & O&M" },
-        ]}
-        groups={[
-          { label: "SOURCE & DESIGN", range: "Day 0–75" },
-          { label: "BUILD & METER",   range: "Day 75–300" },
-          { label: "OPERATE",         range: "Day 300+" },
-        ]}
-      />
-    ),
-  },
-  // 13
-  {
-    title: "Electricity Distribution: Track Record",
-    render: () => (
-      <TrackRecordSlide
-        solutionNum={2} solutionLabel="Electricity Distribution" color="#1d4ed8" icon={elecIcon} photo={P.electric}
-        heading="TAQA Power: Scale, Efficiency & Yield"
-        subheading="One of Egypt's first private utilities licensed for power generation and distribution"
-        body="Anchored by major substations like 6th of October (250 MVA) and Nabq (160 MVA), TAQA Power delivers end-to-end infrastructure — engineering, EPC, substations, grid connections and distribution networks — plus smart energy management, advanced metering and digital tools for uninterrupted supply. Trusted by tier-1 developers including LMD, Marakez, Pioneer Property and Emaar for integrated utility management and renewable-energy integration that maximizes asset value long term."
-        stats={[
-          { value: "1,600+", label: "Total MVA distributed across Egypt" },
-          { value: "31M m²", label: "Area covered across concessions" },
-          { value: "12k+",   label: "End users connected to electricity" },
-          { value: "Tier-1", label: "Developers trust TAQA — LMD, Marakez, Emaar & more" },
-        ]}
-      />
-    ),
-  },
-
   // ── Gas Distribution ─────────────────────────────────────────────────────────
-  // 14
+  // 12
   {
     title: "Gas Distribution: Scope",
     render: () => (
@@ -1258,7 +1220,7 @@ const SLIDES = [
       />
     ),
   },
-  // 15
+  // 13
   {
     title: "Gas Distribution: Value Proposition",
     render: () => (
@@ -1279,29 +1241,7 @@ const SLIDES = [
       />
     ),
   },
-  // 16
-  {
-    title: "Gas Distribution: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={3} solutionLabel="Gas Distribution" color="#059669" icon={gasIcon} photo={P.pipeline}
-        phases={[
-          { days: "Day 0–25",    label: "Feasibility" },
-          { days: "Day 25–70",   label: "Engineering" },
-          { days: "Day 70–120",  label: "Procurement" },
-          { days: "Day 120–240", label: "Construction" },
-          { days: "Day 240–280", label: "Commissioning" },
-          { days: "Day 280+",    label: "Operation" },
-        ]}
-        groups={[
-          { label: "PLAN & DESIGN",        range: "Day 0–70" },
-          { label: "PROCURE & BUILD",      range: "Day 70–240" },
-          { label: "COMMISSION & OPERATE", range: "Day 240+" },
-        ]}
-      />
-    ),
-  },
-  // 17
+  // 14
   {
     title: "Gas Distribution: Track Record",
     render: () => (
@@ -1315,6 +1255,66 @@ const SLIDES = [
           { value: "+25",   label: "Exclusive governorate concessions" },
           { value: "66%",   label: "Share of Egypt's private gas concessions" },
           { value: "10k+",  label: "Kilometers of high-pressure pipeline" },
+        ]}
+      />
+    ),
+  },
+
+  // ── Electricity Distribution ─────────────────────────────────────────────────
+  // 15
+  {
+    title: "Electricity Distribution: Scope",
+    render: () => (
+      <ScopeSlide
+        solutionNum={2} solutionLabel="Electricity Distribution" color="#1d4ed8" icon={elecIcon} photo={P.electric}
+        subtitle="Turnkey distribution networks for industrial sites and parks — from power sourcing and design through licensed lifetime O&M."
+        taqaInvests={["HV/MV substations & switchgear", "Distribution transformers", "Cabling, protection & metering", "SCADA & control room"]}
+        steps={[
+          "TAQA designs the zone network to factory load demands.",
+          "Substations, transformers and feeders are built and energized.",
+          "Power is distributed to every plot at the right voltage.",
+          "Smart meters bill each factory for its consumption.",
+          "A 24/7 control room keeps the zone powered and balanced.",
+        ]}
+        whatYouReceive={["A licensed industrial power network", "Reliable supply to every factory", "Operation, metering and billing handled", "450 MVA in zones"]}
+      />
+    ),
+  },
+  // 16
+  {
+    title: "Electricity Distribution: Value Proposition",
+    render: () => (
+      <ValuePropSlide
+        solutionNum={2} solutionLabel="Electricity Distribution" color="#1d4ed8" icon={elecIcon} photo={P.electric}
+        whatYouGain={[
+          { label: "Potential New Revenue Stream", desc: "The profit-share model turns the distribution network from a cost center into recurring income." },
+          { label: "Lower Factory Bills",          desc: "Demand-side management and tariff optimization reduce consumption and end-user charges." },
+          { label: "Guaranteed Power Quality",     desc: "Stable, metered, billable electricity to every unit from handover — no reliance on stretched public utilities." },
+          { label: "Future-Ready Network",         desc: "Designed for solar, storage and EV loads from day one — the factory scales without re-builds." },
+        ]}
+        taqaEdge={[
+          { label: "Flexible Delivery Approach", desc: "Take it as EPC build, licensed O&M, or a profit-share — TAQA flexes from substation to metering." },
+          { label: "Faster Time-to-Handover",    desc: "TAQA's licensing relationships and in-house engineering compress approvals, so units energize on schedule." },
+          { label: "Single Accountable Operator", desc: "One licensed party owns sourcing, network, metering and O&M — no finger-pointing between contractors." },
+          { label: "Reliability & Smart O&M",    desc: "24/7 predictive maintenance and rapid-response teams with guaranteed SAIDI / SAIFI performance." },
+        ]}
+      />
+    ),
+  },
+  // 17
+  {
+    title: "Electricity Distribution: Track Record",
+    render: () => (
+      <TrackRecordSlide
+        solutionNum={2} solutionLabel="Electricity Distribution" color="#1d4ed8" icon={elecIcon} photo={P.electric}
+        heading="TAQA Power: Scale, Efficiency & Yield"
+        subheading="One of Egypt's first private utilities licensed for power generation and distribution"
+        body="Anchored by major substations like 6th of October (250 MVA) and Nabq (160 MVA), TAQA Power delivers end-to-end infrastructure — engineering, EPC, substations, grid connections and distribution networks — plus smart energy management, advanced metering and digital tools for uninterrupted supply. Trusted by tier-1 developers including LMD, Marakez, Pioneer Property and Emaar for integrated utility management and renewable-energy integration that maximizes asset value long term."
+        stats={[
+          { value: "1,600+", label: "Total MVA distributed across Egypt" },
+          { value: "31M m²", label: "Area covered across concessions" },
+          { value: "12k+",   label: "End users connected to electricity" },
+          { value: "Tier-1", label: "Developers trust TAQA — LMD, Marakez, Emaar & more" },
         ]}
       />
     ),
@@ -1363,28 +1363,6 @@ const SLIDES = [
   },
   // 20
   {
-    title: "CHP: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={4} solutionLabel="CHP" color="#b45309" icon={chpIcon} photo={P.chp}
-        phases={[
-          { days: "Day 0–21",    label: "Energy Audit (power & thermal load profiling)" },
-          { days: "Day 21–60",   label: "System Design (CHP sizing & tri-gen configuration)" },
-          { days: "Day 45–80",   label: "Commercial Model (BOO/BOOT & performance guarantee)" },
-          { days: "Day 80–160",  label: "Procurement (gensets, HRSG & chillers)" },
-          { days: "Day 160–270", label: "Install & Commission" },
-          { days: "Day 270+",    label: "O&M" },
-        ]}
-        groups={[
-          { label: "AUDIT & DESIGN", range: "Day 0–60" },
-          { label: "FINANCE & BUILD", range: "Day 45–270" },
-          { label: "OPERATE",        range: "Day 270+" },
-        ]}
-      />
-    ),
-  },
-  // 21
-  {
     title: "CHP: Case Study “MAFI”",
     render: () => (
       <SingleLineTrackSlide
@@ -1408,97 +1386,8 @@ const SLIDES = [
     ),
   },
 
-  // ── Solar ─────────────────────────────────────────────────────────────────────
-  // 22
-  {
-    title: "Solar: Scope",
-    render: () => (
-      <ScopeSlide
-        solutionNum={5} solutionLabel="Solar" color="#ca8a04" icon={solarIcon} photo={P.solar}
-        subtitle="Tailored solar PV solutions delivering measurable value across financing, sustainability and operations."
-        taqaInvests={["Rooftop & ground-mount PV", "Inverters & transformers", "Connection & net-metering works", "Monitoring & SCADA"]}
-        steps={[
-          "TAQA assesses roof, land and the plant's load curve.",
-          "PV arrays and inverters are installed and grid-tied.",
-          "Panels generate clean power across the working day.",
-          "Solar offsets daytime process and facility loads.",
-          "TAQA monitors yield and maintains the system.",
-        ]}
-        whatYouReceive={["On-site solar cutting daytime grid draw", "Lower, hedged energy cost from day one", "Monitored, maintained PV assets"]}
-      />
-    ),
-  },
-  // 23
-  {
-    title: "Solar: Value Proposition",
-    render: () => (
-      <ValuePropSlide
-        solutionNum={5} solutionLabel="Solar PV" color="#ca8a04" icon={solarIcon} photo={P.solar}
-        whatYouGain={[
-          { label: "Lower Energy Bills",       desc: "Solar's cost per kWh sits well below the grid tariff — factories save from day one." },
-          { label: "Tariff-Hike Hedge",        desc: "Lock in clean-energy cost for decades and insulate the factory from grid-price escalation." },
-          { label: "Higher Property Value",    desc: "Solar-equipped, lower-running-cost sites command a premium." },
-          { label: "Green Living Credentials", desc: "Visible clean energy strengthens the site's ESG and sustainability story." },
-        ]}
-        taqaEdge={[
-          { label: "Egypt's Solar Pioneer",      desc: "TAQA was the first national company to commercially operate a plot at the Benban solar park." },
-          { label: "Flexible Models",            desc: "CAPEX, BOOT/BOO or PPA — own it, transfer it over time, or buy cheaper solar under a zero-capex PPA." },
-          { label: "Turnkey Engineering",        desc: "Survey, design, supply, installation and grid tie-in delivered end-to-end by one partner." },
-          { label: "Lifecycle O&M & Guarantee", desc: "Remote monitoring, maintenance and performance guarantees keep output high for 25+ years." },
-        ]}
-      />
-    ),
-  },
-  // 24
-  {
-    title: "Solar: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={5} solutionLabel="Solar" color="#ca8a04" icon={solarIcon} photo={P.solar}
-        phases={[
-          { days: "Day 0–21",    label: "Site & Energy Study" },
-          { days: "Day 21–55",   label: "System Design" },
-          { days: "Day 40–75",   label: "PPA Structuring" },
-          { days: "Day 75–130",  label: "Procurement" },
-          { days: "Day 130–210", label: "Install & Commission" },
-          { days: "Day 210+",    label: "O&M" },
-        ]}
-        groups={[
-          { label: "STUDY & DESIGN",  range: "Day 0–55" },
-          { label: "FINANCE & BUILD", range: "Day 40–210" },
-          { label: "OPERATE",         range: "Day 210+" },
-        ]}
-      />
-    ),
-  },
-  // 25
-  {
-    title: "Solar: Case Study “ASCOM”",
-    render: () => (
-      <ChartTrackRecordSlide
-        solutionNum={5} solutionLabel="Solar" color="#ca8a04" icon={solarIcon}
-        heading="Developing and Investing in Tailored Solar Across Egypt"
-        subheading="A show of muscle — what TAQA Arabia has already delivered · 7 MW ASCOM solar plant"
-        body="TAQA's 7 MW ASCOM solar plant cuts tariffs 15% and saved the client EGP 340M over 25 years."
-        data={SOLAR_CHART}
-        xKey="year"
-        series={[
-          { key: "taqa", name: "TAQA Tariff", color: "#facc15" },
-          { key: "gov", name: "Government (MV) Tariff", color: "#94a3b8" },
-        ]}
-        yLabel="EGP / kWh"
-        stats={[
-          { value: "BOO/BOOT",     label: "PPA models, no client capex" },
-          { value: "~1,000",       label: "t CO₂ avoided / MWp / yr" },
-          { value: "340 Million",  label: "EGP total savings over 25 years" },
-          { value: "24/7",         label: "Monitoring & O&M" },
-        ]}
-      />
-    ),
-  },
-
   // ── Energy Storage (BESS) ─────────────────────────────────────────────────────
-  // 26
+  // 21
   {
     title: "Energy Storage (BESS): Scope",
     render: () => (
@@ -1517,7 +1406,7 @@ const SLIDES = [
       />
     ),
   },
-  // 27
+  // 22
   {
     title: "Energy Storage (BESS): Value Proposition",
     render: () => (
@@ -1538,29 +1427,7 @@ const SLIDES = [
       />
     ),
   },
-  // 28
-  {
-    title: "Energy Storage (BESS): Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={6} solutionLabel="Energy Storage (BESS)" color="#7c3aed" icon={bessIcon} photo={P.battery}
-        phases={[
-          { days: "Day 0–21",    label: "Load & Tariff Study" },
-          { days: "Day 21–55",   label: "System Design (BESS sizing & use-case config)" },
-          { days: "Day 40–75",   label: "Commercial Model" },
-          { days: "Day 75–140",  label: "Procurement" },
-          { days: "Day 140–220", label: "Install & Commission" },
-          { days: "Day 220+",    label: "Smart O&M" },
-        ]}
-        groups={[
-          { label: "STUDY & DESIGN",  range: "Day 0–55" },
-          { label: "FINANCE & BUILD", range: "Day 40–220" },
-          { label: "SMART OPERATE",   range: "Day 220+" },
-        ]}
-      />
-    ),
-  },
-  // 29
+  // 23
   {
     title: "BESS: Backup Power & Grid Relief",
     render: () => (
@@ -1583,16 +1450,16 @@ const SLIDES = [
   },
 
   // ── Closing ───────────────────────────────────────────────────────────────────
-  // 30
+  // 24
   { title: "Why One Partner", render: () => <WhyOnePartnerSlide /> },
-  // 31
+  // 25
   { title: "Cross-Solution Benefits", render: () => <BundleSlide /> },
-  // 32
+  // 26
   { title: "Success Story: Integrated Industrial Energy", render: () => <SuccessStorySlide /> },
 ];
 
 // ─── Narration (Play as Video) ─────────────────────────────────────────────────
-// One entry per SLIDES index, same order, same length (33).
+// One entry per SLIDES index, same order, same length (27).
 
 const NARRATION: readonly string[] = [
   // 0 — Cover
@@ -1602,64 +1469,52 @@ const NARRATION: readonly string[] = [
   // 2 — Regional Presence
   "This is TAQA Arabia's actual footprint today, not an aspiration. The platform spans ten countries across Egypt, the GCC, Africa, Greece and South Asia, operating through four divisions — Gas, Power, Petroleum and Water. Within Egypt alone it reaches more than twenty governorates, and the whole platform is staffed by over 3,400 employees delivering live projects on the ground. The map that follows shows exactly what TAQA is building and operating in each market, both established and under study.",
   // 3 — In Numbers
-  "In fiscal year 2025, TAQA Arabia generated EGP 13.4 billion in revenue on more than EGP 18 billion in group-wide assets under management, serving roughly 6.5 million gas customers nationwide. By division: Gas runs over 10,000 kilometers of network across 8 fifteen-year governorate concessions; Power distributes more than 1,600 MVA and generates over 150 MW; Water delivers over 47,000 cubic meters a day of desalination across 15 locations; and Mobility operates 300 stations, including Egypt's first private EV-charging license.",
+  "In fiscal year 2025, TAQA Arabia generated EGP 13.4 billion in revenue on more than EGP 18 billion in group-wide assets under management, serving roughly 7 million customers across Egypt. By division: Gas runs over 10,000 kilometers of network across 8 fifteen-year governorate concessions; Power distributes more than 1,600 MVA and generates over 150 MW; Water delivers over 47,000 cubic meters a day of desalination across 15 locations; and Mobility operates 300 stations, including Egypt's first private EV-charging license.",
   // 4 — Trusted By
   "This is a representative cross-section of the clients and partners TAQA Arabia already serves across every division — leading real-estate developers, industrial majors, hospitality groups and institutions who rely on TAQA for gas, power, water and integrated utility management. Their continued trust, often spanning multiple projects and multiple divisions at once, is itself the strongest evidence that the one-stop-shop model works in practice, not just on paper, for organizations with serious operational and reputational stakes.",
   // 5 — Solutions Overview
-  "Six integrated solutions make up TAQA Arabia's offering for industrial sites, factories and parks. Mobile CNG delivers off-grid gas via virtual pipeline with zero infrastructure capex, Electricity Distribution provides turnkey MV and LV networks with smart metering and O&M, and Gas Distribution covers full network EPC from design to operation. Combined Heat and Power reaches nearly 85 percent efficiency from one fuel input, Solar delivers clean power below grid tariffs via PPA, and Battery Storage handles peak shaving, solar firming and backup power.",
-  // 6 — Mobile CNG: Scope
+  "Six integrated solutions make up TAQA Arabia's offering for industrial sites, factories and parks. Solar delivers clean power below grid tariffs via PPA, Mobile CNG delivers off-grid gas via virtual pipeline with zero infrastructure capex, and Gas Distribution covers full network EPC from design to operation. Electricity Distribution provides turnkey MV and LV networks with smart metering and O&M, Combined Heat and Power reaches nearly 85 percent efficiency from one fuel input, and Battery Storage handles peak shaving, solar firming and backup power.",
+  // 6 — Solar: Scope
+  "Now, let's talk about our Solar solution. TAQA assesses the site's roof or land area alongside its load curve, then installs and grid-ties rooftop or ground-mount PV arrays, inverters and transformers, together with the connection and net-metering works needed for tie-in. Panels generate power across the working day to offset daytime process and facility loads, while TAQA continues to monitor yield and maintain the system. The client receives on-site solar that cuts daytime grid draw, a lower and hedged energy cost from day one, and a fully monitored, maintained PV asset.",
+  // 7 — Solar: Value Proposition
+  "Solar's cost per kilowatt-hour sits well below the grid tariff, and locking that rate in for decades hedges the site against tariff-hike escalation. Solar-equipped sites with lower running costs command a property-value premium, and visible clean energy strengthens the site's ESG and sustainability story. TAQA was the first national company to operate a plot at the Benban solar park, delivers it as CAPEX, BOOT, BOO or zero-capex PPA, handles survey through grid tie-in, and backs it with remote monitoring and performance guarantees for 25-plus years.",
+  // 8 — Solar: Case Study "ASCOM"
+  "TAQA's 7 megawatt ASCOM solar plant holds its tariff consistently below the government medium-voltage rate across the entire 25-year horizon, cutting tariffs by 15 percent and saving the client EGP 340 million in total over that period. Delivered under BOO or BOOT PPA models with no client capex at all, the plant also avoids roughly 1,000 tonnes of CO2 per megawatt-peak every year, all under continuous 24/7 monitoring and O&M — a direct demonstration of TAQA developing and investing in tailored solar across Egypt.",
+  // 9 — Mobile CNG: Scope
   "Now, let's talk about our Mobile CNG solution. TAQA funds, builds, owns and operates the mobile CNG asset — the mother station and compression, the CNG and virtual-pipeline trailers, on-site decompression and PRMS skid, and industrial metering and controls. Gas is compressed to roughly 250 bar at the mother station, trucked to the plant as a virtual pipeline, then decompressed on-site to feed boilers, furnaces and process lines. TAQA tracks usage and refills ahead of demand, so the factory pays only for the gas it consumes, with little to no upfront capital.",
-  // 7 — Mobile CNG: Value Proposition
+  // 10 — Mobile CNG: Value Proposition
   "Mobile CNG cuts fuel costs against diesel and LPG, replacing LPG and electric heating across the development. Emissions drop roughly 24 percent versus diesel, lowering NOx and particulates for ESG and green-rating targets, while offsetting diesel-quota reliance. TAQA delivers it as BOO, BOOT or EPC through Capacity-as-a-Service, refilled on schedule by a nationwide trailer fleet via Master Gas stations. It scales from a Starter load of 550 litres diesel-equivalent per day to Heavy loads above 5,500 litres, growing with occupancy before bridging to the grid.",
-  // 8 — Mobile CNG: Timeline
-  "The process moves in parallel to get factories running fast. Discovery and initial contact happen within the first three days, followed by a site audit through day seven and a signed contract by day fourteen. Mobilization runs from day fifteen through thirty, on-site installation follows between day ninety and one-hundred-twenty, and live gas typically flows to the plant somewhere between day one-hundred-twenty and day two-hundred — turning an off-grid site into a fully gas-fed facility in well under a year.",
-  // 9 — Mobile CNG: Track Record
+  // 11 — Mobile CNG: Track Record
   "TAQA was the first company in Egypt to supply natural gas through a mobile virtual pipeline, and the twenty-five-year outlook shows why it matters: TAQA's CNG price consistently undercuts diesel, and that gap only widens further with every passing year. That advantage is already proven in the field across an 86-station network spanning 20 governorates, reaching 4 off-grid governorates that have no fixed pipeline access at all — including delivering gas to an entire governorate, El Kharga, among 10 existing Mobile CNG projects nationwide.",
-  // 10 — Electricity Distribution: Scope
-  "Now, let's talk about our Electricity Distribution solution. TAQA designs the zone's power network around actual factory load demands, then builds and energizes the HV and MV substations, switchgear, distribution transformers, cabling and protection equipment. Smart meters bill each factory individually for its own consumption, and a 24/7 control room keeps the entire zone powered, balanced and monitored. The result is a licensed industrial power network — already delivering 450 MVA across zones — with reliable supply, metering, billing and operations all handled by one accountable party.",
-  // 11 — Electricity Distribution: Value Proposition
-  "A profit-share model turns the distribution network from a cost center into a potential new revenue stream, while demand-side management and tariff optimization lower every factory's bill. Power quality is guaranteed — stable, metered and billable from handover, without relying on stretched public utilities — and the network is built future-ready for solar, storage and EV loads from day one. TAQA delivers it as EPC build, licensed O&M or profit-share, backed by 24/7 predictive maintenance and guaranteed SAIDI and SAIFI performance.",
-  // 12 — Electricity Distribution: Timeline
-  "Power sourcing runs through the first thirty days, followed by engineering approval out to day seventy-five and MEP approval through day one-hundred-twenty. Network build then proceeds from day one-hundred-twenty through two-hundred-forty, smart metering rolls out through day three-hundred, and the network is energized and moves into full ongoing O&M beyond day three-hundred — sourcing and design in the first quarter, build and metering across the middle stretch, and operation from there on.",
-  // 13 — Electricity Distribution: Track Record
-  "TAQA Power is one of Egypt's first private utilities licensed for generation and distribution, anchored by substations including 6th of October at 250 MVA and Nabq at 160 MVA. It delivers end-to-end infrastructure — engineering, EPC, substations, grid connections and distribution networks — alongside smart energy management, metering and digital monitoring tools. Today that means over 1,600 MVA distributed across 31 million square meters, serving more than 12,000 end users — trusted by tier-one developers including LMD, Marakez, Pioneer Property and Emaar for renewable-energy integration.",
-  // 14 — Gas Distribution: Scope
+  // 12 — Gas Distribution: Scope
   "Now, let's talk about our Gas Distribution solution. TAQA secures the concession and designs the gas grid, then lays steel distribution mains and factory service lines from the city-gate and PRMS stations across the entire zone. Pressure is regulated down to each factory's specific process needs, every connection is metered, tested and commissioned, and TAQA continues to operate, inspect and bill for gas delivered. The result is a licensed industrial gas network moving 6.4 billion cubic meters a year, delivering process-grade gas to every factory with lifetime O&M and emergency response.",
-  // 15 — Gas Distribution: Value Proposition
+  // 13 — Gas Distribution: Value Proposition
   "TAQA manages the full transition from diesel and LPG to cleaner, cheaper natural gas, bridging supply through mobile CNG or SNG where no fixed pipeline exists yet, so no factory waits. Subsidized piped gas runs far cheaper than LPG cylinders or electric heating, and connection to the national gas grid lifts both site value and tenancy. TAQA delivers it as EPC, long-term O&M or BOO, building the external and internal networks through its engineering arm EGUSCO, aligned with IGEM, EGAS and international gas-safety standards.",
-  // 16 — Gas Distribution: Timeline
-  "Feasibility work runs through day twenty-five, followed by engineering through day seventy and procurement through day one-hundred-twenty. Construction then continues from day one-hundred-twenty through two-hundred-forty, commissioning wraps up by day two-hundred-eighty, and the network moves into full operation from there — planning and design in the early phase, procurement and build through the middle, and commissioning straight into ongoing operation beyond day two-hundred-eighty.",
-  // 17 — Gas Distribution: Track Record
+  // 14 — Gas Distribution: Track Record
   "TAQA Gas was Egypt's first private natural gas distributor, licensed by EGAS, and it now runs the country's largest private pipeline network end-to-end — from engineering through 24/7 emergency response, ISO-certified throughout. That network today serves 1.9 million residential, commercial and industrial customers across more than 25 exclusive governorate concessions, representing 66 percent of all of Egypt's private gas concessions, delivered through over 10,000 kilometers of high-pressure pipeline — a scale no other private operator in the country comes close to matching.",
+  // 15 — Electricity Distribution: Scope
+  "Now, let's talk about our Electricity Distribution solution. TAQA designs the zone's power network around actual factory load demands, then builds and energizes the HV and MV substations, switchgear, distribution transformers, cabling and protection equipment. Smart meters bill each factory individually for its own consumption, and a 24/7 control room keeps the entire zone powered, balanced and monitored. The result is a licensed industrial power network — already delivering 450 MVA across zones — with reliable supply, metering, billing and operations all handled by one accountable party.",
+  // 16 — Electricity Distribution: Value Proposition
+  "A profit-share model turns the distribution network from a cost center into a potential new revenue stream, while demand-side management and tariff optimization lower every factory's bill. Power quality is guaranteed — stable, metered and billable from handover, without relying on stretched public utilities — and the network is built future-ready for solar, storage and EV loads from day one. TAQA delivers it as EPC build, licensed O&M or profit-share, backed by 24/7 predictive maintenance and guaranteed SAIDI and SAIFI performance.",
+  // 17 — Electricity Distribution: Track Record
+  "TAQA Power is one of Egypt's first private utilities licensed for generation and distribution, anchored by substations including 6th of October at 250 MVA and Nabq at 160 MVA. It delivers end-to-end infrastructure — engineering, EPC, substations, grid connections and distribution networks — alongside smart energy management, metering and digital monitoring tools. Today that means over 1,600 MVA distributed across 31 million square meters, serving more than 12,000 end users — trusted by tier-one developers including LMD, Marakez, Pioneer Property and Emaar for renewable-energy integration.",
   // 18 — CHP: Scope
   "Now, let's talk about our Combined Heat and Power solution. A single gas-fed engine or turbine generates electricity for the plant, while otherwise-wasted exhaust and jacket heat is captured by a waste-heat recovery unit and converted into steam, hot water, and — through an absorption chiller in tri-generation mode — chilled water. Grid-sync controls and SCADA keep output matched to the site's real-time load. TAQA installs and owns the genset, the heat-recovery unit and the chiller, so one fuel input delivers three energy outputs at up to 85 percent total efficiency.",
   // 19 — CHP: Value Proposition
   "Combined Heat and Power reaches up to 85 percent efficiency by capturing waste heat a standard generator would lose, cutting energy cost from a single fuel input while shrinking carbon footprint per unit of output. Thermal outputs are flexible — steam, hot water, chilled water or direct heat, matched to process — and TAQA can supply both the gas and the CHP plant as one accountable provider, delivered as EPC, long-term O&M or BOO, backed by performance guarantees and maintenance with guaranteed SAIDI and SAIFI.",
-  // 20 — CHP: Timeline
-  "An energy audit profiling both power and thermal load runs through day twenty-one, followed by system design covering CHP sizing and tri-generation configuration through day sixty, with the commercial model — BOO, BOOT or a performance guarantee — settled in parallel by day eighty. Procurement of gensets, heat-recovery units and chillers runs through day one-hundred-sixty, installation and commissioning continue through day two-hundred-seventy, and the plant then moves into full ongoing O&M beyond that point.",
-  // 21 — CHP: Case Study "MAFI"
+  // 20 — CHP: Case Study "MAFI"
   "At client MAFI, TAQA owns and operates a 9 megawatt captive CHP station running above 65 percent efficiency, delivering four distinct products from one plant — electricity, steam, chilled water and boiled water. Over the project's 20-year life, that single station has already generated EGP 6 billion in savings for the client, backed by round-the-clock, performance-guaranteed O&M that keeps efficiency near 85 percent. It's a concrete demonstration of what TAQA Arabia has already delivered in high-efficiency captive generation, not a projection.",
-  // 22 — Solar: Scope
-  "Now, let's talk about our Solar solution. TAQA assesses the site's roof or land area alongside its load curve, then installs and grid-ties rooftop or ground-mount PV arrays, inverters and transformers, together with the connection and net-metering works needed for tie-in. Panels generate power across the working day to offset daytime process and facility loads, while TAQA continues to monitor yield and maintain the system. The client receives on-site solar that cuts daytime grid draw, a lower and hedged energy cost from day one, and a fully monitored, maintained PV asset.",
-  // 23 — Solar: Value Proposition
-  "Solar's cost per kilowatt-hour sits well below the grid tariff, and locking that rate in for decades hedges the site against tariff-hike escalation. Solar-equipped sites with lower running costs command a property-value premium, and visible clean energy strengthens the site's ESG and sustainability story. TAQA was the first national company to operate a plot at the Benban solar park, delivers it as CAPEX, BOOT, BOO or zero-capex PPA, handles survey through grid tie-in, and backs it with remote monitoring and performance guarantees for 25-plus years.",
-  // 24 — Solar: Timeline
-  "A site and energy study runs through day twenty-one, followed by system design through day fifty-five, with PPA structuring proceeding in parallel from day forty through seventy-five. Procurement continues through day one-hundred-thirty, installation and commissioning run through day two-hundred-ten, and the system then enters full ongoing O&M beyond that point — study and design first, financing and build through the middle stretch, and operation from day two-hundred-ten onward.",
-  // 25 — Solar: Case Study "ASCOM"
-  "TAQA's 7 megawatt ASCOM solar plant holds its tariff consistently below the government medium-voltage rate across the entire 25-year horizon, cutting tariffs by 15 percent and saving the client EGP 340 million in total over that period. Delivered under BOO or BOOT PPA models with no client capex at all, the plant also avoids roughly 1,000 tonnes of CO2 per megawatt-peak every year, all under continuous 24/7 monitoring and O&M — a direct demonstration of TAQA developing and investing in tailored solar across Egypt.",
-  // 26 — Energy Storage (BESS): Scope
+  // 21 — Energy Storage (BESS): Scope
   "Now, let's talk about our Energy Storage solution. TAQA sizes battery storage to the plant's load and tariff profile, then installs the battery units, power-conversion system, inverters, switchgear and grid interface, all managed by an energy-management system and SCADA controls. Storage charges automatically when power is cheap or on-site solar is in surplus, then discharges to shave demand peaks and bridge outages, with every cycle optimized by the EMS. The client receives peak shaving with lower demand charges, backup power through grid disturbances, and stored surplus energy captured from solar or off-peak periods.",
-  // 27 — Energy Storage (BESS): Value Proposition
+  // 22 — Energy Storage (BESS): Value Proposition
   "Discharging stored energy during peak hours slashes demand charges and tariff exposure, while instant-response backup protects critical production lines and avoids costly downtime during outages. Frequency regulation and load balancing can open new grid-services revenue, and renewable integration supports the plant's decarbonisation roadmap. TAQA delivers it as CAPEX, BOOT, BOO or PPA, with an EMS that optimizes charge and discharge against tariffs and loads, backed by 25-plus years of lifecycle O&M — one energy stack combining storage, solar, power and gas from a single provider.",
-  // 28 — Energy Storage (BESS): Timeline
-  "A load and tariff study runs through day twenty-one, followed by system design covering BESS sizing and use-case configuration through day fifty-five, with the commercial model settled in parallel from day forty through seventy-five. Procurement continues through day one-hundred-forty, installation and commissioning run through day two-hundred-twenty, and the system then moves into smart, EMS-managed O&M beyond that point — study and design first, financing and build through the middle, smart operation from day two-hundred-twenty onward.",
-  // 29 — BESS: Backup Power & Grid Relief
+  // 23 — BESS: Backup Power & Grid Relief
   "TAQA Arabia is actively deploying BESS as a direct alternative to diesel generators for backup power, cutting fuel logistics, maintenance and emissions from standby operations. Paired with solar, the same battery asset shifts stored daytime generation into peak-demand hours, easing the load carried by client transformers and helping defer costly infrastructure upgrades. In practice, that has already cut peak transformer loading by 35 percent, shifted backup runtime away from diesel onto BESS, delivered under BOO or BOOT terms with no client capex required.",
-  // 30 — Why One Partner
+  // 24 — Why One Partner
   "Consolidating every utility under TAQA removes interface risk and cuts complexity for the client. One SLA governs gas, power, CHP, solar and storage, with one uptime guarantee and one renewal. One communication point means one account team and a 24/7 hotline instead of chasing multiple contractors. One commercial relationship brings consolidated billing and aligned contract terms instead of separate procurement cycles. Utilities are engineered to interoperate from day one on shared infrastructure and monitoring, and one accountable owner carries end-to-end responsibility, removing finger-pointing between vendors.",
-  // 31 — Cross-Solution Benefits
+  // 25 — Cross-Solution Benefits
   "Combined under one SLA, TAQA's solutions compound in value beyond what any single vendor can match. Solar paired with storage lets BESS dispatch stored daytime solar after sunset, pushing self-consumption and PPA savings higher, while solar paired with distribution feeds TAQA's network to lower blended power cost. Gas fuels CHP under one provider, storage eases peak-demand load on distribution, mobile CNG bridges supply until the permanent network goes live, and one shared control room and field team pool spares and response for lower cost.",
-  // 32 — Success Story: Integrated Industrial Energy
+  // 26 — Success Story: Integrated Industrial Energy
   "Across Egypt's industrial parks, TAQA Arabia combines gas distribution, power distribution and on-site generation into one integrated system for factories — supplying the fuel, building the network and running the assets. TAQA Power operates 450 MVA across nine industrial-park concessions, serving more than 500 factories, while the platform distributes 6.4 billion cubic meters of gas a year and over 150 megawatts of captive generation. It's proof the bundled, one-SLA model works — contact TAQA Arabia to explore how it can work for your site.",
 ];
 

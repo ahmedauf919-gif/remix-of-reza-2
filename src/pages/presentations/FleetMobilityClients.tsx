@@ -7,7 +7,7 @@ import {
 import taqaLogo from "@/assets/taqa-logo.png";
 import {
   SlideStyles, Kicker, CornerWash, Bracket, BlueprintGrid, ColHead,
-  ScopeSlide, ValuePropSlide, TimelineSlide, TrackRecordSlide, TrustedBySlide, d, hideImg, lighter,
+  ScopeSlide, ValuePropSlide, TrackRecordSlide, TrustedBySlide, d, hideImg, lighter,
 } from "./slides";
 import { TRUSTED_BY_LOGOS } from "./trustedByLogos";
 
@@ -31,11 +31,11 @@ const SECTIONS = [
   { id: "trusted",   label: "Trusted By",     color: "#0d9488", slides: [4] },
   { id: "challenge", label: "Fleet Challenge", color: "#dc2626", slides: [5, 6] },
   { id: "overview",  label: "Solutions",       color: "#0369a1", slides: [7] },
-  { id: "fuel",      label: "Fuel Stations",   color: "#b45309", slides: [8, 9, 10, 11] },
-  { id: "cng",       label: "Natural Gas",     color: "#059669", slides: [12, 13, 14, 15] },
-  { id: "ev",        label: "EV Charging",     color: "#7c3aed", slides: [16, 17, 18, 19] },
-  { id: "waqood",    label: "Waqood",          color: "#0369a1", slides: [20, 21, 22, 23] },
-  { id: "closing",   label: "Closing",         color: "#002060", slides: [24, 25, 26] },
+  { id: "fuel",      label: "Fuel Stations",   color: "#b45309", slides: [8, 9, 10] },
+  { id: "cng",       label: "Natural Gas",     color: "#059669", slides: [11, 12, 13] },
+  { id: "ev",        label: "EV Charging",     color: "#7c3aed", slides: [14, 15, 16] },
+  { id: "waqood",    label: "Waqood",          color: "#0369a1", slides: [17, 18, 19] },
+  { id: "closing",   label: "Closing",         color: "#002060", slides: [20, 21, 22] },
 ];
 
 function sectionOf(slideIdx: number) {
@@ -294,9 +294,9 @@ function RegionalSlide() {
 
 function NumbersSlide() {
   const heroStats = [
-    { value: "EGP 13.4bn", label: "Revenue",                   sub: "FY 2025", hero: true },
-    { value: "EGP 1.5bn",  label: "EBITDA",                    sub: "FY 2025" },
-    { value: "~6.5M",      label: "Residential gas customers", sub: "Gas division" },
+    { value: "EGP 13.4bn", label: "Revenue",                     sub: "FY 2025", hero: true },
+    { value: "EGP 18bn+",  label: "Assets under Management",     sub: "Group-wide, FY 2025" },
+    { value: "~7M",        label: "Customers across Egypt",      sub: "FY 2025" },
   ];
   const divCards = [
     { div: "GAS",       icon: <Flame className="h-4 w-4" />, color: "#059669", stats: ["86 CNG stations", "18 conversion centers", "Capacity 12K cars/year", "Master Gas virtual pipeline"] },
@@ -885,7 +885,7 @@ function ClosingSlide() {
   );
 }
 
-// ─── SLIDES Array (27 slides, 0-indexed) ─────────────────────────────────────
+// ─── SLIDES Array (23 slides, 0-indexed) ─────────────────────────────────────
 
 const fuelIcon   = <Truck className="w-5 h-5" />;
 const cngIcon    = <Flame className="w-5 h-5" />;
@@ -963,28 +963,6 @@ const SLIDES = [
   },
   // 10
   {
-    title: "Fuel Stations: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={1} solutionLabel="Fuel Stations" color="#b45309" icon={fuelIcon} photo={P.fuel}
-        phases={[
-          { days: "Day 0–7",   label: "Account Setup — Fleet profiling, fuel account & credit terms." },
-          { days: "Day 7–14",  label: "Network Activation — Station access & depot survey." },
-          { days: "Day 14–30", label: "Depot Fuelling — On-site tank/bowser install where needed." },
-          { days: "Day 30+",   label: "Live Fuelling — Cashless refuelling across the network." },
-          { days: "Monthly",   label: "Reporting — Consolidated billing & consumption analytics." },
-          { days: "Ongoing",   label: "Optimisation — Route, supply & spend reviews." },
-        ]}
-        groups={[
-          { label: "SET UP", range: "Day 0–14" },
-          { label: "DEPLOY", range: "Day 14–30" },
-          { label: "MANAGE", range: "Ongoing" },
-        ]}
-      />
-    ),
-  },
-  // 11
-  {
     title: "Fuel Stations: Track Record",
     render: () => (
       <TrackRecordSlide
@@ -1003,7 +981,7 @@ const SLIDES = [
   },
 
   // ── Natural Gas (CNG) ────────────────────────────────────────────────────────
-  // 12
+  // 11
   {
     title: "Natural Gas (CNG): Scope",
     render: () => (
@@ -1022,7 +1000,7 @@ const SLIDES = [
       />
     ),
   },
-  // 13
+  // 12
   {
     title: "Natural Gas (CNG): Value Proposition",
     render: () => (
@@ -1043,29 +1021,7 @@ const SLIDES = [
       />
     ),
   },
-  // 14
-  {
-    title: "Natural Gas (CNG): Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={2} solutionLabel="Natural Gas (CNG)" color="#059669" icon={cngIcon} photo={P.cng}
-        phases={[
-          { days: "Day 0–10",  label: "Assessment — Suitable vehicles, routes & payback." },
-          { days: "Day 10–20", label: "Conversion Plan — Dedicated vs. bi-fuel; fuelling via network, Master Gas or NGV station." },
-          { days: "Day 20–45", label: "Conversion — Licensed conversion or NGV station build." },
-          { days: "Day 45–55", label: "Inspection — Certification & safety sign-off." },
-          { days: "Day 55–65", label: "Go-Live — CNG fuelling across the fleet." },
-          { days: "Ongoing",   label: "Re-test & O&M — SCADA dispatch & cylinder re-testing." },
-        ]}
-        groups={[
-          { label: "ASSESS",           range: "Day 0–20" },
-          { label: "CONVERT & SUPPLY", range: "Day 20–65" },
-          { label: "OPERATE",          range: "Ongoing" },
-        ]}
-      />
-    ),
-  },
-  // 15
+  // 13
   {
     title: "Natural Gas (CNG): Track Record",
     render: () => (
@@ -1085,7 +1041,7 @@ const SLIDES = [
   },
 
   // ── EV Charging ──────────────────────────────────────────────────────────────
-  // 16
+  // 14
   {
     title: "EV Charging: Scope",
     render: () => (
@@ -1104,7 +1060,7 @@ const SLIDES = [
       />
     ),
   },
-  // 17
+  // 15
   {
     title: "EV Charging: Value Proposition",
     render: () => (
@@ -1125,29 +1081,7 @@ const SLIDES = [
       />
     ),
   },
-  // 18
-  {
-    title: "EV Charging: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={3} solutionLabel="EV Charging" color="#7c3aed" icon={evIcon} photo={P.ev}
-        phases={[
-          { days: "Day 0–14",   label: "Site Assessment — Grid survey, duty-cycle & site mix." },
-          { days: "Day 14–30",  label: "Commercial Model — Full-investment/profit-share structuring." },
-          { days: "Day 30–60",  label: "Supply — AC/DC charger & grid-equipment procurement." },
-          { days: "Day 60–95",  label: "Installation — Install across depot, en-route; grid tie-in." },
-          { days: "Day 95–110", label: "Activation — App onboarding, testing & go-live." },
-          { days: "Day 110+",   label: "O&M & Uptime — 24/7 monitoring, maintenance & billing." },
-        ]}
-        groups={[
-          { label: "DESIGN",  range: "Day 0–30" },
-          { label: "BUILD",   range: "Day 30–110" },
-          { label: "OPERATE", range: "Day 110+" },
-        ]}
-      />
-    ),
-  },
-  // 19
+  // 16
   {
     title: "EV Charging: Track Record",
     render: () => (
@@ -1167,7 +1101,7 @@ const SLIDES = [
   },
 
   // ── Waqood Smart System ──────────────────────────────────────────────────────
-  // 20
+  // 17
   {
     title: "Waqood Smart System: Scope",
     render: () => (
@@ -1186,7 +1120,7 @@ const SLIDES = [
       />
     ),
   },
-  // 21
+  // 18
   {
     title: "Waqood Smart System: Value Proposition",
     render: () => (
@@ -1207,29 +1141,7 @@ const SLIDES = [
       />
     ),
   },
-  // 22
-  {
-    title: "Waqood Smart System: Timeline",
-    render: () => (
-      <TimelineSlide
-        solutionNum={4} solutionLabel="Waqood Smart System" color="#0369a1" icon={waqoodIcon} photo={P.digital}
-        phases={[
-          { days: "Day 0–7",   label: "Discovery — Vehicles, drivers & rules scoping." },
-          { days: "Day 7–14",  label: "Onboarding — Stickers, PINs & limits configured." },
-          { days: "Day 14–21", label: "Integration — Fuel, CNG & EV data connected." },
-          { days: "Day 21–30", label: "Dashboard Live — Single-pane dashboard & billing live." },
-          { days: "Day 30–45", label: "Tuning — Limits, alerts & reports refined." },
-          { days: "Ongoing",   label: "Optimise — Analytics, ESG & savings reviews." },
-        ]}
-        groups={[
-          { label: "ONBOARD",  range: "Day 0–14" },
-          { label: "ACTIVATE", range: "Day 14–30" },
-          { label: "OPTIMISE", range: "Ongoing" },
-        ]}
-      />
-    ),
-  },
-  // 23
+  // 19
   {
     title: "Waqood Smart System: Track Record",
     render: () => (
@@ -1249,15 +1161,15 @@ const SLIDES = [
   },
 
   // ── Closing ──────────────────────────────────────────────────────────────────
-  // 24
+  // 20
   { title: "Why One Partner",      render: () => <WhyOnePartnerSlide /> },
-  // 25
+  // 21
   { title: "Integrated Economics", render: () => <IntegratedEconomicsSlide /> },
-  // 26
+  // 22
   { title: "From Pump to Plug",    render: () => <ClosingSlide /> },
 ];
 
-// ─── Narration (27 entries, matches SLIDES order) ────────────────────────────
+// ─── Narration (23 entries, matches SLIDES order) ────────────────────────────
 
 const NARRATION: string[] = [
   // 0 — Cover
@@ -1267,7 +1179,7 @@ const NARRATION: string[] = [
   // 2 — Regional Presence
   "This map shows TAQA Arabia's actual, live footprint alongside the markets it is currently studying — operations spanning eight countries across Egypt, the GCC, Africa and South Asia. Within Egypt alone, that reach extends across more than twenty governorates, run through four operating divisions of Gas, Power, Petroleum and Water, and supported by a workforce of over 3,400 employees. For a fleet client, that scale means a partner with the people, licences and infrastructure already in place nationwide, not one still building toward it.",
   // 3 — In Numbers
-  "In fiscal year 2025 TAQA Arabia posted EGP 13.4 billion in revenue and EGP 1.5 billion in EBITDA, while serving roughly 6.5 million residential gas customers. Behind those numbers sit real fleet-relevant assets: 86 CNG stations, 18 conversion centres and the Master Gas virtual pipeline in Gas; over 130 charging stations and Egypt's first private EV licence in Power; and 230-plus fuel stations, including 172 Wataniya sites, plus two fuel terminals in Petroleum — all reachable through one mobility account, one SLA and consolidated billing.",
+  "In fiscal year 2025 TAQA Arabia posted EGP 13.4 billion in revenue and more than EGP 18 billion in group-wide assets under management, while serving roughly 7 million customers across Egypt. Behind those numbers sit real fleet-relevant assets: 86 CNG stations, 18 conversion centres and the Master Gas virtual pipeline in Gas; over 130 charging stations and Egypt's first private EV licence in Power; and 230-plus fuel stations, including 172 Wataniya sites, plus two fuel terminals in Petroleum — all reachable through one mobility account, one SLA and consolidated billing.",
   // 4 — Trusted By
   "These are real clients and partners across developers, industrials, hospitality groups and public institutions that already rely on TAQA Arabia's energy and utility services today. This representative cross-section spans multiple divisions of the business, from gas and power to water and petroleum, and reflects relationships built over years of delivery rather than one-off projects. For a fleet operator evaluating TAQA as a partner, it is evidence that organisations of comparable scale and complexity already trust the company across more than one part of their operations.",
   // 5 — The Fleet Challenge
@@ -1280,39 +1192,31 @@ const NARRATION: string[] = [
   "Now, let's talk about our Fuel Stations solution. TAQA finances and builds everything on site — the forecourt, tanks and dispensers, the canopy, shop and safety systems, and the automation and fuel-management technology, alongside the fleet cards drivers use daily. TAQA secures the licence, builds to spec, and certifies every tank and dispenser before fleet vehicles begin fuelling on cards tied to each driver. Every litre is captured digitally against agreed limits, while TAQA supplies fuel, runs the site and reports consumption — reinforced by 172 newly added Wataniya stations.",
   // 9 — Fuel Stations: Value Proposition
   "Fuel stations deliver value on several fronts. Depot and on-site fuelling keeps heavy fleets running from base with no detours or queueing at the pump, while quality-assured supply from two owned terminals protects engines and resale value. Consolidated billing turns fuel spend into something predictable, and one TAQA account team removes the juggling of suppliers. TAQA's edge is traceable fuel from its own terminals, a network extended by 172 Wataniya sites, one cashless account, and a ready partner for the CNG and EV steps ahead.",
-  // 10 — Fuel Stations: Timeline
-  "Getting a fleet onto the network moves quickly. Within the first week, TAQA sets up the fleet profile, fuel account and credit terms; by day fourteen, station access and a depot survey activate the network; and by day thirty, on-site tank and bowser installation brings depot fuelling online where needed. From that point, cashless fuelling runs live across the network, with consolidated monthly billing and consumption analytics, followed by ongoing reviews of route, supply and spend to keep the account optimised as the fleet grows.",
-  // 11 — Fuel Stations: Track Record
+  // 10 — Fuel Stations: Track Record
   "TAQA Petroleum was the first privately owned Egyptian company licensed to supply fuel, building its business on its own retail stations and two storage terminals in Suez and Alexandria. In 2026 it took over management of 172 Wataniya stations through Quick Fuel, pushing its footprint past 230 stations, backed by terminal capacities exceeding 43 units in litres. It is the dependable backbone keeping commercial fleets fuelled today, and the same accredited operator behind the gas and EV infrastructure TAQA is building for tomorrow.",
-  // 12 — Natural Gas (CNG): Scope
+  // 11 — Natural Gas (CNG): Scope
   "Now, let's talk about our Natural Gas solution. TAQA converts fleet vehicles you own to run on compressed natural gas, then fuels them through mother and daughter CNG stations built with compression and dispensing skids. Vehicles are converted in TAQA's own workshops, gas compressed and dispensed at TAQA CNG stations, and where no pipeline exists, virtual-pipeline trailers bring gas to the depot instead. Drivers fuel using cards that log every fill, and TAQA maintains stations, skids and converted vehicles — giving lower-cost fuel and managed supply off the pipeline grid.",
-  // 13 — Natural Gas (CNG): Value Proposition
+  // 12 — Natural Gas (CNG): Value Proposition
   "Natural gas is cheaper than petrol and diesel, running up to roughly forty percent lower on fuel cost — the fastest lever on cost. Conversions are bi-fuel, so petrol stays a fallback, and cylinders and stations are licensed and periodically re-tested. Conversion cost is recovered within months from fuel savings, and engines run cleaner and quieter, cutting particulates, NOx and noise. TAQA owns both sides of the switch: 20 conversion centres converting vehicles in-house, plus Master Gas bringing gas to remote depots in days.",
-  // 14 — Natural Gas (CNG): Timeline
-  "The gas conversion journey moves through clear stages. Assessment of suitable vehicles, routes and payback runs through day ten, followed by a conversion plan choosing dedicated or bi-fuel setups and how the fleet will be supplied — via the station network, Master Gas or a new NGV station. Conversion or station construction runs from day twenty to forty-five, followed by inspection and safety sign-off through day fifty-five, with CNG fuelling live by day sixty-five, then ongoing re-testing and SCADA-managed operations.",
-  // 15 — Natural Gas (CNG): Track Record
+  // 13 — Natural Gas (CNG): Track Record
   "Through its Gas division, TAQA Arabia operates 86 CNG stations and runs more than 18 licensed vehicle-conversion centres across Egypt, while pioneering mobile CNG under the Master Gas brand — a genuine virtual pipeline reaching sites with no fixed gas infrastructure at all. Because one partner both converts vehicles and then fuels them, natural gas becomes the lowest-cost, lowest-disruption fuel switch a fleet can make, unlocking savings of roughly forty percent while avoiding the years-long wait a fixed pipeline connection would otherwise require.",
-  // 16 — EV Charging: Scope
+  // 14 — EV Charging: Scope
   "Now, let's talk about our EV Charging solution. TAQA sizes depot and route charging around each fleet's duty cycles, then installs AC and DC fast chargers with any grid connection and transformer upgrades needed. A smart charge-management system schedules vehicles to charge overnight at the lowest cost, drivers authenticate through the app and RFID, and every kilowatt-hour is logged per vehicle. TAQA finances the chargers, then operates and reports on the network — leaving the fleet with depot and en-route charging ready to use, on optimised windows with dependable uptime.",
-  // 17 — EV Charging: Value Proposition
+  // 15 — EV Charging: Value Proposition
   "Electricity delivers the lowest energy cost per kilometre of any fuel in the transition, positioning the operator ahead of tightening regulation, fuel bans and customer demands. Zero tailpipe emissions give the strongest possible ESG and city-access position, while lifecycle maintenance, an operator and user app, and a 24/7 hotline keep every charger available and billing correctly. TAQA's edge includes flexible financing up to a full profit-share model with zero charging capex, depot-to-highway coverage, and secured grid capacity through its own power-distribution arm.",
-  // 18 — EV Charging: Timeline
-  "Rolling out EV charging takes roughly 110 days start to finish. Site assessment, covering the grid survey, duty-cycle analysis and site mix, runs through day fourteen, followed by structuring the commercial model — full investment or profit-share — through day thirty. Charger and grid-equipment procurement follows through day sixty, then installation across depot and en-route locations with grid tie-in through day ninety-five, and app onboarding and go-live through day 110. From there, 24/7 monitoring, maintenance and billing keep the network running around the clock.",
-  // 19 — EV Charging: Track Record
+  // 16 — EV Charging: Track Record
   "TAQA Power secured Egypt's first private EV-charging licence and is rolling out AC and DC charging across depot, commercial and highway locations, supported by an operator and user app plus a 24/7 hotline. As Egypt's largest private power distributor, with capacity behind more than 130 live charge points already, TAQA pairs its charging rollout with the grid, solar and storage assets the rest of the business already owns. That combination gives any fleet a complete electrification package from a single, proven provider.",
-  // 20 — Waqood Smart System: Scope
+  // 17 — Waqood Smart System: Scope
   "Now, let's talk about our Waqood Smart System solution. TAQA configures every vehicle, driver and fuelling rule inside the Waqood platform, then issues RFID stickers for vehicles and PINs for drivers, integrated with reader hardware at the station side. At the pump, the system verifies the vehicle, the driver and their limit before allowing only authorised fuelling within the set rules, and every transaction streams live to dashboards the moment it happens. The result is total control over fuelling, every litre tracked, and leakage or fraud designed out entirely.",
-  // 21 — Waqood Smart System: Value Proposition
+  // 18 — Waqood Smart System: Value Proposition
   "Waqood brings litres of fuel, cubic metres of gas and kilowatt-hours of charging into one dashboard, giving total-energy visibility across every fuel type the fleet uses. Per-driver PINs, daily limits and captured pump readings make unauthorised fuelling almost impossible, while live analytics show managers where cost and waste sit, surfacing inefficient vehicles worth fixing. TAQA's edge: Waqood is its own EnerTech company, owned rather than rented, plugged into TAQA's nationwide network, and built for the transition from diesel to CNG to EV under one provider.",
-  // 22 — Waqood Smart System: Timeline
-  "Getting Waqood live moves in clear stages. Discovery of vehicles, drivers and rules takes the first week, followed by onboarding — issuing stickers, PINs and limits — through day fourteen. Fuel, CNG and EV data integrate into the platform through day twenty-one, and the single-pane dashboard and billing go fully live by day thirty. From there, limits, alerts and reports are tuned through day forty-five, and ongoing analytics reviews cover ESG performance and savings opportunities as ordinary business as usual.",
-  // 23 — Waqood Smart System: Track Record
+  // 19 — Waqood Smart System: Track Record
   "Waqood is TAQA Arabia's own EnerTech company, purpose-built to digitalise fuel payments for fleet operators. At the pump, a driver scans the vehicle's sticker, the system captures the pump reading, and the driver enters a personal PIN before the transaction is approved — while fleet managers set daily limits, receive fraud alerts and watch live analytics on a single dashboard. Extended across fuel, CNG and EV charging, Waqood turns a complex, multi-fuel operation into one optimised, fully reported system, owned end-to-end by TAQA Arabia.",
-  // 24 — Why One Partner
+  // 20 — Why One Partner
   "Bringing fuel, gas, EV charging and Waqood under one roof means one service-level agreement covering every energy type, with one uptime guarantee and one renewal instead of several. It also means one communication point through a dedicated account team and 24/7 hotline, and one commercial relationship with consolidated billing and a single negotiation replacing up to six separate procurement cycles. Solutions are engineered to interoperate on shared accounts and monitoring, and end-to-end accountability sits with one owner — turning fragmented suppliers into a single operator.",
-  // 25 — Integrated Economics
+  // 21 — Integrated Economics
   "A diesel-only fleet today carries a high, volatile fuel bill exposed to every oil-price spike, sources fuel and chargers from fragmented vendors, loses money to leakage through cash and paper receipts, and carries maximum emissions and low-emission-zone exposure. With TAQA's integrated mix, fuel cost falls by up to forty percent as CNG and EV displace the priciest litres, everything runs through one partner, Waqood's PINs design leakage out, and carbon falls every year — delivering a lower cost per kilometre and a stronger ESG story.",
-  // 26 — From Pump to Plug (Closing)
+  // 22 — From Pump to Plug (Closing)
   "From pump to plug, TAQA Arabia is the one partner that can carry your fleet from today's diesel to tomorrow's electric — spanning 230-plus fuel stations, 86 CNG stations, Egypt's first EV-charging licence with 130-plus charge points live, and the Waqood platform tying every energy type into one dashboard, financed at every step. The next move is simple: let TAQA build your fleet's transition map, starting with a baseline of your fuel cost, emissions and savings — reach out to your TAQA account team today.",
 ];
 
