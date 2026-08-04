@@ -193,10 +193,12 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
     } catch {
       // Ignored — presenting still proceeds without fullscreen.
     }
+    // Start from whichever slide is currently on screen, not always slide 0 —
+    // if the viewer has already navigated to a slide, playback should pick
+    // up from there instead of restarting the whole deck.
     setDirection("fwd");
     setAnimKey(k => k + 1);
     setPrevIndex(null);
-    setCurrent(0);
     setPaused(false);
     setPresenting(true);
   }, []);
@@ -269,12 +271,11 @@ export function DeckShell({ title, subtitle, sections, slides, pdf, narration }:
 
     if (!muted && text && "speechSynthesis" in window) {
       const utter = new SpeechSynthesisUtterance(text);
-      // Deep, measured, documentary-style narrator tone. Rate stays close to
-      // natural pace — dragging it too slow makes even a good voice sound
-      // choppy — while pitch is lowered for warmth and depth without
-      // dropping so far it starts to distort on lower-quality engines.
-      utter.rate = 0.92;
-      utter.pitch = 0.76;
+      // Deep, slow, deliberate documentary-narrator tone — pushed further
+      // than a "brisk TTS read" on both axes, but stopped short of the
+      // point where pitch-shifting starts to distort a non-neural voice.
+      utter.rate = 0.87;
+      utter.pitch = 0.68;
       const v = pickVoice(window.speechSynthesis.getVoices());
       if (v) utter.voice = v;
       // Chrome silently stops speaking ~15s into a long utterance unless it's
