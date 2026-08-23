@@ -12,7 +12,8 @@ import { StatCard, SectorBarChart, EgyptMap, DualEgyptMap, ConsolidatedEgyptMap,
 import { ServiceEgyptMap } from "@/components/taqa/ServiceEgyptMap";
 import { TaqaGasSummary, MasterGasSummary, PetroleumSummary, ElectricitySummary, WaterSummary } from "@/components/taqa/BusinessSummary";
 import { ClientsOverviewTab } from "@/components/taqa/ClientsOverview";
-import { Fuel, Zap, Droplets, MapPin, Building2, Factory, Flame, Users, Layers } from "lucide-react";
+import { OpportunitiesTab } from "@/components/taqa/OpportunitiesTab";
+import { Fuel, Zap, Droplets, MapPin, Building2, Factory, Flame, Users, Layers, Target } from "lucide-react";
 import taqaLogo from "@/assets/taqa-logo.png";
 
 const tabs = [
@@ -24,6 +25,7 @@ const tabs = [
   { id: "water", label: "Water", icon: <Droplets className="w-4 h-4" /> },
   { id: "clients", label: "Who We Serve", icon: <Users className="w-4 h-4" /> },
   { id: "portfolio", label: "Portfolio", icon: <Layers className="w-4 h-4" /> },
+  { id: "opportunities", label: "Outreach Opportunities", icon: <Target className="w-4 h-4" /> },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -453,6 +455,7 @@ export default function Index() {
         {activeTab === "water" && <WaterTab />}
         {activeTab === "clients" && <ClientsOverviewTab />}
         {activeTab === "portfolio" && <PortfolioTab />}
+        {activeTab === "opportunities" && <OpportunitiesTab />}
       </main>
     </div>
   );
