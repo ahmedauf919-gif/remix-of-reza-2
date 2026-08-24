@@ -106,6 +106,29 @@ const investmentModels = [
 
 type CategoryId = "investment" | "sizing" | "presentations" | "directory" | "analytics";
 
+type PlatformTabId = "investment-dept" | "business-development" | "full-platform";
+
+const platformTabs: { id: PlatformTabId; label: string; description: string; categories: CategoryId[] }[] = [
+  {
+    id: "investment-dept",
+    label: "Investment",
+    description: "Project finance models, sizing tools and the saved-scenario directory.",
+    categories: ["investment", "sizing", "directory"],
+  },
+  {
+    id: "business-development",
+    label: "Business Development",
+    description: "TAQA Analytics dashboard and client presentation decks.",
+    categories: ["analytics", "presentations"],
+  },
+  {
+    id: "full-platform",
+    label: "Full Platform",
+    description: "Everything — investment models, sizing, presentations, analytics and the directory.",
+    categories: ["investment", "sizing", "presentations", "analytics", "directory"],
+  },
+];
+
 const categories = [
   {
     id: "investment" as CategoryId,
@@ -184,11 +207,15 @@ const features = [
 ];
 
 export default function Home() {
+  const [platformTab, setPlatformTab] = useState<PlatformTabId>("full-platform");
   const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null);
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);
   const [dirCount, setDirCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
+
+  const activeTab = platformTabs.find(t => t.id === platformTab)!;
+  const visibleCategories = categories.filter(c => activeTab.categories.includes(c.id));
 
   useEffect(() => {
     import("@/lib/directoryStore").then(m => setDirCount(m.loadEntries().length));
@@ -312,12 +339,36 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── Platform tabs ──────────────────────────────────── */}
+      <div className="bg-white border-b border-border">
+        <div className="container flex flex-wrap gap-2 py-4">
+          {platformTabs.map(t => {
+            const isActive = platformTab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => { setPlatformTab(t.id); setActiveCategory(null); }}
+                className={`px-4 py-2 rounded-full text-sm font-semibold border-2 transition-all ${
+                  isActive
+                    ? "bg-[#002060] text-white border-[#002060] shadow-sm"
+                    : "bg-white text-[#002060] border-border hover:border-[#005298]/50"
+                }`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* ── Main content ───────────────────────────────────── */}
       <main className="container py-10 flex-1">
 
+        <p className="text-sm text-muted-foreground mb-6 -mt-2">{activeTab.description}</p>
+
         {/* Category accordion — hidden until clicked, opens inline */}
         <div className="space-y-4">
-          {categories.map((cat, i) => {
+          {visibleCategories.map((cat, i) => {
             const Icon = cat.icon;
             const isActive = activeCategory === cat.id;
             return (
@@ -651,7 +702,10 @@ export default function Home() {
               <span>Internal business intelligence and client portfolio dashboards.</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {/* NABQ card */}
+              {/* NABQ card — a sizing/investment dashboard, not shown under the
+                  Business Development tab, which surfaces the TAQA Arabia
+                  Dashboard only. */}
+              {platformTab !== "business-development" && (
               <Link
                 to="/sizing/nabq"
                 className="group block animate-fade-in-up"
@@ -680,6 +734,7 @@ export default function Home() {
                   <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-emerald-500 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 rounded-b-xl" />
                 </div>
               </Link>
+              )}
               <Link to="/analytics/taqa" className="block group">
                 <div className="relative h-full rounded-xl border bg-white p-6 shadow-sm overflow-hidden hover:shadow-md hover:border-amber-400/40 transition-all">
                   <div className="flex items-start justify-between mb-4">
